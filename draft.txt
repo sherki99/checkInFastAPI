@@ -1,0 +1,18 @@
+
+    Meal Plan Last Week:
+    {checkIn_info.mealPlanLastWeek}
+
+    Analysis Report Start:
+    {checkIn_info.analysisReportStart}
+
+    Body Measurements Last Week:
+    {checkIn_info.bodyMeasurementsLastWeek}
+
+    Daily Reports Last Week:
+    {checkIn_info.dailyReportsLastWeek}
+
+    Exercise Log Last Week:
+    {checkIn_info.exerciseLogLastWeek}
+
+    User Workout Details Last Week:
+    {checkIn_info.userWorkoutDetailsLastWeek}
