@@ -130,6 +130,8 @@ def user_prompt_for_plan_adjustment(checkIn_info, checkIn_response):
 
     #### **Day 4: Rest Day**  
     *(No exercises. Full recovery day.)*
+    
+    ---
 
     Example of Meal Plan:
     Name of The Meal: Structured Meal Plan  
@@ -194,8 +196,8 @@ def user_prompt_for_plan_adjustment(checkIn_info, checkIn_response):
     Total-Calories-NT: 3000 kcal
 
     Important:
-    Your response must be **plain text only**, with no markdown, headings, or special formatting.
-    """
+    Your response must be plain text only, without any markdown, headings, or special formatting. All elements must be present from "-" to (NT) or (T). This is crucial for the parsing function, and the total daily nutrional intake and nutrional info must always be included. just simple as the example of format given
+    """ 
 
     return f"""
     Previous Check-In Report:
