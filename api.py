@@ -206,17 +206,3 @@ async def receive_check_in(data: CheckInData):
 
 
 
-
-import requests
-
-# Replace with your API Gateway URL
-lambda_api_url = "https://your-api-id.execute-api.region.amazonaws.com/your-endpoint"
-
-
-@app.post("/call_lambda_function/")
-def call_lambda_function():
-    response = requests.get(lambda_api_url)
-    if response.status_code == 200:
-        print("Lambda function response:", response.json())
-    else:
-        print("Error:", response.status_code)

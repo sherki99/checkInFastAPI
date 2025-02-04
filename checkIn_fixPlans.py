@@ -12,18 +12,74 @@ OPENAI_MODEL = "gpt-4o-mini"
 # System Message for Check-In Report
 system_message_checkIn_plan_report = """You are Dr. Mike Israetel (Renaissance Periodization - RP Strength), 
 a leading expert in evidence-based nutrition for strength training and muscle hypertrophy. 
-Your goal is to analyze the provided check-in data and generate a detailed feedback report.
 
-Focus areas:
-- Evaluate meal plan adherence and effectiveness.
-- Assess training consistency, progressive overload, and recovery.
-- Provide insights on body composition trends and performance.
-- Suggest next steps for optimizing training and nutrition.
+Your role is to analyze the provided check-in data and generate a **detailed feedback report** with **clear, actionable recommendations**. 
 
-Ensure the report is actionable and clear.
+### Focus Areas:
+1. **Meal Plan Adherence** – Assess consistency and effectiveness.
+2. **Training Performance** – Evaluate progressive overload, training effort, and recovery.
+3. **Body Composition Trends** – Analyze progress in weight, muscle gain, or fat loss.
+4. **Daily Reports & Habits** – Identify patterns affecting performance.
+5. **Goal Adjustments** – Review **previous goals** and adjust for **short-term (1 week), mid-term (4 weeks), and long-term (12 weeks)**.
+
+### Instructions:
+- **Identify key trends and insights** from the check-in data.
+- **Suggest modifications** to the nutrition or training plan.
+- **Adjust goals based on progress** while maintaining long-term objectives.
+- **Summarize key takeaways at the end**, using the given format.
+
+### Output Format:
+1. **Detailed analysis** with structured feedback.
+2. **Revised goals** for the next check-in period, formatted as:
 """
 
 def user_prompt_for_checkIn_plan_report(checkIn_info):
+    return f"""
+    ## Weekly Check-In Summary:
+
+    **1️⃣ Meal Plan Adherence:**
+    {checkIn_info['mealPlanLastWeek']}
+
+    **2️⃣ Workout Plan & Performance:**
+    {checkIn_info['userWorkoutDetailsLastWeek']}
+
+    **3️⃣ Body Measurements & Composition:**
+    {checkIn_info['bodyMeasurementsLastWeek']}
+
+    **4️⃣ Daily Reports & Recovery Insights:**
+    {checkIn_info['dailyReportsLastWeek']}
+
+    **5️⃣ Exercise Log & Training Effort:**
+    {checkIn_info['exercisesLogLastWeek']}
+
+    **6️⃣ Previous Goals & Progress Assessment:**
+    {checkIn_info['analysisReportStart']}
+
+    ---
+    🔍 **Analysis Requirement:**  
+    - Identify **key takeaways** from the check-in data.  
+    - Highlight areas of **success** and **needed improvements**.  
+    - If progress is **on track**, keep the goal steady.  
+    - If adjustments are needed, **modify short-term goals** and **slightly tweak mid/long-term goals**.  
+
+    📌 **Final Report Structure:**  
+    - Detailed insights with **specific** recommendations for meal plan & training.  
+    - Adjusted **short-term (1-week), mid-term (4-week), and long-term (12-week) goals**.  
+    - Important notes added at the end, separated by `--`.  
+
+    📌 **Updated Goal Format:**
+    ```
+    --------
+    GoalOne: [Short-term adjustment based on the report]
+    GoalFour: [Mid-term adjustment]
+    GoalTwelve: [Long-term adjustment]
+    --------
+    ```
+    """
+
+
+
+
     return f"""
     Check-In Summary:
 
@@ -41,6 +97,19 @@ def user_prompt_for_checkIn_plan_report(checkIn_info):
 
     - Exercise Log Last Week:
     {checkIn_info['exercisesLogLastWeek']}
+
+    - Report made Last Week with the Gaol set for the 12 weeks: 
+    {checkIn_info['analysisReportStart']}
+
+    any import point is also add the end of the report separet by line "--" I want to re the goal and from th ebalayis the can cganeg mus tbe chaneg th egoal oen for th enew weke bt the forut and twke week slight chnage it 
+    based on hwo the information and reprot write to set new goal 
+
+    Format respoonse must be like this: 
+    --------
+    GoalOne:  
+    GoalFour:  
+    GoulTwelve
+    --------
 
     Generate a structured report with insights, suggested changes, and key takeaways.
     """
@@ -74,8 +143,10 @@ and determine if any adjustments are needed in their workout or nutrition plan.
 2. Explain why adjustments are necessary, referencing progress, performance, and adherence.
 3. Provide a **fully revised workout plan**, if necessary, adjusting volume, intensity, or exercise selection.
 4. Provide a **fully revised nutrition plan**, if necessary, modifying macronutrient targets, caloric intake, or meal timing.
+5. Provide the new four week goal if there is any change to it
 5. Ensure the new plan follows the **exact format** of the user's existing plan for compatibility.
 6. **Important:** Your response must be in plain text only. **Do not use markdown, bullet points, or special formatting.** 
+
 """
 
 def user_prompt_for_plan_adjustment(checkIn_info, checkIn_response):
