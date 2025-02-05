@@ -68,7 +68,7 @@ def user_prompt_for_checkIn_plan_report(checkIn_info):
     - Important notes added at the end, separated by `--`.  
 
 
-    📌 **Updated Goal Format (MANDATORY—must be included at the END of the report EXACTLY in this structure):** 
+    📌 **Create always even if missing  Goal Format (MANDATORY—must be included at the END of the report EXACTLY in this structure):** 
     ```
     --------
     GoalOne: [Short-term adjustment based on the report]
