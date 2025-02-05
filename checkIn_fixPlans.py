@@ -67,7 +67,8 @@ def user_prompt_for_checkIn_plan_report(checkIn_info):
     - Adjusted **short-term (1-week), mid-term (4-week), and long-term (12-week) goals**.  
     - Important notes added at the end, separated by `--`.  
 
-    📌 **Updated Goal Format:**
+
+    📌 **Updated Goal Format (MANDATORY—must be included at the END of the report EXACTLY in this structure):** 
     ```
     --------
     GoalOne: [Short-term adjustment based on the report]
