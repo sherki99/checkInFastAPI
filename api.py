@@ -6,6 +6,8 @@ from fitness_optimization import optimize_gpt, workout_gpt
 from nutri_optimization import nutrition_gpt
 from checkIn_optimization import checkIn_gpt
 from checkIn_fixPlans import adjust_plan_gpt
+from firstPlan import firstCreate_gpt
+
 
 app = FastAPI()
 app.add_middleware(
@@ -205,4 +207,24 @@ async def receive_check_in(data: CheckInData):
 
 
 
+
+class FirstPlanData(BaseModel):
+    userId: str
+    question:  str
+    bodyMeasurements:  str
+
+
+
+
+
+@app.post("/firt_plan_creation")
+async def create_firt_plan(data: FirstPlanData): 
+    data_info =  data.dict()
+
+    firstEverthing  =  await firstCreate_gpt(data_info)
+
+    return {
+        "message" : "creation succesful first everthing", 
+        "firstEverthing": firstEverthing,       
+    }
 
