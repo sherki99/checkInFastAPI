@@ -25,22 +25,22 @@ class RPAnalysisSystem:
         4. Clear explanations of rationale"""
 
         self.body_analysis = BodyAnalysis(self.SYSTEM_MESSAGE)
-     #   self.workout_plan = WorkoutPlanGenerator(self.SYSTEM_MESSAGE)
-     #   self.nutrition_plan = NutritionPlanGenerator(self.SYSTEM_MESSAGE)
+        self.workout_plan = WorkoutPlanGenerator(self.SYSTEM_MESSAGE)
+        self.nutrition_plan = NutritionPlanGenerator(self.SYSTEM_MESSAGE)
 
     async def analyze_client(self, client_data: Dict[str, Any]) -> Dict[str, Any]:
         """Processes client data through multiple stages."""
 
         body_analysis = await self.body_analysis.analyze(client_data['measurements'])
         analysis_report = await self._generate_analysis_report(client_data, body_analysis)
-      #  workout_plan = await self.workout_plan.generate(analysis_report)
-      #  nutrition_plan = await self.nutrition_plan.generate(analysis_report)
+        workout_plan = await self.workout_plan.generate(analysis_report)
+        nutrition_plan = await self.nutrition_plan.generate(analysis_report)
 
         return {
             'message' : "yes complete ", 
             'analysis_report': analysis_report,
-            #'workout_plan': workout_plan,
-            #'nutrition_plan': nutrition_plan
+            'workout_plan': workout_plan,
+            'nutrition_plan': nutrition_plan
         }
 
     async def _generate_analysis_report(self, client_data: Dict, body_analysis: Dict) -> Dict:
