@@ -1,11 +1,8 @@
 from typing import Dict, Any
 from datetime import datetime
-import json
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
-
-
 
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
@@ -13,8 +10,6 @@ client = OpenAI(api_key=api_key)
 OPENAI_MODEL = "gpt-4o-mini"
 
 class RPAnalysisSystem:
-    """Main system to coordinate different analysis components."""
-
     def __init__(self, system_message: str = None):
         self.SYSTEM_MESSAGE = system_message or """You are Dr. Mike Israetel, a renowned expert in exercise science and bodybuilding. 
         Your role is to analyze client data and create evidence-based training and nutrition plans following 
@@ -28,58 +23,32 @@ class RPAnalysisSystem:
         self.workout_plan = WorkoutPlanGenerator(self.SYSTEM_MESSAGE)
         self.nutrition_plan = NutritionPlanGenerator(self.SYSTEM_MESSAGE)
 
-    async def _call_llm(self, prompt: str) -> Dict:
-        """Modified LLM call with improved error handling and response parsing"""
+    async def _call_llm(self, prompt: str) -> str:
+        """Modified LLM call to return string responses"""
         response = client.chat.completions.create(
             model=OPENAI_MODEL,
             messages=[
                 {"role": "system", "content": self.SYSTEM_MESSAGE},
-                {"role": "user", "content": prompt + "\nProvide the response as a valid JSON object without markdown formatting or code blocks."}
+                {"role": "user", "content": prompt}
             ],
         )
-
-        response_text = response.choices[0].message.content.strip()
-        
-        # Clean up common formatting issues
-        if response_text.startswith("```json"):
-            response_text = response_text[7:]
-        if response_text.endswith("```"):
-            response_text = response_text[:-3]
-        
-        response_text = response_text.strip()
-        
-        try:
-            result = json.loads(response_text)
-            return result
-        except json.JSONDecodeError as e:
-            # Log the problematic response for debugging
-            print(f"JSON Parse Error: {e}")
-            print(f"Raw response: {response_text}")
-            
-            # Return a structured error response instead of raising an exception
-            return {
-                "error": True,
-                "message": f"Failed to parse LLM response: {str(e)}",
-                "raw_response": response_text
-            }
+        return response.choices[0].message.content.strip()
 
     async def analyze_client(self, client_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Modified client analysis with error handling"""
+        """Modified client analysis with string responses"""
         try:
             body_analysis = await self.body_analysis.analyze(client_data.get('measurements', {}))
-            if body_analysis.get('error'):
+            if "ERROR:" in body_analysis:
                 return {
                     'status': 'error',
-                    'message': 'Body analysis failed',
-                    'details': body_analysis
+                    'message': body_analysis
                 }
 
             analysis_report = await self._generate_analysis_report(client_data, body_analysis)
-            if analysis_report.get('error'):
+            if "ERROR:" in analysis_report:
                 return {
                     'status': 'error',
-                    'message': 'Analysis report generation failed',
-                    'details': analysis_report
+                    'message': analysis_report
                 }
 
             workout_plan = await self.workout_plan.generate(analysis_report)
@@ -95,45 +64,19 @@ class RPAnalysisSystem:
         except Exception as e:
             return {
                 'status': 'error',
-                'message': f'Analysis failed: {str(e)}',
-                'details': None
+                'message': f'Analysis failed: {str(e)}'
             }
 
-    async def _generate_analysis_report(self, client_data: Dict, body_analysis: Dict) -> Dict:
-
-        """Generates a comprehensive analysis report."""
-        prompt = f"""Given this client data and body analysis:
-        Client Data: {json.dumps(client_data, indent=2)}
-        Body Analysis: {json.dumps(body_analysis, indent=2)}
-        
-        Follow this chain of thought:
-        1. Evaluate current fitness level and training history
-        2. Analyze recovery capacity and limitations
-        3. Set specific, measurable goals based on client objectives
-        4. Define realistic timelines and progression paths
-        
-        Create a comprehensive analysis report as JSON including specific goals.
-        """
-
-        return await self._call_llm(prompt)
-
-
-
-
 class BodyAnalysis:
-    """Handles body analysis using external tools and LLM processing."""
-
     def __init__(self, system_message: str):
         self.SYSTEM_MESSAGE = system_message
-      #  self.measurement_analyzer = MeasurementAnalyzer()
 
-    async def analyze(self, measurements: Dict[str, float]) -> Dict[str, Any]:
-        """Analyzes body measurements."""
-    #    technical_analysis = self.measurement_analyzer.analyze_measurements(measurements)
-
-        prompt = f"""Based on these measurements and technical analysis:
-        Measurements: {json.dumps(measurements, indent=2)}
-       
+    async def analyze(self, measurements: Dict[str, float]) -> str:
+        """Analyzes body measurements returning string format"""
+        measurements_str = "\n".join([f"{k}: {v}" for k, v in measurements.items()])
+        
+        prompt = f"""Based on these measurements:
+        {measurements_str}
         
         Provide a detailed analysis with:
         1. Structure and proportions
@@ -141,103 +84,140 @@ class BodyAnalysis:
         3. Potential imbalances
         4. Training implications
         
-        Format as structured JSON."""
+        Format as clear sections with headings."""
         
         return await RPAnalysisSystem._call_llm(self, prompt)
 
-
 class WorkoutPlanGenerator:
-    """Handles workout plan generation using volume calculations and LLM."""
-
     def __init__(self, system_message: str):
         self.SYSTEM_MESSAGE = system_message
         self.volume_calculator = VolumeCalculator()
 
-    async def generate(self, analysis_report: Dict) -> Dict:
-        """Generates a detailed workout plan."""
-        volume_ranges = self.volume_calculator.calculate_optimal_volumes(
-            analysis_report['fitness_level'], analysis_report['recovery_capacity']
+    async def generate(self, analysis_report: str) -> str:
+        """Generates a detailed workout plan in string format"""
+        volume_info = self.volume_calculator.calculate_optimal_volumes(
+            self._extract_fitness_level(analysis_report),
+            self._extract_recovery_capacity(analysis_report)
         )
-
-        prompt = f"""Based on this analysis and volume ranges:
-        Analysis: {json.dumps(analysis_report, indent=2)}
-        Volume Ranges: {json.dumps(volume_ranges, indent=2)}
         
-        Follow this chain of thought:
+        prompt = f"""Based on this analysis and volume information:
+        Analysis: {analysis_report}
+        Volume Info: {volume_info}
+        
+        Create a detailed workout plan including:
         1. Exercise selection
         2. Volume distribution
         3. Progressive overload design
         4. Weekly structure
         
-        Generate a structured JSON workout plan."""
+        Format as a clear, structured training program."""
         
         return await RPAnalysisSystem._call_llm(self, prompt)
 
-class NutritionPlanGenerator:
-    """Handles nutrition plan generation using external tools and LLM."""
+    def _extract_fitness_level(self, analysis: str) -> float:
+        """Extract fitness level from analysis text"""
+        # Simple extraction - could be made more sophisticated
+        if "beginner" in analysis.lower():
+            return 1.0
+        elif "intermediate" in analysis.lower():
+            return 2.0
+        elif "advanced" in analysis.lower():
+            return 3.0
+        return 1.5  # default moderate level
 
+    def _extract_recovery_capacity(self, analysis: str) -> float:
+        """Extract recovery capacity from analysis text"""
+        # Simple extraction - could be made more sophisticated
+        if "poor recovery" in analysis.lower():
+            return 0.8
+        elif "good recovery" in analysis.lower():
+            return 1.2
+        return 1.0  # default normal recovery
+
+class NutritionPlanGenerator:
     def __init__(self, system_message: str):
         self.SYSTEM_MESSAGE = system_message
         self.nutrition_calculator = NutritionCalculator()
 
-    async def generate(self, analysis_report: Dict) -> Dict:
-        """Generates a nutrition plan."""
-        nutrition_baseline = self.nutrition_calculator.calculate_needs(
-            analysis_report['body_stats'], analysis_report['activity_level'], analysis_report['goals']
-        )
+    async def generate(self, analysis_report: str) -> str:
+        """Generates a nutrition plan in string format"""
+        stats = self._extract_body_stats(analysis_report)
+        activity = self._extract_activity_level(analysis_report)
+        goals = self._extract_goals(analysis_report)
+        
+        nutrition_info = self.nutrition_calculator.calculate_needs(stats, activity, goals)
+        nutrition_str = "\n".join([f"{k}: {v}" for k, v in nutrition_info.items()])
 
-        prompt = f"""Using this analysis and nutrition baseline:
-        Analysis: {json.dumps(analysis_report, indent=2)}
-        Nutrition Baseline: {json.dumps(nutrition_baseline, indent=2)}
+        prompt = f"""Based on this analysis and nutrition information:
+        Analysis: {analysis_report}
+        Calculated Needs: {nutrition_str}
         
-        Follow this chain of thought:
-        1. Adjust macronutrients
-        2. Meal timing
-        3. Dietary preferences
-        4. Nutrition periodization
+        Create a detailed nutrition plan including:
+        1. Daily macronutrient targets
+        2. Meal timing recommendations
+        3. Food choices and preferences
+        4. Nutrition periodization strategy
         
-        Generate a structured JSON nutrition plan."""
+        Format as a clear, structured nutrition program."""
         
         return await RPAnalysisSystem._call_llm(self, prompt)
 
-class MeasurementAnalyzer:
+    def _extract_body_stats(self, analysis: str) -> Dict:
+        """Extract body stats from analysis text"""
+        # Simple extraction - could be made more sophisticated
+        weight = 70  # default
+        for line in analysis.split('\n'):
+            if 'weight' in line.lower():
+                try:
+                    weight = float(line.split(':')[1].strip().split()[0])
+                except:
+                    pass
+        return {"weight": weight}
 
-    def analyze_measurements(self, measurements):
-        """Analyze body measurements and return a structured report."""
-        weight = measurements.get("weight", 0)
-        height = measurements.get("height", 0)
-        body_fat = measurements.get("body_fat", 0)
+    def _extract_activity_level(self, analysis: str) -> str:
+        """Extract activity level from analysis text"""
+        if "sedentary" in analysis.lower():
+            return "sedentary"
+        elif "very active" in analysis.lower():
+            return "very_active"
+        return "moderate"
 
-        bmi = weight / ((height / 100) ** 2) if height > 0 else 0
-
-        return {
-            "BMI": round(bmi, 2),
-            "Body Fat Percentage": body_fat,
-            "Category": "Underweight" if bmi < 18.5 else "Normal" if bmi < 25 else "Overweight" if bmi < 30 else "Obese"
-        }
-
-class NutritionCalculator:
-
-    def calculate_needs(self, body_stats, activity_level, goals):
-        """Calculates nutritional needs based on body stats and goals."""
-        weight = body_stats.get("weight", 0)
-        goal = goals.get("goal", "maintain")
-
-        return self.calculate_macros(weight, goal)
-
-    def calculate_macros(self, weight, goal):
-        """Calculates macros based on weight and goal."""
-        if goal == "bulk":
-            protein, carbs, fats = weight * 2.2, weight * 4, weight * 1
-        elif goal == "cut":
-            protein, carbs, fats = weight * 2.5, weight * 2, weight * 0.8
-        else:
-            protein, carbs, fats = weight * 2, weight * 3, weight * 0.9
-
-        return {"Protein (g)": round(protein, 1), "Carbs (g)": round(carbs, 1), "Fats (g)": round(fats, 1)}
+    def _extract_goals(self, analysis: str) -> Dict:
+        """Extract goals from analysis text"""
+        if "muscle gain" in analysis.lower() or "bulk" in analysis.lower():
+            return {"goal": "bulk"}
+        elif "fat loss" in analysis.lower() or "cut" in analysis.lower():
+            return {"goal": "cut"}
+        return {"goal": "maintain"}
 
 class VolumeCalculator:
+    def calculate_optimal_volumes(self, fitness_level: float, recovery_capacity: float) -> str:
+        """Calculate training volume returning string format"""
+        weekly_sets = fitness_level * recovery_capacity * 10
+        return f"Recommended weekly sets per muscle group: {weekly_sets:.1f}"
 
-    def calculate_optimal_volumes(self, fitness_level, recovery_capacity):
-        """Calculate training volume based on fitness level."""
-        return {"weekly_sets_per_muscle_group": fitness_level * recovery_capacity}
+class NutritionCalculator:
+    def calculate_needs(self, body_stats: Dict, activity_level: str, goals: Dict) -> Dict:
+        """Calculates nutritional needs returning dictionary"""
+        weight = body_stats.get("weight", 70)
+        goal = goals.get("goal", "maintain")
+        
+        # Calculate macros
+        if goal == "bulk":
+            protein = weight * 2.2
+            carbs = weight * 4
+            fats = weight * 1
+        elif goal == "cut":
+            protein = weight * 2.5
+            carbs = weight * 2
+            fats = weight * 0.8
+        else:
+            protein = weight * 2
+            carbs = weight * 3
+            fats = weight * 0.9
+
+        return {
+            "Daily Protein": f"{round(protein, 1)}g",
+            "Daily Carbs": f"{round(carbs, 1)}g",
+            "Daily Fats": f"{round(fats, 1)}g"
+        }
