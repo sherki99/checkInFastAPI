@@ -146,7 +146,6 @@ class NutritionPlanGenerator:
         
         return await RPAnalysisSystem._call_llm(self, prompt)
 
-
 class MeasurementAnalyzer:
 
     def analyze_measurements(self, measurements):
@@ -162,7 +161,6 @@ class MeasurementAnalyzer:
             "Body Fat Percentage": body_fat,
             "Category": "Underweight" if bmi < 18.5 else "Normal" if bmi < 25 else "Overweight" if bmi < 30 else "Obese"
         }
-
 
 class NutritionCalculator:
 
@@ -185,11 +183,3 @@ class NutritionCalculator:
         return {"Protein (g)": round(protein, 1), "Carbs (g)": round(carbs, 1), "Fats (g)": round(fats, 1)}
 
 
-class VolumeCalculator:
-    
-    def calculate_optimal_volumes(self, fitness_level, recovery_capacity):
-        """Calculate training volume based on fitness level."""
-        # Example calculation logic for the optimal volume
-        return {
-            "weekly_sets_per_muscle_group": fitness_level * recovery_capacity,
-        }
