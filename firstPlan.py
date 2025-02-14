@@ -99,6 +99,26 @@ class RPAnalysisSystem:
                 'details': None
             }
 
+    async def _generate_analysis_report(self, client_data: Dict, body_analysis: Dict) -> Dict:
+
+        """Generates a comprehensive analysis report."""
+        prompt = f"""Given this client data and body analysis:
+        Client Data: {json.dumps(client_data, indent=2)}
+        Body Analysis: {json.dumps(body_analysis, indent=2)}
+        
+        Follow this chain of thought:
+        1. Evaluate current fitness level and training history
+        2. Analyze recovery capacity and limitations
+        3. Set specific, measurable goals based on client objectives
+        4. Define realistic timelines and progression paths
+        
+        Create a comprehensive analysis report as JSON including specific goals.
+        """
+
+        return await self._call_llm(prompt)
+
+
+
 
 class BodyAnalysis:
     """Handles body analysis using external tools and LLM processing."""
