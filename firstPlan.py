@@ -99,17 +99,14 @@ class WorkoutPlanGenerator:
 
     def __init__(self, system_message: str):
         self.SYSTEM_MESSAGE = system_message
-        self.volume_calculator = VolumeCalculator()
+        # Removed the volume_calculator reference
 
     async def generate(self, analysis_report: Dict) -> Dict:
         """Generates a detailed workout plan."""
-        volume_ranges = self.volume_calculator.calculate_optimal_volumes(
-            analysis_report['fitness_level'], analysis_report['recovery_capacity']
-        )
 
-        prompt = f"""Based on this analysis and volume ranges:
+        # Removed volume ranges logic as it's not needed anymore
+        prompt = f"""Based on this analysis:
         Analysis: {json.dumps(analysis_report, indent=2)}
-        Volume Ranges: {json.dumps(volume_ranges, indent=2)}
         
         Follow this chain of thought:
         1. Exercise selection
