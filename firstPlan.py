@@ -68,10 +68,9 @@ class RPAnalysisSystem:
         response = client.chat.completions.create(
             model=OPENAI_MODEL,
             messages=[{"role": "system", "content": self.SYSTEM_MESSAGE}, {"role": "user", "content": prompt}],
-            response_format="json", 
         )
 
-        
+        print(response.choices[0])
         return response.choices[0].message.content.strip()
 
 
