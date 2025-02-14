@@ -37,7 +37,6 @@ class RPAnalysisSystem:
         return {
             'message' : "yes complete doen for the first ", 
             'analysis_report': analysis_report,
-            
             #'workout_plan': workout_plan,
             #'nutrition_plan': nutrition_plan
         }
@@ -55,7 +54,8 @@ class RPAnalysisSystem:
         3. Set specific, measurable goals based on client objectives
         4. Define realistic timelines and progression paths
         
-        Create a comprehensive analysis report as JSON including specific goals."""
+        Create a comprehensive analysis report as JSON including specific goals.
+        """
 
         return await self._call_llm(prompt)
 
@@ -189,7 +189,10 @@ class NutritionCalculator:
 
 
 class VolumeCalculator:
-
+    
     def calculate_optimal_volumes(self, fitness_level, recovery_capacity):
         """Calculate training volume based on fitness level."""
-        return {"weekly_sets_per_muscle_group": fitness_level * recovery_capacity}
+        # Example calculation logic for the optimal volume
+        return {
+            "weekly_sets_per_muscle_group": fitness_level * recovery_capacity,
+        }
