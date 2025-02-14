@@ -4,11 +4,20 @@ import json
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
+import asyncio
+import time
+from openai.error import OpenAIError
+
+
+
+
 
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
 OPENAI_MODEL = "gpt-4o-mini"
+
+
 
 class RPAnalysisSystem:
     """Main system to coordinate different analysis components."""
@@ -23,26 +32,24 @@ class RPAnalysisSystem:
         4. Clear explanations of rationale"""
 
         self.body_analysis = BodyAnalysis(self.SYSTEM_MESSAGE)
-     #   self.workout_plan = WorkoutPlanGenerator(self.SYSTEM_MESSAGE)
-     #   self.nutrition_plan = NutritionPlanGenerator(self.SYSTEM_MESSAGE)
 
     async def analyze_client(self, client_data: Dict[str, Any]) -> Dict[str, Any]:
         """Processes client data through multiple stages."""
-
-        body_analysis = await self.body_analysis.analyze(client_data['measurements'])
-        analysis_report = await self._generate_analysis_report(client_data, body_analysis)
-      #  workout_plan = await self.workout_plan.generate(analysis_report)
-      #  nutrition_plan = await self.nutrition_plan.generate(analysis_report)
-
-        return {
-            'message' : "yes complete doen for the first ", 
-            'analysis_report': analysis_report,
-            #'workout_plan': workout_plan,
-            #'nutrition_plan': nutrition_plan
-        }
+        try:
+            body_analysis = await self.body_analysis.analyze(client_data['measurements'])
+            analysis_report = await self._generate_analysis_report(client_data, body_analysis)
+            return {
+                'message': "Analysis complete for the first stage.",
+                'analysis_report': analysis_report,
+            }
+        except OpenAIError as e:
+            print(f"OpenAI Error: {e}")
+            return {'error': "There was an error with the OpenAI service."}
+        except Exception as e:
+            print(f"General Error: {e}")
+            return {'error': "An unexpected error occurred."}
 
     async def _generate_analysis_report(self, client_data: Dict, body_analysis: Dict) -> Dict:
-
         """Generates a comprehensive analysis report."""
         prompt = f"""Given this client data and body analysis:
         Client Data: {json.dumps(client_data, indent=2)}
@@ -61,12 +68,26 @@ class RPAnalysisSystem:
 
     async def _call_llm(self, prompt: str) -> Dict:
         """Calls OpenAI's GPT model to generate a response."""
-        response = client.chat.completions.create(
-            model=OPENAI_MODEL,
-            messages=[{"role": "system", "content": self.SYSTEM_MESSAGE}, {"role": "user", "content": prompt}]
-        )
-        return response.choices[0].message.content.strip()
-
+        attempt = 0
+        max_retries = 3
+        while attempt < max_retries:
+            try:
+                response = client.chat.completions.create(
+                    model=OPENAI_MODEL,
+                    messages=[{"role": "system", "content": self.SYSTEM_MESSAGE}, {"role": "user", "content": prompt}],
+                    timeout=30  # Adjust timeout duration here
+                )
+                return response.choices[0].message.content.strip()
+            except OpenAIError as e:
+                attempt += 1
+                if attempt == max_retries:
+                    print(f"Max retries reached. Error: {e}")
+                    return {'error': f"Failed to generate response after {max_retries} attempts."}
+                print(f"Retrying due to error: {e}")
+                await asyncio.sleep(5)  # Wait before retrying
+            except Exception as e:
+                print(f"Unexpected error: {e}")
+                return {'error': "An unexpected error occurred."}
 
 class BodyAnalysis:
     """Handles body analysis using external tools and LLM processing."""
