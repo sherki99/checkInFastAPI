@@ -236,7 +236,6 @@ async def create_first_plan(base_model: BaseModelForRequest):
         analysis_result = await rp_system.analyze_client(base_model.dict())
         print(base_model)
         return {
-            "message": "Success",
             "analysis_result": analysis_result
         }
     except Exception as e:
