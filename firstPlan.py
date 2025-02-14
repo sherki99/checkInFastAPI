@@ -68,7 +68,7 @@ class RPAnalysisSystem:
         response = client.chat.completions.create(
             model=OPENAI_MODEL,
             messages=[{"role": "system", "content": self.SYSTEM_MESSAGE}, {"role": "user", "content": prompt}],
-            response_format={ type: "json_object" },
+            response_format="json", 
         )
 
         
