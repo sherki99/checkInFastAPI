@@ -218,7 +218,7 @@ rp_system = RPAnalysisSystem()
 async def create_first_plan(request: FirstPlanRequest):
     try:
         # Process the request
-        analysis_result = await rp_system.analyze_client(request)
+      #  analysis_result = await rp_system.analyze_client(request)
         print(request)
         return {
          "message" : "okk", 
