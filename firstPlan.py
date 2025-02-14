@@ -64,7 +64,7 @@ class RPAnalysisSystem:
     
 
     async def _call_llm(self, prompt: str) -> Dict:
-        
+
         response = client.chat.completions.create(
             model=OPENAI_MODEL,
             messages=[
@@ -80,10 +80,6 @@ class RPAnalysisSystem:
             raise ValueError(f"LLM output is not valid JSON: {e}\nOutput: {response_text}")
         return result
 
-    
-
-
-
 class BodyAnalysis:
     """Handles body analysis using external tools and LLM processing."""
 
@@ -91,7 +87,7 @@ class BodyAnalysis:
         self.SYSTEM_MESSAGE = system_message
       #  self.measurement_analyzer = MeasurementAnalyzer()
 
-    async def analyze(self, measurements: Dict[str, float]) -> Dict[str, Any]:
+    async def analyze(self, measurements: Dict[int, float]) -> Dict[int, Any]:
         """Analyzes body measurements."""
     #    technical_analysis = self.measurement_analyzer.analyze_measurements(measurements)
 
@@ -108,7 +104,6 @@ class BodyAnalysis:
         Format as structured JSON."""
         
         return await RPAnalysisSystem._call_llm(self, prompt)
-
 
 class WorkoutPlanGenerator:
     """Handles workout plan generation using volume calculations and LLM."""
