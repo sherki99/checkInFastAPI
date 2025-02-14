@@ -99,14 +99,17 @@ class WorkoutPlanGenerator:
 
     def __init__(self, system_message: str):
         self.SYSTEM_MESSAGE = system_message
-        # Removed the volume_calculator reference
+        self.volume_calculator = VolumeCalculator()
 
     async def generate(self, analysis_report: Dict) -> Dict:
         """Generates a detailed workout plan."""
+        volume_ranges = self.volume_calculator.calculate_optimal_volumes(
+            analysis_report['fitness_level'], analysis_report['recovery_capacity']
+        )
 
-        # Removed volume ranges logic as it's not needed anymore
-        prompt = f"""Based on this analysis:
+        prompt = f"""Based on this analysis and volume ranges:
         Analysis: {json.dumps(analysis_report, indent=2)}
+        Volume Ranges: {json.dumps(volume_ranges, indent=2)}
         
         Follow this chain of thought:
         1. Exercise selection
@@ -117,7 +120,6 @@ class WorkoutPlanGenerator:
         Generate a structured JSON workout plan."""
         
         return await RPAnalysisSystem._call_llm(self, prompt)
-
 
 class NutritionPlanGenerator:
     """Handles nutrition plan generation using external tools and LLM."""
@@ -182,4 +184,8 @@ class NutritionCalculator:
 
         return {"Protein (g)": round(protein, 1), "Carbs (g)": round(carbs, 1), "Fats (g)": round(fats, 1)}
 
+class VolumeCalculator:
 
+    def calculate_optimal_volumes(self, fitness_level, recovery_capacity):
+        """Calculate training volume based on fitness level."""
+        return {"weekly_sets_per_muscle_group": fitness_level * recovery_capacity}
