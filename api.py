@@ -208,25 +208,38 @@ async def receive_check_in(data: CheckInData):
 
 
 
-
-from models import FirstPlanRequest
 from firstPlannDue import RPAnalysisSystem
 rp_system = RPAnalysisSystem()
 
 
+class ProfileData(BaseModel):
+    fitness: Dict[str, Any]
+    goals: Dict[str, Any]
+    lifestyle: Dict[str, Any]
+    nutrition: Dict[str, Any]
+    personal: Dict[str, Any]
+
+class MeasurementsData(BaseModel):
+    date: str
+    measurements: Dict[str, Any]
+
+class BaseModelForRequest(BaseModel):
+    userId: str
+    profile: ProfileData
+    measurements: MeasurementsData
+
+
 @app.post("/first_time/")
-async def create_first_plan(request: FirstPlanRequest):
+async def create_first_plan(base_model: BaseModelForRequest):
     try:
-        # Process the request
-      #  analysis_result = await rp_system.analyze_client(request)
-        print(request)
+        # Process the request and pass the base_model data to analyze_client
+        analysis_result = await rp_system.analyze_client(base_model.dict())
         return {
-         "message" : "okk", 
-         "print":  request
+            "message": "Success",
+            "analysis_result": analysis_result
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
 
 
 
