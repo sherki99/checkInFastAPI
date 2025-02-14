@@ -61,17 +61,27 @@ class RPAnalysisSystem:
         """
 
         return await self._call_llm(prompt)
+    
 
     async def _call_llm(self, prompt: str) -> Dict:
-        """Calls OpenAI's GPT model to generate a response."""
         
         response = client.chat.completions.create(
             model=OPENAI_MODEL,
-            messages=[{"role": "system", "content": self.SYSTEM_MESSAGE}, {"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": self.SYSTEM_MESSAGE},
+                {"role": "user", "content": prompt}
+            ],
         )
 
-        print(response.choices[0])
-        return response.choices[0].message.content.strip()
+        response_text = response.choices[0].message.content.strip()
+        try:
+            result = json.loads(response_text)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"LLM output is not valid JSON: {e}\nOutput: {response_text}")
+        return result
+
+    
+
 
 
 class BodyAnalysis:
