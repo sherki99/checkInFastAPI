@@ -38,6 +38,7 @@ class RPAnalysisSystem:
 
         return {
             'message' : "yes complete ", 
+            'body_analysis' : body_analysis, 
             'analysis_report': analysis_report,
             'workout_plan': workout_plan,
             'nutrition_plan': nutrition_plan
@@ -65,7 +66,10 @@ class RPAnalysisSystem:
         """Calls OpenAI's GPT model to generate a response."""
         response = client.chat.completions.create(
             model=OPENAI_MODEL,
-            messages=[{"role": "system", "content": self.SYSTEM_MESSAGE}, {"role": "user", "content": prompt}]
+            messages=[{"role": "system", "content": self.SYSTEM_MESSAGE}, {"role": "user", "content": prompt}],
+            response_format={ type: "json_object" },
+        
+            
         )
         return response.choices[0].message.content.strip()
 
