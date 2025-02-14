@@ -234,7 +234,6 @@ async def create_first_plan(base_model: BaseModelForRequest):
     try:
         # Process the request and pass the base_model data to analyze_client
         analysis_result = await rp_system.analyze_client(base_model.dict())
-        print(base_model)
         return {
             "analysis_result": analysis_result
         }

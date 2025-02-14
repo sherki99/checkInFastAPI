@@ -28,57 +28,77 @@ class RPAnalysisSystem:
         self.workout_plan = WorkoutPlanGenerator(self.SYSTEM_MESSAGE)
         self.nutrition_plan = NutritionPlanGenerator(self.SYSTEM_MESSAGE)
 
-    async def analyze_client(self, client_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Processes client data through multiple stages."""
-
-        body_analysis = await self.body_analysis.analyze(client_data['measurements'])
-        analysis_report = await self._generate_analysis_report(client_data, body_analysis)
-        workout_plan = await self.workout_plan.generate(analysis_report)
-        nutrition_plan = await self.nutrition_plan.generate(analysis_report)
-
-        return {
-            'message' : "yes complete ", 
-            'body_analysis' : body_analysis, 
-            'analysis_report': analysis_report,
-            'workout_plan': workout_plan,
-            'nutrition_plan': nutrition_plan
-        }
-
-    async def _generate_analysis_report(self, client_data: Dict, body_analysis: Dict) -> Dict:
-
-        """Generates a comprehensive analysis report."""
-        prompt = f"""Given this client data and body analysis:
-        Client Data: {json.dumps(client_data, indent=2)}
-        Body Analysis: {json.dumps(body_analysis, indent=2)}
-        
-        Follow this chain of thought:
-        1. Evaluate current fitness level and training history
-        2. Analyze recovery capacity and limitations
-        3. Set specific, measurable goals based on client objectives
-        4. Define realistic timelines and progression paths
-        
-        Create a comprehensive analysis report as JSON including specific goals.
-        """
-
-        return await self._call_llm(prompt)
-    
-
     async def _call_llm(self, prompt: str) -> Dict:
-
+        """Modified LLM call with improved error handling and response parsing"""
         response = client.chat.completions.create(
             model=OPENAI_MODEL,
             messages=[
                 {"role": "system", "content": self.SYSTEM_MESSAGE},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt + "\nProvide the response as a valid JSON object without markdown formatting or code blocks."}
             ],
         )
 
         response_text = response.choices[0].message.content.strip()
+        
+        # Clean up common formatting issues
+        if response_text.startswith("```json"):
+            response_text = response_text[7:]
+        if response_text.endswith("```"):
+            response_text = response_text[:-3]
+        
+        response_text = response_text.strip()
+        
         try:
             result = json.loads(response_text)
+            return result
         except json.JSONDecodeError as e:
-            raise ValueError(f"LLM output is not valid JSON: {e}\nOutput: {response_text}")
-        return result
+            # Log the problematic response for debugging
+            print(f"JSON Parse Error: {e}")
+            print(f"Raw response: {response_text}")
+            
+            # Return a structured error response instead of raising an exception
+            return {
+                "error": True,
+                "message": f"Failed to parse LLM response: {str(e)}",
+                "raw_response": response_text
+            }
+
+    async def analyze_client(self, client_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Modified client analysis with error handling"""
+        try:
+            body_analysis = await self.body_analysis.analyze(client_data.get('measurements', {}))
+            if body_analysis.get('error'):
+                return {
+                    'status': 'error',
+                    'message': 'Body analysis failed',
+                    'details': body_analysis
+                }
+
+            analysis_report = await self._generate_analysis_report(client_data, body_analysis)
+            if analysis_report.get('error'):
+                return {
+                    'status': 'error',
+                    'message': 'Analysis report generation failed',
+                    'details': analysis_report
+                }
+
+            workout_plan = await self.workout_plan.generate(analysis_report)
+            nutrition_plan = await self.nutrition_plan.generate(analysis_report)
+
+            return {
+                'status': 'success',
+                'body_analysis': body_analysis,
+                'analysis_report': analysis_report,
+                'workout_plan': workout_plan,
+                'nutrition_plan': nutrition_plan
+            }
+        except Exception as e:
+            return {
+                'status': 'error',
+                'message': f'Analysis failed: {str(e)}',
+                'details': None
+            }
+
 
 class BodyAnalysis:
     """Handles body analysis using external tools and LLM processing."""
@@ -87,7 +107,7 @@ class BodyAnalysis:
         self.SYSTEM_MESSAGE = system_message
       #  self.measurement_analyzer = MeasurementAnalyzer()
 
-    async def analyze(self, measurements: Dict[int, float]) -> Dict[int, Any]:
+    async def analyze(self, measurements: Dict[str, float]) -> Dict[str, Any]:
         """Analyzes body measurements."""
     #    technical_analysis = self.measurement_analyzer.analyze_measurements(measurements)
 
@@ -104,6 +124,7 @@ class BodyAnalysis:
         Format as structured JSON."""
         
         return await RPAnalysisSystem._call_llm(self, prompt)
+
 
 class WorkoutPlanGenerator:
     """Handles workout plan generation using volume calculations and LLM."""
