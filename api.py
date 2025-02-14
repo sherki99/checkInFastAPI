@@ -1,12 +1,12 @@
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 from fastapi.middleware.cors import CORSMiddleware
 from fitness_optimization import optimize_gpt, workout_gpt
 from nutri_optimization import nutrition_gpt
 from checkIn_optimization import checkIn_gpt
 from checkIn_fixPlans import adjust_plan_gpt
-from firstPlan import firstCreate_gpt
+from firstPlanNote import RPAnalysisSystem
 
 
 app = FastAPI()
@@ -208,23 +208,19 @@ async def receive_check_in(data: CheckInData):
 
 
 
-class FirstPlanData(BaseModel):
-    userId: str
-    question:  str
-    bodyMeasurements:  str
+
+from models import FirstPlanRequest
+from firstPlannDue import RPAnalysisSystem
+rp_system = RPAnalysisSystem()
 
 
+@app.post("/first_time/")
+async def create_first_plan(request: FirstPlanRequest):
+    try:
+        # Process the request
+        analysis_result = await rp_system.analyze_client(request)
+        return analysis_result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-
-
-@app.post("/firt_plan_creation")
-async def create_firt_plan(data: FirstPlanData): 
-    data_info =  data.dict()
-
-    firstEverthing  =  await firstCreate_gpt(data_info)
-
-    return {
-        "message" : "creation succesful first everthing", 
-        "firstEverthing": firstEverthing,       
-    }
 
