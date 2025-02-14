@@ -7,9 +7,6 @@ from dotenv import load_dotenv
 
 
 
-
-
-
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
@@ -40,7 +37,7 @@ class RPAnalysisSystem:
       #  nutrition_plan = await self.nutrition_plan.generate(analysis_report)
 
         return {
-            'message' : "yes complete doen for the first ", 
+            'message' : "yes complete ", 
             'analysis_report': analysis_report,
             #'workout_plan': workout_plan,
             #'nutrition_plan': nutrition_plan
@@ -78,15 +75,15 @@ class BodyAnalysis:
 
     def __init__(self, system_message: str):
         self.SYSTEM_MESSAGE = system_message
-        self.measurement_analyzer = MeasurementAnalyzer()
+      #  self.measurement_analyzer = MeasurementAnalyzer()
 
     async def analyze(self, measurements: Dict[str, float]) -> Dict[str, Any]:
         """Analyzes body measurements."""
-        technical_analysis = self.measurement_analyzer.analyze_measurements(measurements)
+    #    technical_analysis = self.measurement_analyzer.analyze_measurements(measurements)
 
         prompt = f"""Based on these measurements and technical analysis:
         Measurements: {json.dumps(measurements, indent=2)}
-        Technical Analysis: {json.dumps(technical_analysis, indent=2)}
+       
         
         Provide a detailed analysis with:
         1. Structure and proportions
