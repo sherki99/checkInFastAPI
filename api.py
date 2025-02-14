@@ -219,8 +219,11 @@ async def create_first_plan(request: FirstPlanRequest):
     try:
         # Process the request
         analysis_result = await rp_system.analyze_client(request)
+        print(request)
         return analysis_result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
 
 
