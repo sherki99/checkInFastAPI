@@ -63,23 +63,95 @@ class RPAnalysisSystem:
 
 
 class BodyAnalysis:
-    def __init__(self, system_message: str):
-        self.system_message = system_message
 
-    async def analyze(self, measurements: Dict[str, float]) -> str:
+    """
+    Enhanced BodyAnalysis class implementing structured chain-of-thought prompting.
+    
+    The class uses a systematic approach to analyze body measurements by breaking down
+    the thinking process into explicit steps and encouraging detailed reasoning at each stage.
+    """
+        
+    def __init__(self):
+        self.system_message = """
+        You are Dr. Mike Israetel (RP Strength), a leading expert in evidence-based hypertrophy training.
+        Approach each analysis using the following chain-of-thought process:
+        
+        1. DATA UNDERSTANDING
+        - Examine each measurement carefully
+        - Compare measurements to established norms
+        - Note any unusual patterns or relationships
+        
+        2. STRUCTURAL ANALYSIS
+        - Analyze proportions between body parts
+        - Identify structural balance indicators
+        - Consider biomechanical implications
+        
+        3. PRACTICAL IMPLICATIONS
+        - Determine training priorities
+        - Identify potential limitations
+        - Suggest specific interventions
+        
+        For each step, explicitly state your reasoning before moving to conclusions.
+        Support each observation with scientific reasoning or empirical evidence when possible.
         """
-        Analyzes the client's body measurements.
+
+
+    async def analyze(self, measurements: Dict[str, str]) -> str:
+    
         """
-        measurements_str = "\n".join(f"{k}: {v}" for k, v in measurements.items())
-        prompt = (
-            f"Analyze the following body measurements:\n{measurements_str}\n\n"
-            "Provide insights on body structure, muscle mass distribution, potential imbalances, "
-            "and training implications. Format the response with clear section headings."
-        )
-        return await call_llm(self.system_message, prompt)
+        Analyzes client measurements using structured chain-of-thought reasoning.
+        
+        Args:
+            measurements: Dictionary of body measurements (e.g., {'chest': 42.0, 'waist': 32.0})
+        
+        Returns:
+            Detailed analysis with explicit reasoning steps
+        """
+
+
+        measurements_str = "\n".join(f"{k.capitalize()}: {v}" for k, v in measurements.items())
+        
+        prompt = f"""
+        Analyze these body measurements using explicit step-by-step reasoning:
+        
+        CLIENT MEASUREMENTS:
+        ==================
+        {measurements_str}
+
+        Follow this specific thought process:
+        
+        1. First, examine the raw data:
+        - What stands out about these measurements?
+        - How do they compare to population averages?
+        - What initial patterns do you notice?
+        - How do the different units (cm/in) affect your analysis?
+        
+        2. Then, analyze structural relationships:
+        - Calculate and assess key ratios (considering unit conversions)
+        - Identify any potential imbalances
+        - Consider the implications for movement patterns
+        
+        3. Finally, provide practical recommendations:
+        - What are the priority areas for development?
+        - What specific training approaches would be most effective?
+        - What potential limitations should be considered?
+        
+        4. Unit Analysis:
+        - Explain how the presence of units adds context
+        - Discuss any implications of mixed unit usage
+        - Suggest optimal unit standardization if needed
+        
+        For each step, explain your reasoning before stating conclusions.
+        Begin each major section with 'Reasoning:' followed by your analysis process.
+        """
+
+        print(prompt)
+
+        return await self._call_llm(prompt)
 
 
 class ClientInfoAnalysis:
+
     def __init__(self, system_message: str):
         self.system_message = system_message
 
@@ -88,6 +160,7 @@ class ClientInfoAnalysis:
         Analyzes general client information.
         """
         info_str = "\n".join(f"{k}: {v}" for k, v in info.items())
+    
         prompt = (
             f"Analyze the following client information:\n{info_str}\n\n"
             "Provide an overview of the client's fitness level, training history, goals, and recovery capacity. "
