@@ -363,7 +363,7 @@ class ClientAnalysisSystem:
 
         CLIENT PROFILE:
         ===============
-        {formatted_data}
+        {client_data}
 
         {f'BODY ANALYSIS CONTEXT:\n{body_analysis}\n' if body_analysis else ''}
 
@@ -532,7 +532,7 @@ class ClientReportGenerator:
 
         CLIENT INFORMATION:
         ==================
-        {formatted_data}
+        {client_data}
 
         {f'PREVIOUS BODY ANALYSIS:\n{body_analysis_results}\n' if body_analysis_results else ''}
 
@@ -602,6 +602,8 @@ class ClientReportGenerator:
 
 
 
+
+# the part regaridn analsys is the esdeentil part 
 # maybe undertn hwo implent hsoty chat for each client to stay the same
 # in client analsis report need to be deifne everthing for the plan choose type type of bnutron claorue intake 
 # I want to do the same 
