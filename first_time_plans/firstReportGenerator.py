@@ -259,7 +259,7 @@ class BodyAnalysis:
         
         print(test_one_prompt)
 
-        return await self._call_llm(test_one_prompt)
+        return await call_llm(self.system_message, test_one_prompt)
 
 class ClientAnalysisSystem:
     """
@@ -348,11 +348,6 @@ class ClientAnalysisSystem:
         7. Determine monitoring needs
         """
 
-
-
-
-
-
     async def analyze_client(self, client_data: dict, body_analysis: str = None) -> str:
         """
         Performs deep analysis of client data to inform program design.
@@ -417,7 +412,7 @@ class ClientAnalysisSystem:
         Prioritize findings based on impact on program success.
         """
         
-        return await self._call_llm(prompt)
+        return await call_llm(self.system_message, prompt)
 
     def _prepare_data(self, data: dict) -> str:
         """
@@ -584,7 +579,7 @@ class ClientReportGenerator:
         Conclude with a prioritized list of recommendations and critical success factors.
         """
         
-        return await self._call_llm(prompt)
+        return await call_llm(self.system_message, prompt)
 
     def _format_client_data(self, data: dict) -> str:
         """
@@ -607,11 +602,9 @@ class ClientReportGenerator:
 
 
 
-
-
-
-
-
+# maybe undertn hwo implent hsoty chat for each client to stay the same
+# in client analsis report need to be deifne everthing for the plan choose type type of bnutron claorue intake 
+# I want to do the same 
 
 
 
