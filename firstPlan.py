@@ -33,6 +33,44 @@ class RPAnalysisSystem:
             ],
         )
         return response.choices[0].message.content.strip()
+    
+
+    async def _generate_analysis_report(self, client_data: Dict, body_analysis: str) -> str:
+        """Generates a comprehensive analysis report in string format"""
+        client_info = "\n".join([f"{k}: {v}" for k, v in client_data.items() if k != 'measurements'])
+        
+        prompt = f"""Given this client data and body analysis:
+        
+        Client Information:
+        {client_info}
+        
+        Body Analysis Results:
+        {body_analysis}
+        
+        Please follow this analysis structure:
+        1. Current Fitness Assessment
+           - Training history evaluation
+           - Current fitness level
+           - Recovery capacity assessment
+        
+        2. Goal Analysis
+           - Primary objectives
+           - Realistic timelines
+           - Potential limitations
+        
+        3. Training Capacity
+           - Weekly training availability
+           - Exercise experience
+           - Recovery factors
+        
+        4. Recommendations Overview
+           - Training focus areas
+           - Nutrition priorities
+           - Progress monitoring approach
+        
+        Provide a detailed analysis report in clear sections with specific, actionable insights."""
+        
+        return await self._call_llm(self, prompt)
 
     async def analyze_client(self, client_data: Dict[str, Any]) -> Dict[str, Any]:
         """Modified client analysis with string responses"""
@@ -68,6 +106,7 @@ class RPAnalysisSystem:
             }
 
 class BodyAnalysis:
+    
     def __init__(self, system_message: str):
         self.SYSTEM_MESSAGE = system_message
 
