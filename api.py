@@ -209,8 +209,22 @@ async def receive_check_in(data: CheckInData):
 
 
 
-from firstReportGenerator import RPAnalysisSystem
-rp_system = RPAnalysisSystem()
+
+
+
+
+
+
+
+from first_time_plans.firstReportGenerator import RPAnalysisSystem
+from first_time_plans.firstMealGenerator import MealPlanGenerator
+from first_time_plans.firstWorkoutGenerator import WorkoutPlanGenerator
+
+
+report_genarator = RPAnalysisSystem()
+workout_plan_generator = WorkoutPlanGenerator()
+meal_plan_generator = MealPlanGenerator()
+
 
 
 class ProfileData(BaseModel):
@@ -230,22 +244,30 @@ class BaseModelForRequest(BaseModel):
     measurements: MeasurementsData
 
 
+
+
 @app.post("/first_time/")
 async def create_first_plan(base_model: BaseModelForRequest):
     try:
-        # Process the request and pass the base_model data to analyze_client
-        analysis_result = await rp_system.analyze_client(base_model.dict())
+        client_data = base_model.dict()
         
-        #meal_genarator =  await firstW
-
-        #workout_genarator =
-
+        # Step 1: Analyze the client and generate a comprehensive report.
+        first_report = await report_genarator.analyze_client(client_data)
+        
+        # Extract the combined analysis report from the result.
+        analysis_report = first_report.get("report", "")
+        
+        # Step 2: Generate the meal plan using the analysis report.
+        first_meal = await meal_plan_generator.generate_meal_plan(client_data, analysis_report)
+        
+        # Step 3: Generate the workout plan using the same analysis report.
+        first_workout = await workout_plan_generator.generate_workout(client_data, analysis_report)
+        
         return {
-            "analysis_result": analysis_result
-            
+            "first_report": first_report,
+            "first_meal": first_meal,
+            "first_workout": first_workout
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
 
