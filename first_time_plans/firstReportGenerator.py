@@ -47,19 +47,16 @@ class RPAnalysisSystem:
 
         # Step 2: Analyze client information (excluding measurements)
         client_info = {k: v for k, v in client_data.items() if k != 'measurements'}
-        info_analysis = await self.info_analyzer.analyze(client_info, body_analysis)
+        info_analysis = await self.info_analyzer.analyze_client(client_info, body_analysis)
 
         # Step 3: Generate overall report
-        report = await self.report_generator.generate(body_analysis, info_analysis)
+        report = await self.report_generator.generate_report(body_analysis, info_analysis)
 
         return {
             "report": report,
             "body_analysis": body_analysis,
             "client_info_analysis": info_analysis,
         }
-
-
-
 
 class BodyAnalysis:
 
@@ -583,6 +580,7 @@ class ClientReportGenerator:
         4. Note "Risk Factors:" for potential issues
         5. Include "Monitoring Points:" for progress tracking
 
+        Import note: If some lackign or not following certain refuse to generte the report by saying information sens is not correct
         Conclude with a prioritized list of recommendations and critical success factors.
         """
         
