@@ -30,9 +30,9 @@ class RPAnalysisSystem:
             "Analyze client data and provide a comprehensive report."
         )
         # For now, we only implement the analysis portion.
-        self.body_analyzer = BodyAnalysis(self.system_message)
-        self.info_analyzer = ClientAnalysisSystem(self.system_message)
-        self.report_generator = ClientReportGenerator(self.system_message)
+        self.body_analyzer = BodyAnalysis()
+        self.info_analyzer = ClientAnalysisSystem()
+        self.report_generator = ClientReportGenerator()
 
     async def analyze_client(self, client_data: Dict[str, Any]) -> Dict[str, Any]:
         """
