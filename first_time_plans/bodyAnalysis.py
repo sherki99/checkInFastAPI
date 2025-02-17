@@ -1,7 +1,7 @@
-from typing import Dict, Any, List, Optional
+from dataclasses import dataclass
+from typing import Dict, List, Optional
 from enum import Enum
 import re
-from dataclasses import dataclass
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -26,8 +26,6 @@ async def call_llm(system_message: str, prompt: str) -> str:
         ],
     )
     return response.choices[0].message.content.strip()
-
-
 
 
 class BodyType(Enum):
@@ -356,4 +354,3 @@ class BodyAnalysis:
         
         analysis_output = await call_llm(self.system_message, prompt)
         return self._parse_analysis_output(analysis_output)
-    
