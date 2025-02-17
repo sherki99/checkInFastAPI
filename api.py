@@ -252,21 +252,22 @@ async def create_first_plan(base_model: BaseModelForRequest):
         client_data = base_model.dict()
         
         # Step 1: Analyze the client and generate a comprehensive report.
-        first_report = await report_genarator.analyze_client(client_data)
+       # first_report = await report_genarator.analyze_client(client_data)
+        first_report  = await report_genarator.analyze_client(client_data)
         
         # Extract the combined analysis report from the result.
-        analysis_report = first_report.get("report", "")
+      #  analysis_report = first_report.get("report", "")
         
         # Step 2: Generate the meal plan using the analysis report.
-        first_meal = await meal_plan_generator.generate_meal_plan(client_data, analysis_report)
+      #  first_meal = await meal_plan_generator.generate_meal_plan(client_data, analysis_report)
         
         # Step 3: Generate the workout plan using the same analysis report.
-        first_workout = await workout_plan_generator.generate_workout(client_data, analysis_report)
+    #    first_workout = await workout_plan_generator.generate_workout(client_data, analysis_report)
         
         return {
             "first_report": first_report,
-            "first_meal": first_meal,
-            "first_workout": first_workout
+        #    "first_meal": first_meal,
+         #   "first_workout": first_workout
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

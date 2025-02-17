@@ -2,12 +2,15 @@ from typing import Dict, Any
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
+from bodyAnalysis import BodyAnalysis
 
 # Load environment variables and set up the API client
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
 OPENAI_MODEL = "gpt-4o-mini"
+
+
 
 
 async def call_llm(system_message: str, prompt: str) -> str:
@@ -38,8 +41,9 @@ class RPAnalysisSystem:
         """
         Performs the analysis in three steps:
         1. Analyze body measurements.
-        2. Analyze the rest of the client information.
-        3. Generate a comprehensive report.
+        2. Analyze the rest of the client information. - this is the deeper part need now I need ot extrat information where it decide the main objetcive for example thr trianign it goes throu aprocess for cretin pran nned to hjave all the to reahc the ytpe of workjtu for hwo many day why decide the current workut plan based always on dr mik eistrel fo nnturo calcualtion need to perform to perform all the claution of macorsa and base don th ejot day decid eth emeal timing the tyeo fiform they tyeo fo meal decide ehwt tyeo of meal lieks whei for both for wokrut meal they will be sned as ku partmeent to the repero t
+        # it will be send to correpsite cti to meal which ten it will base donthsipoamrent and based ont he gneral report parmeetr which qare th e reusl of deep analysis of th e
+        3. Generate a comprehensive report. 
         """
         # Step 1: Analyze body measurements
         measurements = client_data.get('measurements', {})
@@ -58,208 +62,6 @@ class RPAnalysisSystem:
             "client_info_analysis": info_analysis,
         }
 
-class BodyAnalysis:
-
-    """
-    Enhanced BodyAnalysis class implementing structured chain-of-thought prompting.
-    
-    The class uses a systematic approach to analyze body measurements by breaking down
-    the thinking process into explicit steps and encouraging detailed reasoning at each stage.
-    """
-        
-    def __init__(self):
-        self.system_message = """
-        You are Dr. Mike Israetel (RP Strength), a leading expert in evidence-based hypertrophy training and body composition analysis.
-        As the first step in a comprehensive client analysis system, your role is to:
-
-        1. COMPREHENSIVE MEASUREMENT ANALYSIS
-        Primary Analysis:
-        - Decode body composition implications from measurements
-        - Estimate body fat percentage ranges based on measurement patterns
-        - Identify muscle mass distribution and potential muscle fiber types
-        - Analyze joint structures and mechanical advantage indicators
-        
-        Secondary Analysis:
-        - Evaluate postural indicators from measurement relationships
-        - Assess mobility/flexibility potential from joint measurements
-        - Identify potential muscle imbalances or asymmetries
-        - Determine genetic structural advantages/limitations
-        
-        2. PREDICTIVE ANALYSIS
-        Training Response Indicators:
-        - Likely response to different training stimuli
-        - Potential for muscle gain in specific areas
-        - Recovery capacity indicators
-        - Exercise selection implications
-        
-        Risk Assessment:
-        - Joint stress considerations
-        - Potential injury prevention needs
-        - Movement pattern modifications needed
-        
-        3. PROGRAM DESIGN IMPLICATIONS
-        Volume Considerations:
-        - Optimal training frequency indicators
-        - Volume tolerance predictions
-        - Exercise selection priorities
-        
-        Progressive Planning:
-        - Short-term training priorities
-        - Long-term development pathway
-        - Periodization considerations
-        
-        4. NEXT PHASE PREPARATION
-        Data Collection Needs:
-        - Additional measurements needed
-        - Movement assessments to prioritize
-        - Strength baseline tests to conduct
-        
-        Integration Points:
-        - Key findings for program design phase
-        - Critical constraints for exercise selection
-        - Important considerations for loading parameters
-        
-        For each analysis component:
-        1. State your reasoning process explicitly
-        2. Support conclusions with scientific rationale
-        3. Indicate confidence level in each conclusion
-        4. Note what additional information would be valuable
-        5. Explain how findings connect to next analysis phases
-        """
-        
-
-        # this symstme message e is linked with "prompt" test_one with one runnign now is just testing I will see in the future,  
-        system_message = """
-        You are Dr. Mike Israetel (RP Strength), a leading expert in evidence-based hypertrophy training.
-        Approach each analysis using the following chain-of-thought process:
-        
-        1. DATA UNDERSTANDING
-        - Examine each measurement carefully
-        - Compare measurements to established norms
-        - Note any unusual patterns or relationships
-        
-        2. STRUCTURAL ANALYSIS
-        - Analyze proportions between body parts
-        - Identify structural balance indicators
-        - Consider biomechanical implications
-        
-        3. PRACTICAL IMPLICATIONS
-        - Determine training priorities
-        - Identify potential limitations
-        - Suggest specific interventions
-        
-        For each step, explicitly state your reasoning before moving to conclusions.
-        Support each observation with scientific reasoning or empirical evidence when possible.
-        """
-
-
-    async def analyze(self, measurements: Dict[str, str]) -> str:
-    
-        """
-        Analyzes client measurements using structured chain-of-thought reasoning.
-        
-        Args:
-            measurements: Dictionary of body measurements (e.g., {'chest': 42.0, 'waist': 32.0})
-        
-        Returns:
-            Detailed analysis with explicit reasoning steps
-        """
-
-
-        measurements_str = "\n".join(f"{k.capitalize()}: {v}" for k, v in measurements.items())
-        
-        prompt = f"""
-        Analyze these body measurements using explicit step-by-step reasoning:
-        
-        CLIENT MEASUREMENTS:
-        ==================
-        {measurements_str}
-
-        Follow this specific thought process:
-        
-        1. First, examine the raw data:
-        - What stands out about these measurements?
-        - How do they compare to population averages?
-        - What initial patterns do you notice?
-        - How do the different units (cm/in) affect your analysis?
-        
-        2. Then, analyze structural relationships:
-        - Calculate and assess key ratios (considering unit conversions)
-        - Identify any potential imbalances
-        - Consider the implications for movement patterns
-        
-        3. Finally, provide practical recommendations:
-        - What are the priority areas for development?
-        - What specific training approaches would be most effective?
-        - What potential limitations should be considered?
-        
-        4. Unit Analysis:
-        - Explain how the presence of units adds context
-        - Discuss any implications of mixed unit usage
-        - Suggest optimal unit standardization if needed
-        
-        For each step, explain your reasoning before stating conclusions.
-        Begin each major section with 'Reasoning:' followed by your analysis process.
-        """
-
-        test_one_prompt = f"""
-        Analyze these client measurements using advanced chain-of-thought reasoning:
-
-        CLIENT MEASUREMENTS:
-        ==================
-        {measurements_str}
-
-        Follow this detailed analysis protocol:
-        
-        1. Initial Measurement Assessment:
-        - What are the key insights from each measurement?
-        - How do measurements relate to each other?
-        - What body composition indicators are present?
-        - What structural patterns emerge?
-        
-        2. Body Composition Analysis:
-        - What do these measurements suggest about body fat levels?
-        - What muscle mass distribution patterns are indicated?
-        - How do proportions suggest fiber type dominance?
-        - What genetic structural advantages are apparent?
-        
-        3. Training Implications:
-        - How will these measurements affect exercise selection?
-        - What loading parameters are suggested?
-        - What volume tolerances are indicated?
-        - Which movement patterns need special consideration?
-        
-        4. Program Design Considerations:
-        - What should be prioritized in program design?
-        - Which body parts need additional attention?
-        - What structural balance issues need addressing?
-        - How should progression be structured?
-        
-        5. Risk and Limitation Analysis:
-        - What potential injury risks are indicated?
-        - Which movements might need modification?
-        - What recovery considerations are suggested?
-        - What structural limitations need consideration?
-        
-        6. Next Phase Integration:
-        - What key findings should inform program design?
-        - Which measurements need additional context?
-        - What movement assessments should follow?
-        - How should these findings guide exercise selection?
-        
-        For each section:
-        1. Start with "Reasoning Process:" and explain your thought process
-        2. Follow with "Evidence:" and list supporting indicators
-        3. Include "Confidence Level:" (High/Medium/Low) for conclusions
-        4. Note "Additional Information Needed:" for uncertain areas
-        5. End with "Next Phase Implications:" for system integration
-        
-        Conclude with a summary of the most critical findings for program design.
-        """
-        
-      #  print(test_one_prompt)
-
-        return await call_llm(self.system_message, test_one_prompt)
 
 class ClientAnalysisSystem:
     """
@@ -414,22 +216,7 @@ class ClientAnalysisSystem:
         
         return await call_llm(self.system_message, prompt)
 
-    def _prepare_data(self, data: dict) -> str:
-        """
-        Prepares client data for analysis, organizing critical factors.
-        """
-        sections = []
-        
-        for section, content in data.items():
-            section_title = content.get('title', section.upper())
-            sections.append(f"\n{section_title}")
-            
-            fields = content.get('fields', {})
-            for field, value in fields.items():
-                formatted_value = f"{value['key']} {value['unit']}" if isinstance(value, dict) else value
-                sections.append(f"- {field}: {formatted_value}")
-        
-        return "\n".join(sections)
+
 
     """async def _call_llm(self, prompt: str) -> str:
 
@@ -525,7 +312,7 @@ class ClientReportGenerator:
             client_data: Dictionary containing client information sections
             body_analysis_results: Optional string containing previous body analysis results
         """
-      #  formatted_data = self._format_client_data(client_data)
+   
         
         prompt = f"""
         Analyze this client data using advanced chain-of-thought reasoning:
@@ -581,24 +368,6 @@ class ClientReportGenerator:
         
         return await call_llm(self.system_message, prompt)
 
-    def _format_client_data(self, data: dict) -> str:
-        """
-        Formats client data for analysis, organizing by section with clear headers.
-        """
-        formatted_sections = []
-        
-        for section, content in data.items():
-            section_title = content.get('title', section.capitalize())
-            formatted_sections.append(f"\n{section_title}:")
-            
-            for field, value in content.get('fields', {}).items():
-                if isinstance(value, dict):
-                    formatted_value = f"{value['key']} ({value['unit']})"
-                else:
-                    formatted_value = value
-                formatted_sections.append(f"- {formatted_value}")
-        
-        return "\n".join(formatted_sections)
 
 
 
