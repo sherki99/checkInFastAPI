@@ -7,6 +7,15 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 
+
+"""1. Initial Assessment (Body Analysis)
+   * Body composition analysis
+   * Anthropometric measurements
+   * Structural analysis
+   * Genetic response indicators
+   * Movement pattern assessment Outputs: Body type, muscle mass distribution, structural ratios, genetic potential score
+"""
+
 # Load environment variables and set up the API client
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")

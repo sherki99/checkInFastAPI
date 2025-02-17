@@ -6,6 +6,8 @@ import os
 from openai import OpenAI
 from dotenv import load_dotenv
 from first_time_plans.bodyAnalysis import BodyAnalysis
+from first_time_plans.trainingHistoryTwo import TrainingHistoryAnalysis
+
 
 # Load environment variables and set up the API client
 load_dotenv()
@@ -36,6 +38,10 @@ class RPAnalysisSystem:
         )
         # For now, we only implement the analysis portion.
         self.body_analyzer = BodyAnalysis()
+        self.history_analyzer = TrainingHistoryAnalysis()
+
+
+
         self.info_analyzer = ClientAnalysisSystem()
         self.report_generator = ClientReportGenerator()
 
@@ -52,7 +58,10 @@ class RPAnalysisSystem:
         body_analysis = await self.body_analyzer.analyze(measurements)
 
 
-        # step 2: insted of analyze client I want to get body analsis paramters which are they main foucsu for n
+        # step 2: Training history 
+        profile = client_data.get("profile", {})
+        training_history = await self.history_analyzer.analyze(profile)
+
 
         # Step 2: Analyze client information (excluding measurements)
         client_info = {k: v for k, v in client_data.items() if k != 'measurements'}
@@ -63,6 +72,7 @@ class RPAnalysisSystem:
 
         return {
             "report": report,
+            "training_history": training_history,
             "body_analysis": body_analysis,
             "client_info_analysis": info_analysis,
         }
@@ -231,8 +241,6 @@ class ClientAnalysisSystem:
     
         # Implementation would go here
         pass"""
-
-
 
 class ClientReportGenerator:
     """
