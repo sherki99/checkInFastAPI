@@ -28,7 +28,6 @@ async def call_llm(system_message: str, prompt: str) -> str:
     return response.choices[0].message.content.strip()
 
 
-
 class RPAnalysisSystem:
     def __init__(self, system_message: str = None):
         self.system_message = system_message or (
@@ -53,7 +52,7 @@ class RPAnalysisSystem:
         body_analysis = await self.body_analyzer.analyze(measurements)
 
 
-        # step 2 :  
+        # step 2: insted of analyze client I want to get body analsis paramters which are they main foucsu for n
 
         # Step 2: Analyze client information (excluding measurements)
         client_info = {k: v for k, v in client_data.items() if k != 'measurements'}
@@ -69,140 +68,7 @@ class RPAnalysisSystem:
         }
 
 
-    """
-    Enhanced BodyAnalysis class implementing structured chain-of-thought prompting.
-    
-    The class uses a systematic approach to analyze body measurements by breaking down
-    the thinking process into explicit steps and encouraging detailed reasoning at each stage.
-    """
-        
-    def __init__(self):
-        self.system_message = """
-        You are Dr. Mike Israetel (RP Strength), a leading expert in evidence-based hypertrophy training and body composition analysis.
-        As the first step in a comprehensive client analysis system, your role is to:
 
-        1. COMPREHENSIVE MEASUREMENT ANALYSIS
-    
-        
-        2. PREDICTIVE ANALYSIS
-        Training Response Indicators:
-        - Likely response to different training stimuli
-        - Potential for muscle gain in specific areas
-        - Recovery capacity indicators
-        - Exercise selection implications
-        
-        Risk Assessment:
-        - Joint stress considerations
-        - Potential injury prevention needs
-        - Movement pattern modifications needed
-        
-        3. PROGRAM DESIGN IMPLICATIONS
-        Volume Considerations:
-        - Optimal training frequency indicators
-        - Volume tolerance predictions
-        - Exercise selection priorities
-        
-        Progressive Planning:
-        - Short-term training priorities
-        - Long-term development pathway
-        - Periodization considerations
-        
-        4. NEXT PHASE PREPARATION
-        Data Collection Needs:
-        - Additional measurements needed
-        - Movement assessments to prioritize
-        - Strength baseline tests to conduct
-        
-        Integration Points:
-        - Key findings for program design phase
-        - Critical constraints for exercise selection
-        - Important considerations for loading parameters
-        
-        For each analysis component:
-        1. State your reasoning process explicitly
-        2. Support conclusions with scientific rationale
-        3. Indicate confidence level in each conclusion
-        4. Note what additional information would be valuable
-        5. Explain how findings connect to next analysis phases
-        """
-        
-
-    async def analyze(self, measurements: Dict[str, str]) -> str:
-    
-        """
-        Analyzes client measurements using structured chain-of-thought reasoning.
-        
-        Args:
-            measurements: Dictionary of body measurements (e.g., {'chest': 42.0, 'waist': 32.0})
-        
-        Returns:
-            Detailed analysis with explicit reasoning steps
-        """
-
-
-        measurements_str = "\n".join(f"{k.capitalize()}: {v}" for k, v in measurements.items())
-        
-
-        test_one_prompt = f"""
-        Analyze these client measurements using advanced chain-of-thought reasoning:
-
-        CLIENT MEASUREMENTS:
-        ==================
-        {measurements_str}
-
-        Follow this detailed analysis protocol:
-        
-        1. Initial Measurement Assessment:
-        - What are the key insights from each measurement?
-        - How do measurements relate to each other?
-        - What body composition indicators are present?
-        - What structural patterns emerge?
-        
-        2. Body Composition Analysis:
-        - What do these measurements suggest about body fat levels?
-        - What muscle mass distribution patterns are indicated?
-        - How do proportions suggest fiber type dominance?
-        - What genetic structural advantages are apparent?
-        
-        3. Training Implications:
-        - How will these measurements affect exercise selection?
-        - What loading parameters are suggested?
-        - What volume tolerances are indicated?
-        - Which movement patterns need special consideration?
-        
-        4. Program Design Considerations:
-        - What should be prioritized in program design?
-        - Which body parts need additional attention?
-        - What structural balance issues need addressing?
-        - How should progression be structured?
-        
-        5. Risk and Limitation Analysis:
-        - What potential injury risks are indicated?
-        - Which movements might need modification?
-        - What recovery considerations are suggested?
-        - What structural limitations need consideration?
-        
-        6. Next Phase Integration:
-        - What key findings should inform program design?
-        - Which measurements need additional context?
-        - What movement assessments should follow?
-        - How should these findings guide exercise selection?
-        
-        For each section:
-        1. Start with "Reasoning Process:" and explain your thought process
-        2. Follow with "Evidence:" and list supporting indicators
-        3. Include "Confidence Level:" (High/Medium/Low) for conclusions
-        4. Note "Additional Information Needed:" for uncertain areas
-        5. End with "Next Phase Implications:" for system integration
-        
-        Conclude with a summary of the most critical findings for program design.
-        """
-        
-      #  print(test_one_prompt)
-
-        return await call_llm(self.system_message, test_one_prompt)
-
-    
 class ClientAnalysisSystem:
     """
     Advanced client analysis system that performs deep analysis of client data
@@ -365,6 +231,7 @@ class ClientAnalysisSystem:
     
         # Implementation would go here
         pass"""
+
 
 
 class ClientReportGenerator:
