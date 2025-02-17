@@ -19,7 +19,7 @@ async def call_llm(system_message: str, prompt: str) -> str:
         messages=[
             {"role": "system", "content": system_message},
             {"role": "user", "content": prompt}
-        ],
+        ], 
     )
     return response.choices[0].message.content.strip()
 

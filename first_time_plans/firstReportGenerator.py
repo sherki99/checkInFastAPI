@@ -257,7 +257,7 @@ class BodyAnalysis:
         Conclude with a summary of the most critical findings for program design.
         """
         
-        print(test_one_prompt)
+      #  print(test_one_prompt)
 
         return await call_llm(self.system_message, test_one_prompt)
 
@@ -356,7 +356,7 @@ class ClientAnalysisSystem:
             client_data: Comprehensive client information
             body_analysis: Previous body analysis results
         """
-        formatted_data = self._prepare_data(client_data)
+       # formatted_data = self._prepare_data(client_data)
         
         prompt = f"""
         Conduct a thorough scientific analysis of this client's data:
@@ -525,7 +525,7 @@ class ClientReportGenerator:
             client_data: Dictionary containing client information sections
             body_analysis_results: Optional string containing previous body analysis results
         """
-        formatted_data = self._format_client_data(client_data)
+      #  formatted_data = self._format_client_data(client_data)
         
         prompt = f"""
         Analyze this client data using advanced chain-of-thought reasoning:
