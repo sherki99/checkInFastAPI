@@ -12,8 +12,6 @@ client = OpenAI(api_key=api_key)
 OPENAI_MODEL = "gpt-4o-mini"
 
 
-
-
 async def call_llm(system_message: str, prompt: str) -> str:
     """
     Helper function to call the LLM with a system message and a prompt.
