@@ -66,6 +66,13 @@ class RPAnalysisSystem:
 
 
 
+
+
+from dataclasses import dataclass
+from typing import Dict, List, Optional
+from enum import Enum
+import re
+
 class BodyType(Enum):
     ECTOMORPH = "ectomorph"
     MESOMORPH = "mesomorph"
@@ -101,103 +108,167 @@ class BodyAnalysis:
     def __init__(self):
         self.system_message = """
         You are Dr. Mike Israetel analyzing body measurements with extreme precision.
-        Your task is to extract specific numerical parameters and classifications that will be used
-        for program design. Format your response in a structured way that can be parsed into
-        the following parameters:
+        Your task is to extract specific numerical parameters and classifications.
+        
+        YOU MUST FORMAT YOUR RESPONSE EXACTLY AS SHOWN BELOW:
 
-        REQUIRED OUTPUT FORMAT:
-        ======================
-        BODY_FAT_PERCENTAGE: [number]
-        LEAN_MASS_INDEX: [number]
-        BODY_TYPE: [ectomorph|mesomorph|endomorph|ecto-mesomorph|endo-mesomorph]
+        BODY_FAT_PERCENTAGE: [number between 3-40]
+        LEAN_MASS_INDEX: [number between 15-35]
+        BODY_TYPE: [one of: ECTOMORPH, MESOMORPH, ENDOMORPH, ECTO-MESOMORPH, ENDO-MESOMORPH]
         
         MUSCLE_MASS_DISTRIBUTION:
-        - UPPER_BODY: [0-1 ratio]
-        - LOWER_BODY: [0-1 ratio]
-        - CORE: [0-1 ratio]
+        UPPER_BODY: [number between 0-1]
+        LOWER_BODY: [number between 0-1]
+        CORE: [number between 0-1]
         
         BODY_STRUCTURE:
-        - SHOULDER_HIP_RATIO: [number]
-        - WAIST_HIP_RATIO: [number]
-        - LIMB_TORSO_RATIO: [number]
+        SHOULDER_HIP_RATIO: [number between 0.8-2.0]
+        WAIST_HIP_RATIO: [number between 0.6-1.2]
+        LIMB_TORSO_RATIO: [number between 0.8-1.5]
         
-        GENETIC_POTENTIAL_SCORE: [1-10]
-        RECOVERY_CAPACITY_SCORE: [1-10]
+        GENETIC_POTENTIAL_SCORE: [number between 1-10]
+        RECOVERY_CAPACITY_SCORE: [number between 1-10]
         
         INJURY_RISK_AREAS:
-        - [area1]
-        - [area2]
-        ...
+        [area1]
+        [area2]
+        [area3]
         
         VOLUME_TOLERANCE:
-        - UPPER_BODY: [sets per week]
-        - LOWER_BODY: [sets per week]
-        - CORE: [sets per week]
+        UPPER_BODY: [number between 10-30]
+        LOWER_BODY: [number between 10-30]
+        CORE: [number between 10-20]
         
         ANALYSIS_NOTES:
-        [Additional analysis notes here]
+        [Your detailed analysis notes here]
+
+        IMPORTANT: Use EXACTLY this format. Do not add extra text, explanations, or deviate from this structure.
+        Numbers should be plain numbers without units or extra text.
         """
 
-    def _parse_analysis_output(self, output: str) -> BodyAnalysisResults:
-        """Parse the LLM output into structured data."""
-        lines = output.split('\n')
-        data = {}
-        current_section = None
-        
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-                
-            if line.endswith(':'):
-                current_section = line[:-1]
-                data[current_section] = []
-                continue
-                
-            if current_section:
-                if line.startswith('- '):
-                    data[current_section].append(line[2:])
-                else:
-                    data[current_section] = line
+    def _safe_float(self, value: str, default: float = 0.0) -> float:
+        """Safely convert string to float, handling various formats."""
+        try:
+            # Remove any non-numeric characters except decimal points and minus signs
+            clean_value = re.sub(r'[^0-9.-]', '', value)
+            return float(clean_value)
+        except (ValueError, TypeError):
+            return default
 
-        # Extract body fat percentage
-        bf_pct = float(data.get('BODY_FAT_PERCENTAGE', 0))
-        
-        # Extract muscle mass distribution
-        mmd_data = {item.split(':')[0].lower(): float(item.split(':')[1]) 
-                   for item in data.get('MUSCLE_MASS_DISTRIBUTION', [])}
-        muscle_dist = MuscleMassDistribution(
-            upper_body=mmd_data.get('upper_body', 0),
-            lower_body=mmd_data.get('lower_body', 0),
-            core=mmd_data.get('core', 0)
-        )
-        
-        # Extract body structure
-        struct_data = {item.split(':')[0].lower(): float(item.split(':')[1]) 
-                      for item in data.get('BODY_STRUCTURE', [])}
-        structure = BodyStructure(
-            shoulder_hip_ratio=struct_data.get('shoulder_hip_ratio', 0),
-            waist_hip_ratio=struct_data.get('waist_hip_ratio', 0),
-            limb_torso_ratio=struct_data.get('limb_torso_ratio', 0)
-        )
-        
-        # Extract volume tolerance
-        volume_tolerance = {
-            item.split(':')[0].lower(): int(item.split(':')[1])
-            for item in data.get('VOLUME_TOLERANCE', [])
-        }
-        
-        return BodyAnalysisResults(
-            body_fat_percentage=bf_pct,
-            lean_mass_index=float(data.get('LEAN_MASS_INDEX', 0)),
-            body_type=BodyType(data.get('BODY_TYPE', 'mesomorph').lower()),
-            muscle_mass_distribution=muscle_dist,
-            structure=structure,
-            genetic_potential_score=float(data.get('GENETIC_POTENTIAL_SCORE', 5)),
-            recovery_capacity_score=float(data.get('RECOVERY_CAPACITY_SCORE', 5)),
-            injury_risk_areas=data.get('INJURY_RISK_AREAS', []),
-            recommended_volume_tolerance=volume_tolerance
-        )
+    def _safe_int(self, value: str, default: int = 0) -> int:
+        """Safely convert string to integer, handling various formats."""
+        try:
+            # Remove any non-numeric characters except minus signs
+            clean_value = re.sub(r'[^0-9-]', '', value)
+            return int(clean_value)
+        except (ValueError, TypeError):
+            return default
+
+    def _extract_section(self, text: str, section_name: str) -> List[str]:
+        """Extract a section and its contents from the text."""
+        pattern = f"{section_name}:(.*?)(?=\n\n|$)"
+        match = re.search(pattern, text, re.DOTALL)
+        if match:
+            return [line.strip() for line in match.group(1).strip().split('\n') if line.strip()]
+        return []
+
+    def _extract_single_value(self, text: str, key: str, default: str = "") -> str:
+        """Extract a single value from a key-value pair in the text."""
+        pattern = f"{key}:[\s]*([^\n]+)"
+        match = re.search(pattern, text)
+        return match.group(1).strip() if match else default
+
+    def _parse_analysis_output(self, output: str) -> BodyAnalysisResults:
+        """Parse the LLM output into structured data with improved error handling."""
+        try:
+            # Extract basic measurements
+            body_fat = self._safe_float(self._extract_single_value(output, "BODY_FAT_PERCENTAGE"), 15.0)
+            lean_mass = self._safe_float(self._extract_single_value(output, "LEAN_MASS_INDEX"), 20.0)
+            
+            # Extract body type
+            body_type_str = self._extract_single_value(output, "BODY_TYPE", "MESOMORPH").lower()
+            try:
+                body_type = BodyType(body_type_str)
+            except ValueError:
+                body_type = BodyType.MESOMORPH
+
+            # Extract muscle mass distribution
+            mmd_lines = self._extract_section(output, "MUSCLE_MASS_DISTRIBUTION")
+            mmd = {}
+            for line in mmd_lines:
+                if ":" in line:
+                    key, value = line.split(":", 1)
+                    mmd[key.strip().lower()] = self._safe_float(value, 0.33)
+            
+            muscle_dist = MuscleMassDistribution(
+                upper_body=mmd.get('upper_body', 0.33),
+                lower_body=mmd.get('lower_body', 0.33),
+                core=mmd.get('core', 0.34)
+            )
+
+            # Extract body structure
+            struct_lines = self._extract_section(output, "BODY_STRUCTURE")
+            struct = {}
+            for line in struct_lines:
+                if ":" in line:
+                    key, value = line.split(":", 1)
+                    struct[key.strip().lower()] = self._safe_float(value, 1.0)
+            
+            structure = BodyStructure(
+                shoulder_hip_ratio=struct.get('shoulder_hip_ratio', 1.0),
+                waist_hip_ratio=struct.get('waist_hip_ratio', 0.8),
+                limb_torso_ratio=struct.get('limb_torso_ratio', 1.0)
+            )
+
+            # Extract scores
+            genetic_score = self._safe_float(self._extract_single_value(output, "GENETIC_POTENTIAL_SCORE"), 5.0)
+            recovery_score = self._safe_float(self._extract_single_value(output, "RECOVERY_CAPACITY_SCORE"), 5.0)
+
+            # Extract injury risk areas
+            injury_areas = self._extract_section(output, "INJURY_RISK_AREAS")
+            if not injury_areas:
+                injury_areas = ["None identified"]
+
+            # Extract volume tolerance
+            volume_lines = self._extract_section(output, "VOLUME_TOLERANCE")
+            volume_tolerance = {}
+            for line in volume_lines:
+                if ":" in line:
+                    key, value = line.split(":", 1)
+                    volume_tolerance[key.strip().lower()] = self._safe_int(value, 15)
+
+            if not volume_tolerance:
+                volume_tolerance = {
+                    "upper_body": 15,
+                    "lower_body": 15,
+                    "core": 10
+                }
+
+            return BodyAnalysisResults(
+                body_fat_percentage=body_fat,
+                lean_mass_index=lean_mass,
+                body_type=body_type,
+                muscle_mass_distribution=muscle_dist,
+                structure=structure,
+                genetic_potential_score=genetic_score,
+                recovery_capacity_score=recovery_score,
+                injury_risk_areas=injury_areas,
+                recommended_volume_tolerance=volume_tolerance
+            )
+        except Exception as e:
+            print(f"Error parsing analysis output: {str(e)}")
+            # Return default values if parsing fails
+            return BodyAnalysisResults(
+                body_fat_percentage=15.0,
+                lean_mass_index=20.0,
+                body_type=BodyType.MESOMORPH,
+                muscle_mass_distribution=MuscleMassDistribution(0.33, 0.33, 0.34),
+                structure=BodyStructure(1.0, 0.8, 1.0),
+                genetic_potential_score=5.0,
+                recovery_capacity_score=5.0,
+                injury_risk_areas=["None identified"],
+                recommended_volume_tolerance={"upper_body": 15, "lower_body": 15, "core": 10}
+            )
 
     async def analyze(self, measurements: Dict[str, float]) -> BodyAnalysisResults:
         """
@@ -218,35 +289,22 @@ class BodyAnalysis:
         ==================
         {measurements_str}
 
-        Using Dr. Mike Israetel's methodology, analyze these measurements and provide:
-
-        1. Body Composition Analysis:
-        - Calculate body fat percentage using appropriate formula
-        - Determine lean mass index
-        - Classify body type based on structural indicators
+        Using Dr. Mike Israetel's methodology, provide a complete analysis following EXACTLY 
+        the format specified. Include all required parameters with appropriate numerical values.
         
-        2. Structural Analysis:
-        - Calculate key body ratios
-        - Analyze muscle mass distribution
-        - Evaluate limb-to-torso proportions
-        
-        3. Training Potential:
-        - Assess genetic potential for muscle gain
-        - Evaluate recovery capacity
-        - Determine volume tolerance by body part
-        
-        4. Risk Assessment:
-        - Identify potential injury risk areas
-        - Flag structural imbalances
-        - Note biomechanical considerations
-
-        Provide ALL parameters in the exact format specified in the system message.
-        Each number should be justified by measurement analysis and calculations.
+        Remember:
+        - All numerical values must be plain numbers without units
+        - Follow the exact format specified
+        - Include all required sections
+        - Use only the specified categories for body type
         """
         
         analysis_output = await call_llm(self.system_message, prompt)
-        return  analysis_output # self._parse_analysis_output(analysis_output)
+        return self._parse_analysis_output(analysis_output)
+    
 
+
+    
 class ClientAnalysisSystem:
     """
     Advanced client analysis system that performs deep analysis of client data
