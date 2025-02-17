@@ -2,7 +2,6 @@ from typing import Dict, Any
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
-#from bodyAnalysis import BodyAnalysis
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 from enum import Enum
@@ -246,7 +245,7 @@ class BodyAnalysis:
         """
         
         analysis_output = await call_llm(self.system_message, prompt)
-        return self._parse_analysis_output(analysis_output)
+        return  analysis_output # self._parse_analysis_output(analysis_output)
 
 class ClientAnalysisSystem:
     """
