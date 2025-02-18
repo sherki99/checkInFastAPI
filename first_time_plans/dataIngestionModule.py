@@ -280,3 +280,31 @@ class DataIngestionModule:
             if clean_part:
                 supplements.append(clean_part)
         return supplements
+
+
+"""{"standardized_profile": {"body_composition": {"arm_circumference": 24.7, "calf_circumference": 34, "chest_circumference": 81, "forearm_circumference": 23.2, "hip_circumference": 85.2, "mid_thigh_circumference": 43.8, "neck_circumference": 30.3, "thigh_circumference": 50.3, "waist_circumference": 68.7, "waist_to_hip_ratio": 0.81, "wrist_circumference": 15.1}, "fitness": {"activity_level": "Active", "available_equipment": [Array], "avoided_exercises": [Array], "exercise_routine": "Effective", "fitness_knowledge": "I am quite experienced", "preferred_exercises": [Array], "session_duration_hours": 1.5, "training_experience_years": 2, "training_frequency_per_week": 5, "weekly_exercise_hours": 7.5}, "goals": {"desired_timeframe_weeks": 4, "expected_barriers": "Occasional shoulder pain limits some movements, and balancing training with other responsibilities can be a challenge. Maintaining a strict diet is also sometimes difficult due to time constraints.", "main_goals": [Array], "motivation_level": 5}, "lifestyle": {"daily_work_hours": 5, "sports_background": "Football untill the age of 18 then played time tim", "stress_level": "Stressful", "work_environment": "Sitting"}, "measurement_date": "2024-09-17T11:37:30.217+00:00", "nutrition": {"alcohol_units_per_week": 1.5, "diet_preference": "I prefer a balanced diet with a mix of Mediterranean, Italian, and Moroccan influences. I enjoy whole foods like vegetables, lean meats, grains (like couscous and quinoa), and a moderate amount of dairy. I like to avoid processed foods and prefer home-cooked meals.", "meal_schedule": [Object], "meals_per_day": 5, "supplements": [Array], "water_intake_liters": 2.5}, "personal_info": {"age": 25, "bmi": 24.86, "gender": "Male", "height_cm": 186, "name": "Sherki", "weight_kg": 86}, "user_id": "66e037ef43e9199baf5d"}, "status": "success"}"""
+
+"""
+The process_data method is the main entry point that:
+
+Extracts the user ID, profile, and measurements
+Processes each section of data through specialized helper methods
+Compiles everything into a standardized profile dictionary
+
+
+Helper methods like _process_personal_info, _process_goals, etc., handle specific sections of the input data, applying appropriate transformations:
+
+Converting string measurements to numeric values
+Parsing lists from text
+Standardizing units (e.g., converting to cm, kg, etc.)
+Adding derived metrics (like BMI and waist-to-hip ratio)
+
+
+Additional utility methods extract specific formats of data, such as:
+
+Time periods (weeks, hours)
+Frequencies
+Volume measurements
+Lists of items from comma or newline-separated strings
+"""
+
