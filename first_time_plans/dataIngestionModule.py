@@ -1,18 +1,15 @@
-
 from datetime import datetime
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 
 
 
-class Measurement: 
-    part:  str
+
+class Measurement(BaseModel): 
+    part: str
     current: Optional[float] = None
     previous: Optional[float] = None
     change: Optional[float] = None
-
-
-
 
 class ClientProfile(BaseModel):
     personal: Dict[str, Any]
@@ -20,24 +17,22 @@ class ClientProfile(BaseModel):
     fitness: Dict[str, Any]
     nutrition: Dict[str, Any]
     lifestyle: Dict[str, Any]
-    measurements: List[Measurement]
-    measurement_date: datetime | None
+    measurements: List[Measurement] 
+    measurement_date: Optional[datetime] 
+
 
 
 class DataIngestionModule:
-
     def process(self, raw_data: dict) -> ClientProfile:
-
         profile = raw_data.get("profile", {})
         measurements_data = raw_data.get("measurements", {}).get("measurements", {})
 
-        # Convert measurement dictionary into a list of Measurement objects
         measurements = [
             Measurement(
                 part=part,
                 current=values.get("current"),
-             #   previous=values.get("previous"),
-             #   change=values.get("change")
+                previous=values.get("previous"),
+                change=values.get("change")
             )
             for part, values in measurements_data.items()
         ]
@@ -49,9 +44,8 @@ class DataIngestionModule:
             nutrition=profile.get("nutrition", {}).get("data", {}),
             lifestyle=profile.get("lifestyle", {}).get("data", {}),
             measurements=measurements,
-            measurement_date=measurements.get("date") 
+            measurement_date=raw_data.get("measurements", {}).get("date")
+            
         ) 
         return client_profile
-
-    # I might I want to add more module to return in case I need them 
 
