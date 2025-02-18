@@ -38,14 +38,11 @@ class VolumeAndIntensityDecisionNode:
             'triceps': {'mev': 6, 'mav': 12, 'mrv': 16}
         }
         
-    def process(self, client_data: Dict[str, Any]) -> Dict[str, Any]:
+    def process(self, client_data: Dict[str, Any], training_history:  Dict[str, Any], body_comp:  Dict[str, Any],goals:  Dict[str, Any]) -> Dict[str, Any]:
         """
         Process client data to determine volume and intensity guidelines.
         """
         # Extract relevant data
-        training_history = client_data.get('histroy', {})
-        body_comp = client_data.get('body_composition', {})
-        goals = client_data.get('goalanal', {})
         
         # Calculate recovery capacity
         recovery_multiplier = self._calculate_recovery_multiplier(client_data)

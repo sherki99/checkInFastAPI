@@ -287,8 +287,9 @@ async def create_first_plan(base_model: BaseModelForRequest):
             "history_analysis": history_analysis,
             "body_composition": body_analysis,
             "recovery_lifestyle": recovery_analysis,
-            "split_recomendation":  split_recommendation, 
-            "exercise_analysis":  volume_guidelines,
+            "split_recomendation":  split_recommendation,
+            "volume_guidelines" : volume_guidelines,  
+          #  "exercise_analysis":  exercise_analysis,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
