@@ -224,16 +224,19 @@ async def receive_check_in(data: CheckInData):
 from  first_time_plans.dataIngestionModule import DataIngestionModule
 
 
+class BaseModelForRequest(BaseModel):
+    userId: str
+    profile: Dict[str, Any]
+    measurements: Dict[str, Any]
 
 @app.post("/first_time/")
-async def create_first_plan(base_model: dict):
+async def create_first_plan(base_model: BaseModelForRequest):
     try:
         client_data = base_model.dict()
         ingestion_module = DataIngestionModule()
         client_profile = ingestion_module.process(client_data)
-    
-        
-        return {"profile":  client_profile}
+
+        return {"profile": client_profile.dict()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
