@@ -266,8 +266,17 @@ async def create_first_plan(base_model: BaseModelForRequest):
         # step 6:  Recovery And lifestyle 
         recovery_lifestyle = RecoveryAndLifestyleModule()
         recovery_analysis = recovery_lifestyle.process(standardized_profile)
-        # recovery_lifesty 
+        # recovery_lifesty
+        
+        # Node parts Part C
+        training_split = TrainingSplitDecisionNode()
+        split_recommendation = training_split.process(profile_analysis, goal_analysis, body_analysis)
 
+        volume_decision = VolumeAndIntensityDecisionNode()
+        volume_guidelines = volume_decision.process(client_data)
+
+        exercise_selection = ExerciseSelectionDecisionNode()
+        exercise_analysis = exercise_selection.process(standardized_profile, split_recommendation, volume_guidelines)
 
 
         return {
@@ -277,7 +286,8 @@ async def create_first_plan(base_model: BaseModelForRequest):
             "goal_analysis": goal_analysis,
             "history_analysis": history_analysis,
             "body_composition": body_analysis,
-            "recovery_lifestyle": recovery_analysis
+            "recovery_lifestyle": recovery_analysis,
+            "exercise_analysis":  exercise_analysis,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
