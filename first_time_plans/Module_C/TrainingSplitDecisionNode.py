@@ -236,10 +236,10 @@ class TrainingSplitDecisionNode:
             if sessions_per_week >= 6:
                 return ['Push', 'Pull', 'Legs', 'Push', 'Pull', 'Legs'][:sessions_per_week]
             else:
-                return ['Push', 'Pull', 'Legs'] * 2[:sessions_per_week]
+                return (['Push', 'Pull', 'Legs'] * 2)[:sessions_per_week]
                 
         elif split_type == 'upper_lower':
-            return ['Upper', 'Lower'] * 3[:sessions_per_week]
+            return (['Upper', 'Lower'] * 3)[:sessions_per_week]
             
         elif split_type == 'full_body':
             return ['Full Body'] * sessions_per_week
