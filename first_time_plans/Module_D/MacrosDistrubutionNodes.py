@@ -29,8 +29,8 @@ class MacroDistributionDecisionNode:
         weight_kg = body_composition.get('weight_kg', 0)
         height_cm = body_composition.get('height_cm', 0)
         body_fat_percentage = body_composition.get('estimated_body_fat_percentage', 15)
-        training_age_category = training_history.get('training_age', {}).get('category', 'beginner').lower()
-        training_volume = training_history.get('volume_tolerance', {}).get('volume_category', 'moderate').lower()
+        training_age_category = training_history.training_age.category.lower() if hasattr(training_history, 'training_age') else 'beginner'
+        training_volume = training_history.volume_tolerance.volume_category.lower() if hasattr(training_history, 'volume_tolerance') else 'moderate'
         barriers = goal_analysis.get('barriers', {})
         
         # Calculate macronutrient distribution
