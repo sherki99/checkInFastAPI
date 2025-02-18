@@ -223,7 +223,6 @@ async def receive_check_in(data: CheckInData):
 
 from  first_time_plans.dataIngestionModule import DataIngestionModule
 
-
 class BaseModelForRequest(BaseModel):
     userId: str
     profile: Dict[str, Any]

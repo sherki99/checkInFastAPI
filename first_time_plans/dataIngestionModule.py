@@ -1,7 +1,17 @@
 
 from datetime import datetime
 from pydantic import BaseModel
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
+
+
+
+class Measurement: 
+    part:  str
+    current: str
+    previous: Optional[float] = None
+    change: Optional[float] = None
+
+
 
 
 class ClientProfile(BaseModel):
@@ -10,15 +20,27 @@ class ClientProfile(BaseModel):
     fitness: Dict[str, Any]
     nutrition: Dict[str, Any]
     lifestyle: Dict[str, Any]
-    measurements: Dict[str, Any]
+    measurements: List[Measurement]
     measurement_date: datetime | None
+
 
 class DataIngestionModule:
 
     def process(self, raw_data: dict) -> ClientProfile:
-        
+
         profile = raw_data.get("profile", {})
-        measurements = raw_data.get("measurements", {})
+        measurements_data = raw_data.get("measurements", {}).get("measurements", {})
+
+        # Convert measurement dictionary into a list of Measurement objects
+        measurements = [
+            Measurement(
+                part=part,
+                current=values.get("current"),
+             #   previous=values.get("previous"),
+             #   change=values.get("change")
+            )
+            for part, values in measurements_data.items()
+        ]
 
         client_profile = ClientProfile(
             personal=profile.get("personal", {}).get("data", {}),
