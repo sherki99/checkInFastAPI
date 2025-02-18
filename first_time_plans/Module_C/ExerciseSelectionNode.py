@@ -28,14 +28,14 @@ class ExerciseSelectionDecisionNode:
         
     def process(self, 
                 client_data: Dict[str, Any],
+                training_history: Dict[str,Any], 
                 split_recommendation: Dict[str, Any],
                 volume_guidelines: Dict[str, Any]) -> Dict[str, Any]:
         """
         Process client data to determine exercise selection.
         """
         # Extract relevant data
-        training_history = client_data.get('histroy', {})
-        available_equipment = client_data.get('standardized_profile', {}).get('fitness', {}).get('available_equipment', [])
+        available_equipment = client_data.get('fitness', {}).get('available_equipment', [])
         movement_restrictions = training_history.get('training_limitations', {}).get('movement_restrictions', [])
         
         # Get training schedule
