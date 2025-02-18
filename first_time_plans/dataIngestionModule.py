@@ -1,7 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
-import json 
+
 
 
 
@@ -28,12 +28,12 @@ class DataIngestionModule:
         measurements_data = raw_data.get("measurements", {}).get("measurements", {})
 
         measurements = [
-            json.dumps({  # Convert each measurement into a string
-                "part": part,
-                "current": values.get("current"),
-              #  "previous": values.get("previous"),
-              #  "change": values.get("change")
-            })
+            Measurement(
+                part=part,
+                current=values.get("current"),
+                previous=values.get("previous"),
+                change=values.get("change")
+            )
             for part, values in measurements_data.items()
         ]
 
@@ -45,7 +45,6 @@ class DataIngestionModule:
             lifestyle=profile.get("lifestyle", {}).get("data", {}),
             measurements=measurements,
             measurement_date=raw_data.get("measurements", {}).get("date")
-            
         ) 
         return client_profile
 
