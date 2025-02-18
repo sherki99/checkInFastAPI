@@ -224,7 +224,7 @@ from  first_time_plans.Module_C.ExerciseSelectionNode import ExerciseSelectionDe
 
 from first_time_plans.Module_D.MacrosDistrubutionNodes import MacroDistributionDecisionNode
 from first_time_plans.Module_D.CalorieNeedsDecisionNode import CaloricNeedsDecisionNode
-#from first_time_plans.Module_D.MealTimingDecion import
+from first_time_plans.Module_D.MealTimingDecion import MealTimingDecisionNode
 
 #from first_time_plans.Module_E.PlanIntegrationNode import 
 
@@ -278,6 +278,27 @@ async def create_first_plan(base_model: BaseModelForRequest):
         exercise_selection = ExerciseSelectionDecisionNode()
         exercise_analysis = exercise_selection.process(standardized_profile, history_analysis, split_recommendation, volume_guidelines)
 
+        caloric_needs = CaloricNeedsDecisionNode()
+        caloric_targets = caloric_needs.process(profile_analysis, body_analysis, goal_analysis)
+
+
+        macro_distribution = MacroDistributionDecisionNode()
+        macro_plan = macro_distribution.process(
+            caloric_targets, profile_analysis, body_analysis, 
+            goal_analysis, history_analysis
+        )
+
+
+        meal_timing = MealTimingDecisionNode()
+        timing_recommendations = meal_timing.process(
+            macro_distribution,
+            split_recommendation,
+            profile_analysis,
+            goal_analysis,
+            recovery_analysis
+        )
+
+
 
         return {
             "status": "success",
@@ -290,6 +311,10 @@ async def create_first_plan(base_model: BaseModelForRequest):
             "split_recomendation":  split_recommendation,
             "volume_guidelines" : volume_guidelines,  
             "exercise_analysis":  exercise_analysis,
+            "caloric_targets" : caloric_targets,
+            "macro_plan" : macro_plan, 
+            "timing_recommendations":  timing_recommendations, 
+
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
