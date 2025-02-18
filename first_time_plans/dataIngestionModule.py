@@ -16,11 +16,11 @@ class ClientProfile(BaseModel):
 
 class DataIngestionModule:
     def process(self, raw_data: dict) -> ClientProfile:
-     
+        # Extract data from the nested JSON structure.
         profile = raw_data.get("profile", {})
         measurements = raw_data.get("measurements", {})
         
-
+        # Build a structured client profile.
         client_profile = ClientProfile(
             personal=profile.get("personal", {}).get("data", {}),
             goals=profile.get("goals", {}).get("data", {}),
@@ -28,8 +28,6 @@ class DataIngestionModule:
             nutrition=profile.get("nutrition", {}).get("data", {}),
             lifestyle=profile.get("lifestyle", {}).get("data", {}),
             measurements=measurements.get("measurements", {}),
-            measurement_date=measurements.get("date")  
+            measurement_date=measurements.get("date")  # Should be parseable as a datetime
         )
         return client_profile
-    
-

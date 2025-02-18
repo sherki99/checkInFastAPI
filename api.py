@@ -7,6 +7,8 @@ from nutri_optimization import nutrition_gpt
 from checkIn_optimization import checkIn_gpt
 from checkIn_fixPlans import adjust_plan_gpt
 from firstPlanNote import RPAnalysisSystem
+from datetime import datetime
+
 
 
 app = FastAPI()
@@ -216,22 +218,40 @@ async def receive_check_in(data: CheckInData):
 
 
 
-from first_time_plans.firstReportGenerator import RPAnalysisSystem
-from first_time_plans.firstMealGenerator import MealPlanGenerator
-from first_time_plans.firstWorkoutGenerator import WorkoutPlanGenerator
-from first_time_plans.dataIngestionModule import DataIngestionModule
-
-report_genarator = RPAnalysisSystem()
-workout_plan_generator = WorkoutPlanGenerator()
-meal_plan_generator = MealPlanGenerator()
-
-
-
-
 class BaseModelForRequest(BaseModel):
     userId: str
     profile: Dict[str, Any]
     measurements: Dict[str, Any]
+    measurement_date: datetime 
+
+
+class ClientProfile(BaseModel):
+    personal: Dict[str, Any]
+    goals: Dict[str, Any]
+    fitness: Dict[str, Any]
+    nutrition: Dict[str, Any]
+    lifestyle: Dict[str, Any]
+    measurements: Dict[str, Any]
+    measurement_date: datetime
+
+
+
+class DataIngestionModule:
+    def process(self, raw_data: dict) -> ClientProfile:
+        profile = raw_data.get("profile", {})
+        measurements = raw_data.get("measurements", {})
+
+        client_profile = ClientProfile(
+            personal=profile.get("personal", {}),
+            goals=profile.get("goals", {}),
+            fitness=profile.get("fitness", {}),
+            nutrition=profile.get("nutrition", {}),
+            lifestyle=profile.get("lifestyle", {}),
+            measurements=measurements,  
+            measurement_date=raw_data.get("measurement_date")  
+        )
+        return client_profile
+
 
 
 
@@ -239,50 +259,13 @@ class BaseModelForRequest(BaseModel):
 async def create_first_plan(base_model: BaseModelForRequest):
     try:
         client_data = base_model.dict()
-
-        ingestion_module =  DataIngestionModule()
+        ingestion_module = DataIngestionModule()
         client_profile = ingestion_module.process(client_data)
-
-        return {"client_profile": client_profile.dict()}
-        # Step 1: Analyze the client and generate a comprehensive report.
-       # first_report = await report_genarator.analyze_client(client_data)
-
-
-
-
-        #first_report  = await report_genarator.analyze_client(client_data)
-
-
-
-        
-        # Extract the combined analysis report from the result.
-      #  analysis_report = first_report.get("report", "")
-        
-        # Step 2: Generate the meal plan using the analysis report.
-      #  first_meal = await meal_plan_generator.generate_meal_plan(client_data, analysis_report)
-        
-        # Step 3: Generate the workout plan using the same analysis report.
-    #    first_workout = await workout_plan_generator.generate_workout(client_data, analysis_report)
-        
-        return {
-            "first_report": first_report,
-        #    "first_meal": first_meal,
-         #   "first_workout": first_workout
-        }
+        return {"message": "Client profile processed successfully", "profile": client_profile.dict()}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"error": str(e)}
 
 
 
-"""{"client_profile": {"fitness": {"activityLevel": "Active", "exerciseRoutine": "Effective", "exercise_leastLiked": "Overhead Press (due to shoulder pain) 
 
-", "exercise_mostLiked": "Bench Press and using dumbell for bicepes ", "fitnessEquipment": "Barbells, dumbbells, cables, resistance bands, machines.", "fitnessKnowledge": "I am quite experienced", "trainingDuration": "Two Years", "trainingFrequency": "5x Week", "trainingSessionDuration": "1.5 hours", "weeklyExerciseTime": " 7-8 Hours"}, "goals": {"expectedBarriers": "Occasional shoulder pain limits some movements, and balancing training with other responsibilities can be a challenge. Maintaining a strict diet is also sometimes difficult due to time constraints.", "main_goals": "Hypertrophy (Muscle Gain)  
-Muscular Strength
-General Fitness
-Improve number of Pull ups        
-", "motivationLevel": "5", "timeToSeeChanges": "4 weeks"}, "lifestyle": {"sports": "Football untill the age of 18 then played time tim", "stressLevel": "Stressful", "workEnvironment": "Sitting", "workHours": " 4-6 hours of study per day"}, "measurement_date": "2024-09-17T11:37:30.217000+00:00", "measurements": {"acrossBackShoulderWidth": [Object], "backNeckHeight": [Object], "backNeckPointToGroundContoured": [Object], "backNeckPointToWaist": [Object], "backNeckPointToWristLengthR": [Object], "bellyWaistDepth": [Object], "bellyWaistGirth": [Object], "bellyWaistHeight": [Object], "bellyWaistWidth": [Object], "bustGirth": [Object], "bustHeight": [Object], "calfGirthR": [Object], "forearmGirthR": [Object], "hipGirth": [Object], "hipHeight": [Object], "insideLegHeight": [Object], "insideLegLengthR": [Object], "kneeGirthR": [Object], "kneeHeightR": [Object], "midThighGirthR": [Object], "neckBaseGirth": [Object], "neckGirth": [Object], "outerAnkleHeightR": [Object], "outerArmLengthR": [Object], "outseamR": [Object], "outsideLegLengthR": [Object], "shoulderToElbowR": [Object], "thighGirthR": [Object], "topHipGirth": [Object], "topHipHeight": [Object], "underBustGirth": [Object], "upperArmGirthR": [Object], "waistGirth": [Object], "waistHeight": [Object], "wristGirthR": [Object]}, "nutrition": {"alcoholUnits": " 1-2 units per week", "dietPreference": " I prefer a balanced diet with a mix of Mediterranean, Italian, and Moroccan influences. I enjoy whole foods like vegetables, lean meats, grains (like couscous and quinoa), and a moderate amount of dairy. I like to avoid processed foods and prefer home-cooked meals. 
-", "mealTime": "Breakfast: 7:30 AM
-Snack 1: 10:30 AM
-Lunch: 1:00 PM
-Evening Snack: 4:30 PM
-Supper: 7:30 PM", "mealsPerDay": "5", "supplements": "I take whey protein post-workout, creatine daily, and sometimes BCAAs for recovery. I also include Omega-3 and a multivitamin for overall health", "waterIntake": "2.5 liters per day"}, "personal": {"age": "25", "gender": "Male", "height": "186 cm", "name": "Sherki", "weight": "86 kg"}}}"""
+
