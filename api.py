@@ -227,22 +227,11 @@ meal_plan_generator = MealPlanGenerator()
 
 
 
-class ProfileData(BaseModel):
-    fitness: Dict[str, Any]
-    goals: Dict[str, Any]
-    lifestyle: Dict[str, Any]
-    nutrition: Dict[str, Any]
-    personal: Dict[str, Any]
-
-class MeasurementsData(BaseModel):
-    date: str
-    measurements: Dict[str, Any]
 
 class BaseModelForRequest(BaseModel):
     userId: str
-    profile: ProfileData
-    measurements: MeasurementsData
-
+    profile: Dict[str, Any]
+    measurements: Dict[str, Any]
 
 
 
@@ -283,3 +272,17 @@ async def create_first_plan(base_model: BaseModelForRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+
+"""{"client_profile": {"fitness": {"activityLevel": "Active", "exerciseRoutine": "Effective", "exercise_leastLiked": "Overhead Press (due to shoulder pain) 
+
+", "exercise_mostLiked": "Bench Press and using dumbell for bicepes ", "fitnessEquipment": "Barbells, dumbbells, cables, resistance bands, machines.", "fitnessKnowledge": "I am quite experienced", "trainingDuration": "Two Years", "trainingFrequency": "5x Week", "trainingSessionDuration": "1.5 hours", "weeklyExerciseTime": " 7-8 Hours"}, "goals": {"expectedBarriers": "Occasional shoulder pain limits some movements, and balancing training with other responsibilities can be a challenge. Maintaining a strict diet is also sometimes difficult due to time constraints.", "main_goals": "Hypertrophy (Muscle Gain)  
+Muscular Strength
+General Fitness
+Improve number of Pull ups        
+", "motivationLevel": "5", "timeToSeeChanges": "4 weeks"}, "lifestyle": {"sports": "Football untill the age of 18 then played time tim", "stressLevel": "Stressful", "workEnvironment": "Sitting", "workHours": " 4-6 hours of study per day"}, "measurement_date": "2024-09-17T11:37:30.217000+00:00", "measurements": {"acrossBackShoulderWidth": [Object], "backNeckHeight": [Object], "backNeckPointToGroundContoured": [Object], "backNeckPointToWaist": [Object], "backNeckPointToWristLengthR": [Object], "bellyWaistDepth": [Object], "bellyWaistGirth": [Object], "bellyWaistHeight": [Object], "bellyWaistWidth": [Object], "bustGirth": [Object], "bustHeight": [Object], "calfGirthR": [Object], "forearmGirthR": [Object], "hipGirth": [Object], "hipHeight": [Object], "insideLegHeight": [Object], "insideLegLengthR": [Object], "kneeGirthR": [Object], "kneeHeightR": [Object], "midThighGirthR": [Object], "neckBaseGirth": [Object], "neckGirth": [Object], "outerAnkleHeightR": [Object], "outerArmLengthR": [Object], "outseamR": [Object], "outsideLegLengthR": [Object], "shoulderToElbowR": [Object], "thighGirthR": [Object], "topHipGirth": [Object], "topHipHeight": [Object], "underBustGirth": [Object], "upperArmGirthR": [Object], "waistGirth": [Object], "waistHeight": [Object], "wristGirthR": [Object]}, "nutrition": {"alcoholUnits": " 1-2 units per week", "dietPreference": " I prefer a balanced diet with a mix of Mediterranean, Italian, and Moroccan influences. I enjoy whole foods like vegetables, lean meats, grains (like couscous and quinoa), and a moderate amount of dairy. I like to avoid processed foods and prefer home-cooked meals. 
+", "mealTime": "Breakfast: 7:30 AM
+Snack 1: 10:30 AM
+Lunch: 1:00 PM
+Evening Snack: 4:30 PM
+Supper: 7:30 PM", "mealsPerDay": "5", "supplements": "I take whey protein post-workout, creatine daily, and sometimes BCAAs for recovery. I also include Omega-3 and a multivitamin for overall health", "waterIntake": "2.5 liters per day"}, "personal": {"age": "25", "gender": "Male", "height": "186 cm", "name": "Sherki", "weight": "86 kg"}}}"""
