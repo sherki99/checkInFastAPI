@@ -27,10 +27,10 @@ class DataIngestionModule:
         profile = raw_data.get("profile", {})
         measurements_data = raw_data.get("measurements", {}).get("measurements", {})
 
-        measurements = [
-            f"{part}: {values.get('current')}"  
+        measurements = {
+            part: values.get("current")
             for part, values in measurements_data.items()
-        ]
+        }
 
         client_profile = ClientProfile(
             personal=profile.get("personal", {}).get("data", {}),
