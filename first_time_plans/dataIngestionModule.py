@@ -10,7 +10,6 @@ class ClientProfile(BaseModel):
     nutrition: Dict[str, Any]
     lifestyle: Dict[str, Any]
     measurements: Dict[str, Any]
-    measurement_date: datetime
 
 
 
@@ -27,7 +26,7 @@ class DataIngestionModule:
             fitness=profile.get("fitness", {}).get("data", {}),
             nutrition=profile.get("nutrition", {}).get("data", {}),
             lifestyle=profile.get("lifestyle", {}).get("data", {}),
-            measurements=measurements.get("measurements", {}),
+            measurements=measurements.get("measurements", {}).get({}),
             measurement_date=measurements.get("date")  # Should be parseable as a datetime
         )
         return client_profile
