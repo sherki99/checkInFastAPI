@@ -231,11 +231,16 @@ class BaseModelForRequest(BaseModel):
 @app.post("/first_time/")
 async def create_first_plan(base_model: BaseModelForRequest):
     try:
+        
         client_data = base_model.dict()
         ingestion_module = DataIngestionModule()
-        client_profile = ingestion_module.process(client_data)
-
-        return {"profile": client_profile.dict()}  
+        standardized_profile = ingestion_module.process_data(client_data)
+        
+        # The standardized profile would then be passed to subsequent modules
+        # You would continue with the next steps in your processing pipeline here
+        
+        return {"status": "success", "standardized_profile": standardized_profile}
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
