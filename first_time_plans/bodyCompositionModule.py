@@ -235,4 +235,61 @@ class BodyCompositionModule:
             distribution['calves'] = "Unknown (insufficient measurements)"
         
         return distribution
+    
+
+    def _calculate_structural_ratios(self, measurements: Dict[str, Any], height_cm: float) -> Dict[str, float]:
+        """
+        Calculate structural ratios based on body measurements and height.
+
+        Args:
+            measurements: Dictionary of body measurements
+            height_cm: Client's height in centimeters
+
+        Returns:
+            Dictionary containing key structural ratios
+        """
+        ratios = {}
+        
+        # Ensure height is valid
+        if height_cm <= 0:
+            return {"error": "Invalid height value"}
+
+        # Example ratios
+        if 'waist_circumference' in measurements and 'shoulder_circumference' in measurements:
+            ratios['shoulder_to_waist_ratio'] = measurements['shoulder_circumference'] / measurements['waist_circumference']
+        
+        if 'leg_length' in measurements:
+            ratios['leg_to_height_ratio'] = measurements['leg_length'] / height_cm
+        
+        if 'arm_length' in measurements:
+            ratios['arm_to_height_ratio'] = measurements['arm_length'] / height_cm
+        
+        return ratios
+    
+    def _determine_weight_category(self, bmi: float) -> str:
+        """
+        Determine the weight category based on BMI.
+
+        Args:
+            bmi: Body Mass Index value
+
+        Returns:
+            Weight category as a string
+        """
+        if bmi <= 0:
+            return "Unknown (invalid BMI)"
+
+        if bmi < 18.5:
+            return "Underweight"
+        elif 18.5 <= bmi < 24.9:
+            return "Normal weight"
+        elif 25 <= bmi < 29.9:
+            return "Overweight"
+        elif 30 <= bmi < 34.9:
+            return "Obesity (Class 1)"
+        elif 35 <= bmi < 39.9:
+            return "Obesity (Class 2)"
+        else:
+            return "Obesity (Class 3)"
+
 

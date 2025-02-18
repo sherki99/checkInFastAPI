@@ -251,6 +251,8 @@ async def create_first_plan(base_model: BaseModelForRequest):
 
 
        # step 5:  
+        training_history =  TrainingHistoryModule()
+        history_analysis =  training_history.process(standardized_profile)
 
 
 
@@ -260,7 +262,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
         # The standardized profile would then be passed to subsequent modules
         # You would continue with the next steps in your processing pipeline here
         
-        return {"status": "success", "standardized_profile": standardized_profile, "profile anal":  profile_analysis, "goalanal":  goal_analysis, "body_composition":  body_analysis}
+        return {"status": "success", "standardized_profile": standardized_profile, "profile anal":  profile_analysis, "goalanal":  goal_analysis, "histroy": history_analysis, "body_composition":  body_analysis}
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
