@@ -88,7 +88,7 @@ class TrainingSplitDecisionNode:
             'rationale': rationale,
             'training_days': training_days,
             'sessions_per_week': sessions_per_week,
-            'split_scores': split_scores  # Include for transparency
+            'split_scores': split_scores 
         }
 
     def _score_splits(self, sessions_per_week: int, hours_per_session: float,
