@@ -275,8 +275,8 @@ async def create_first_plan(base_model: BaseModelForRequest):
         volume_decision = VolumeAndIntensityDecisionNode()
         volume_guidelines = volume_decision.process(client_data, history_analysis, body_analysis, goal_analysis)
 
-       # exercise_selection = ExerciseSelectionDecisionNode()
-       # exercise_analysis = exercise_selection.process(standardized_profile, split_recommendation, volume_guidelines)
+        exercise_selection = ExerciseSelectionDecisionNode()
+        exercise_analysis = exercise_selection.process(standardized_profile, history_analysis, split_recommendation, volume_guidelines)
 
 
         return {
@@ -289,7 +289,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
             "recovery_lifestyle": recovery_analysis,
             "split_recomendation":  split_recommendation,
             "volume_guidelines" : volume_guidelines,  
-          #  "exercise_analysis":  exercise_analysis,
+            "exercise_analysis":  exercise_analysis,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
