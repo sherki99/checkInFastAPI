@@ -215,7 +215,7 @@ from  first_time_plans.dataIngestionModule import DataIngestionModule
 from  first_time_plans.clientProfileModule import ClientProfileModule
 from  first_time_plans.goalClarificationModule import GoalClarificationModule
 from  first_time_plans.bodyCompositionModule import BodyCompositionModule
-
+from  first_time_plans.trainingHistory import TrainingHistoryModule
 
 
 
@@ -245,6 +245,8 @@ async def create_first_plan(base_model: BaseModelForRequest):
         goal_analysis = goal_module.process(standardized_profile) 
 
        # step 4: Composition Module
+        body_composition =  BodyCompositionModule()
+        body_analysis =  body_composition.process(standardized_profile)
     
 
 
@@ -254,10 +256,11 @@ async def create_first_plan(base_model: BaseModelForRequest):
 
 
 
+
         # The standardized profile would then be passed to subsequent modules
         # You would continue with the next steps in your processing pipeline here
         
-        return {"status": "success", "standardized_profile": standardized_profile, "profile anal":  profile_analysis, "goalanal":  goal_analysis}
+        return {"status": "success", "standardized_profile": standardized_profile, "profile anal":  profile_analysis, "goalanal":  goal_analysis, "body_composition":  body_analysis}
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
