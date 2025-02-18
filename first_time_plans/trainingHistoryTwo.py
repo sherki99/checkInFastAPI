@@ -13,13 +13,13 @@ from dotenv import load_dotenv
 
 
 
-"""   Training History & Background Analysis
+"""  Training History & Background Analysis
    * Training age evaluation
    * Previous volume tolerance
    * Exercise technique proficiency
    * Past injury patterns
    * Response to different training styles Outputs: Experience level, volume tolerance ranges, exercise selection constraints  
-        """
+ """
 
 
 

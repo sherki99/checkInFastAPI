@@ -219,7 +219,7 @@ async def receive_check_in(data: CheckInData):
 from first_time_plans.firstReportGenerator import RPAnalysisSystem
 from first_time_plans.firstMealGenerator import MealPlanGenerator
 from first_time_plans.firstWorkoutGenerator import WorkoutPlanGenerator
-
+from first_time_plans.dataIngestionModule import DataIngestionModule
 
 report_genarator = RPAnalysisSystem()
 workout_plan_generator = WorkoutPlanGenerator()
@@ -250,10 +250,21 @@ class BaseModelForRequest(BaseModel):
 async def create_first_plan(base_model: BaseModelForRequest):
     try:
         client_data = base_model.dict()
-        
+
+        ingestion_module =  DataIngestionModule()
+        client_profile = ingestion_module.process(client_data)
+
+        return {"client_profile": client_profile.dict()}
         # Step 1: Analyze the client and generate a comprehensive report.
        # first_report = await report_genarator.analyze_client(client_data)
-        first_report  = await report_genarator.analyze_client(client_data)
+
+
+
+
+        #first_report  = await report_genarator.analyze_client(client_data)
+
+
+
         
         # Extract the combined analysis report from the result.
       #  analysis_report = first_report.get("report", "")
