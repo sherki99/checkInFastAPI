@@ -213,6 +213,11 @@ async def receive_check_in(data: CheckInData):
 
 from  first_time_plans.dataIngestionModule import DataIngestionModule
 from  first_time_plans.clientProfileModule import ClientProfileModule
+from  first_time_plans.goalClarificationModule import GoalClarificationModule
+from  first_time_plans.bodyCompositionModule import BodyCompositionModule
+
+
+
 
 class BaseModelForRequest(BaseModel):
     userId: str
@@ -235,10 +240,24 @@ async def create_first_plan(base_model: BaseModelForRequest):
         profile_analysis =  profile_module.process(standardized_profile)
 
 
+        # step 3: Goal Clarrification
+        goal_module  = GoalClarificationModule()
+        goal_analysis = goal_module.process(standardized_profile) 
+
+       # step 4: Composition Module
+    
+
+
+       # step 5:  
+
+
+
+
+
         # The standardized profile would then be passed to subsequent modules
         # You would continue with the next steps in your processing pipeline here
         
-        return {"status": "success", "standardized_profile": standardized_profile, "profile anal":  profile_analysis}
+        return {"status": "success", "standardized_profile": standardized_profile, "profile anal":  profile_analysis, "goalanal":  goal_analysis}
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
