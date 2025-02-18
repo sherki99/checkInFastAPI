@@ -235,7 +235,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
         ingestion_module = DataIngestionModule()
         client_profile = ingestion_module.process(client_data)
 
-        return {"profile": client_profile.dict()}
+        return {"profile": client_profile}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
