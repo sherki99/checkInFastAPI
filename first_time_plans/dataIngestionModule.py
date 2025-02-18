@@ -4,7 +4,7 @@ from typing import Dict, Any, List, Optional
 
 
 
-
+# no used now 
 class Measurement(BaseModel): 
     part: str
     current: Optional[float] = None
@@ -28,12 +28,7 @@ class DataIngestionModule:
         measurements_data = raw_data.get("measurements", {}).get("measurements", {})
 
         measurements = [
-            Measurement(
-                part=part,
-                current=values.get("current"),
-                previous=values.get("previous"),
-                change=values.get("change")
-            )
+            f"{part}: {values.get('current')}"  
             for part, values in measurements_data.items()
         ]
 
@@ -45,7 +40,7 @@ class DataIngestionModule:
             lifestyle=profile.get("lifestyle", {}).get("data", {}),
             measurements=measurements,
             measurement_date=raw_data.get("measurements", {}).get("date")
-            
+
         ) 
         return client_profile
 
