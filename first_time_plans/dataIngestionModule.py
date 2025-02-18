@@ -7,7 +7,7 @@ from typing import Dict, Any, List, Optional
 
 class Measurement: 
     part:  str
-    current: str
+    current: Optional[float] = None
     previous: Optional[float] = None
     change: Optional[float] = None
 
@@ -48,9 +48,9 @@ class DataIngestionModule:
             fitness=profile.get("fitness", {}).get("data", {}),
             nutrition=profile.get("nutrition", {}).get("data", {}),
             lifestyle=profile.get("lifestyle", {}).get("data", {}),
-            measurements=measurements.get("measurements", {}),  
+            measurements=measurements,
             measurement_date=measurements.get("date") 
-        )
+        ) 
         return client_profile
 
     # I might I want to add more module to return in case I need them 
