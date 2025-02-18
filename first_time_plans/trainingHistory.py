@@ -383,3 +383,14 @@ class TrainingHistoryModule:
             'lunge': ['Walking Lunge', 'Reverse Lunge', 'Jump Lunge'],
             'carry': [],  # No strict body
         }
+
+        return exercises.get(pattern, [])
+    
+    @staticmethod
+    def _get_machine_exercises(self) -> List[str]:
+        """
+        Retrieve a list of machine-based exercises.
+        Returns:
+            A list of machine-based exercises.
+        """
+        return ["leg press", "lat pulldown", "chest press", "seated row"]
