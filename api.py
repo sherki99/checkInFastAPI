@@ -211,13 +211,22 @@ async def receive_check_in(data: CheckInData):
 
 
 
-from  first_time_plans.dataIngestionModule import DataIngestionModule
-from  first_time_plans.clientProfileModule import ClientProfileModule
-from  first_time_plans.goalClarificationModule import GoalClarificationModule
-from  first_time_plans.bodyCompositionModule import BodyCompositionModule
-from  first_time_plans.trainingHistory import TrainingHistoryModule
+from  first_time_plans.Module_A_B.dataIngestionModule import DataIngestionModule
+from  first_time_plans.Module_A_B.clientProfileModule import ClientProfileModule
+from  first_time_plans.Module_A_B.goalClarificationModule import GoalClarificationModule
+from  first_time_plans.Module_A_B.bodyCompositionModule import BodyCompositionModule
+from  first_time_plans.Module_A_B.trainingHistory import TrainingHistoryModule
+from  first_time_plans.Module_A_B.recoveryAndLifestyleModule import RecoveryAndLifestyleModule
 
+from  first_time_plans.Module_C.TrainingSplitDecisionNode import TrainingSplitDecisionNode
+from  first_time_plans.Module_C.VolumeDecisionNode import VolumeAndIntensityDecisionNode
+from  first_time_plans.Module_C.ExerciseSelectionNode import ExerciseSelectionDecisionNode
 
+from first_time_plans.Module_D.MacrosDistrubutionNodes import MacroDistributionDecisionNode
+from first_time_plans.Module_D.CalorieNeedsDecisionNode import CaloricNeedsDecisionNode
+#from first_time_plans.Module_D.MealTimingDecion import
+
+#from first_time_plans.Module_E.PlanIntegrationNode import 
 
 class BaseModelForRequest(BaseModel):
     userId: str
@@ -229,6 +238,7 @@ class BaseModelForRequest(BaseModel):
 @app.post("/first_time/")
 async def create_first_plan(base_model: BaseModelForRequest):
     try:
+        # core analysis A and B"
         # Step 1:  Data Ingestion
         client_data = base_model.dict()
         ingestion_module = DataIngestionModule()
@@ -244,26 +254,31 @@ async def create_first_plan(base_model: BaseModelForRequest):
         goal_module  = GoalClarificationModule()
         goal_analysis = goal_module.process(standardized_profile) 
 
-       # step 4: Composition Module
+        # step 4: Composition Module
         body_composition =  BodyCompositionModule()
         body_analysis =  body_composition.process(standardized_profile)
     
 
-
-       # step 5:  
+        # step 5:  Training History Module
         training_history =  TrainingHistoryModule()
         history_analysis =  training_history.process(standardized_profile)
 
+        # step 6:  Recovery And lifestyle 
+        recovery_lifestyle = RecoveryAndLifestyleModule()
+        recovery_analysis = recovery_lifestyle.process(standardized_profile)
+        # recovery_lifesty 
 
 
 
-
-
-        # The standardized profile would then be passed to subsequent modules
-        # You would continue with the next steps in your processing pipeline here
-        
-        return {"status": "success", "standardized_profile": standardized_profile, "profile anal":  profile_analysis, "goalanal":  goal_analysis, "histroy": history_analysis, "body_composition":  body_analysis}
-    
+        return {
+            "status": "success",
+            "standardized_profile": standardized_profile,
+            "profile_analysis": profile_analysis,
+            "goal_analysis": goal_analysis,
+            "history_analysis": history_analysis,
+            "body_composition": body_analysis,
+            "recovery_lifestyle": recovery_analysis
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

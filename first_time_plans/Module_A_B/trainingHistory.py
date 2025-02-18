@@ -386,6 +386,8 @@ class TrainingHistoryModule:
 
         return exercises.get(pattern, [])
     
+
+    # need to be imlen correctly 
     @staticmethod
     def _get_machine_exercises(self) -> List[str]:
         """

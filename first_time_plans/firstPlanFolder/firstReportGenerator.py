@@ -5,8 +5,8 @@ from dataclasses import dataclass
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
-from first_time_plans.bodyAnalysis import BodyAnalysis
-from first_time_plans.trainingHistoryTwo import TrainingHistoryAnalysis
+from first_time_plans.PastClassesWanted.bodyAnalysis import BodyAnalysis
+from first_time_plans.PastClassesWanted.trainingHistoryTwo import TrainingHistoryAnalysis
 
 
 # Load environment variables and set up the API client
