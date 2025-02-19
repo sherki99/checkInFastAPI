@@ -211,6 +211,11 @@ async def receive_check_in(data: CheckInData):
 from  first_time_plans.Module_A_B.dataIngestionModule import DataIngestionModule
 from  first_time_plans.Module_A_B.clientProfileModule import ClientProfileModule
 from  first_time_plans.Module_A_B.goalClarificationModule import GoalClarificationModule
+from  first_time_plans.Module_A_B.goalClarrificationTwo import GoalClarificationModule
+
+from first_time_plans.call_llm_class import SimpleLLMClient
+
+
 from  first_time_plans.Module_A_B.bodyCompositionModule import BodyCompositionModule
 from  first_time_plans.Module_A_B.trainingHistory import TrainingHistoryModule
 from  first_time_plans.Module_A_B.recoveryAndLifestyleModule import RecoveryAndLifestyleModule
@@ -241,6 +246,11 @@ async def create_first_plan(base_model: BaseModelForRequest):
         ingestion_module = DataIngestionModule()
         standardized_profile = ingestion_module.process_data(client_data)
 
+        simple_llm = SimpleLLMClient()
+
+
+        goal_llm_extract = GoalClarificationModule()
+        goal_analysis_two = goal_llm_extract._analyze_goals(standardized_profile, simple_llm)
 
         # Step 2:  Client profile
         profile_module = ClientProfileModule()
@@ -294,10 +304,16 @@ async def create_first_plan(base_model: BaseModelForRequest):
             recovery_analysis
         )
 
+        #plan_integretion = PlanIntegrationNode.process()
+
+
+        
+
     
 
         return {
             "status": "success",
+            "goal_deeeeeee":  goal_analysis_two, 
             "standardized_profile": standardized_profile,
             "profile_analysis": profile_analysis,
             "goal_analysis": goal_analysis,
