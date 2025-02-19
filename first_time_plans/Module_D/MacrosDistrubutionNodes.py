@@ -5,6 +5,20 @@ class MacroDistributionDecisionNode:
         """Initialize the MacroDistributionDecisionNode."""
         self.macro_distribution = {}
     
+    def get(self, key: str, default: Any = None) -> Any:
+            """
+            Get a value from the macro distribution dictionary.
+            
+            Args:
+                key: Key to lookup in the macro_distribution
+                default: Default value if key not found
+                
+            Returns:
+                Value associated with key or default if not found
+            """
+            return self.macro_distribution.get(key, default)
+    
+    
     def process(self, caloric_targets: Dict[str, Any], client_profile: Dict[str, Any],
                 body_composition: Dict[str, Any], goal_analysis: Dict[str, Any],
                 training_history: Dict[str, Any]) -> Dict[str, Any]:
@@ -79,6 +93,10 @@ class MacroDistributionDecisionNode:
         }
         
         return self.macro_distribution
+    
+
+
+  
     
     def _calculate_macros(self, calories: float, primary_goal: str, weight_kg: float,
                          body_fat_percentage: float, training_age: str, 
