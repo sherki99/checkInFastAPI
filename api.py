@@ -208,9 +208,6 @@ async def receive_check_in(data: CheckInData):
 
 
 # digenstion model cna give worngh extart of code btu it is ok for now in case chaneg qyestiuonare bneed to change as well ù
-
-
-
 from  first_time_plans.Module_A_B.dataIngestionModule import DataIngestionModule
 from  first_time_plans.Module_A_B.clientProfileModule import ClientProfileModule
 from  first_time_plans.Module_A_B.goalClarificationModule import GoalClarificationModule
@@ -297,9 +294,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
             recovery_analysis
         )
 
-        
-
-
+    
 
         return {
             "status": "success",
