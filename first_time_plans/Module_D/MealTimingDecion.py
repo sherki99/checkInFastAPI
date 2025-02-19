@@ -277,3 +277,101 @@ class MealTimingDecisionNode:
         }
         
         return considerations
+    
+    def _get_goal_specific_adjustments(self, primary_goal: str) -> Dict[str, str]:
+        """
+        Generate timing adjustments specific to the client's primary goal.
+        
+        Args:
+            primary_goal: Client's primary goal
+            
+        Returns:
+            Dictionary of goal-specific timing adjustments
+        """
+        adjustments = {}
+        
+        if 'muscle' in primary_goal or 'hypertrophy' in primary_goal:
+            adjustments = {
+                'meal_frequency': 'Higher meal frequency (4-6 meals) to support muscle growth',
+                'protein_timing': 'Every 3-4 hours to maximize muscle protein synthesis',
+                'carb_timing': 'Higher carbs pre/post workout for performance and recovery',
+                'pre_bed': 'Slow-digesting protein before bed to support overnight recovery'
+            }
+        elif 'fat loss' in primary_goal or 'cut' in primary_goal:
+            adjustments = {
+                'meal_frequency': 'Moderate meal frequency (3-4 meals) for better adherence',
+                'meal_timing': 'Larger meals earlier in the day',
+                'carb_timing': 'Concentrate carbs around training sessions',
+                'evening_meals': 'Lower carb evening meals to support fat loss'
+            }
+        else:  # maintenance or general fitness
+            adjustments = {
+                'meal_frequency': 'Moderate meal frequency (3-5 meals) based on preference',
+                'timing_flexibility': 'More flexible meal timing windows',
+                'nutrient_distribution': 'Even distribution of nutrients throughout day',
+                'workout_nutrition': 'Moderate focus on workout nutrition timing'
+            }
+        
+        return adjustments
+
+    def _get_barrier_specific_adjustments(self, barriers: Dict[str, bool]) -> Dict[str, str]:
+        """
+        Generate timing adjustments based on client-specific barriers.
+        
+        Args:
+            barriers: Dictionary of client barriers
+            
+        Returns:
+            Dictionary of barrier-specific timing adjustments
+        """
+        adjustments = {}
+        
+        if barriers.get('time_constraints', False):
+            adjustments['scheduling'] = 'Simplified meal timing with wider windows'
+            adjustments['preparation'] = 'Batch cooking and meal prep strategies'
+            adjustments['meal_frequency'] = 'Lower meal frequency with larger portions'
+        
+        if barriers.get('stress', False):
+            adjustments['cortisol_management'] = 'Avoid large meals close to bedtime'
+            adjustments['meal_spacing'] = 'Regular meal timing to stabilize blood sugar'
+        
+        if barriers.get('sleep', False):
+            adjustments['evening_timing'] = 'Last meal 3 hours before bed'
+            adjustments['carb_timing'] = 'Consider moderate carbs at dinner for sleep'
+        
+        if barriers.get('digestion', False):
+            adjustments['meal_spacing'] = 'Longer intervals between meals for digestion'
+            adjustments['meal_size'] = 'Smaller, more frequent meals if needed'
+        
+        return adjustments
+    
+
+    def _get_lifestyle_specific_adjustments(self, lifestyle: Dict[str, Any]) -> Dict[str, str]:
+        """
+        Generate timing adjustments based on lifestyle factors.
+        
+        Args:
+            lifestyle: Dictionary of lifestyle factors
+            
+        Returns:
+            Dictionary of lifestyle-specific timing adjustments
+        """
+        adjustments = {}
+        
+        work_schedule = lifestyle.get('work_schedule', 'standard')
+        stress_level = lifestyle.get('stress_level', 'moderate')
+        sleep_schedule = lifestyle.get('sleep_schedule', 'regular')
+        
+        if work_schedule == 'shift_work':
+            adjustments['meal_timing'] = 'Adjust meal timing to match shift schedule'
+            adjustments['sleep_consideration'] = 'Maintain consistent meal patterns despite varying sleep'
+        
+        if stress_level == 'high':
+            adjustments['cortisol_management'] = 'Regular meal timing to manage stress response'
+            adjustments['evening_nutrition'] = 'Emphasis on relaxing evening meal routine'
+        
+        if sleep_schedule == 'irregular':
+            adjustments['consistency'] = 'Focus on meal spacing rather than specific times'
+            adjustments['flexibility'] = 'Adaptable meal windows based on sleep/wake cycle'
+        
+        return adjustments
