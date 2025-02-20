@@ -61,6 +61,8 @@ class BodyCompositionModule:
         
         return self.body_composition_metrics
     
+
+    """
     def _determine_body_type(self, measurements: Dict[str, Any], gender: str) -> str:
 
     
@@ -69,3 +71,4 @@ class BodyCompositionModule:
     def _calculate_structural_ratios(self, measurements: Dict[str, Any], height_cm: float) -> Dict[str, float]:
  
     def _determine_weight_category(self, bmi: float) -> str:
+"""
