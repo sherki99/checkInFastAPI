@@ -207,126 +207,152 @@ async def receive_check_in(data: CheckInData):
 
 
 
-# digenstion model cna give worngh extart of code btu it is ok for now in case chaneg qyestiuonare bneed to change as well ù
-from  first_time_plans.Module_A_B.dataIngestionModule import DataIngestionModule
-from  first_time_plans.Module_A_B.clientProfileModule import ClientProfileModule
-from  first_time_plans.Module_A_B.goalClarificationModule import GoalClarificationModule
-from  first_time_plans.Module_A_B.goalClarrificationTwo import GoalClarificationModule
-
-from first_time_plans.call_llm_class import SimpleLLMClient
 
 
-from  first_time_plans.Module_A_B.bodyCompositionModule import BodyCompositionModule
-from  first_time_plans.Module_A_B.trainingHistory import TrainingHistoryModule
-from  first_time_plans.Module_A_B.recoveryAndLifestyleModule import RecoveryAndLifestyleModule
 
-from  first_time_plans.Module_C.TrainingSplitDecisionNode import TrainingSplitDecisionNode
-from  first_time_plans.Module_C.VolumeDecisionNode import VolumeAndIntensityDecisionNode
-from  first_time_plans.Module_C.ExerciseSelectionNode import ExerciseSelectionDecisionNode
 
-from first_time_plans.Module_D.MacrosDistrubutionNodes import MacroDistributionDecisionNode
+
+
+
+
+
+
+
+
+# Import modules for data processing and analysis
+from first_time_plans.Module_A_B.dataIngestionModule import DataIngestionModule
+from first_time_plans.Module_A_B.clientProfileModule import ClientProfileModule
+from first_time_plans.Module_A_B.goalClarificationModule import GoalClarificationModule
+from first_time_plans.Module_A_B.bodyCompositionModule import BodyCompositionModule
+from first_time_plans.Module_A_B.trainingHistory import TrainingHistoryModule
+from first_time_plans.Module_A_B.recoveryAndLifestyleModule import RecoveryAndLifestyleModule
+
+# Import decision nodes for workout planning
+from first_time_plans.Module_C.TrainingSplitDecisionNode import TrainingSplitDecisionNode
+from first_time_plans.Module_C.VolumeDecisionNode import VolumeAndIntensityDecisionNode
+from first_time_plans.Module_C.ExerciseSelectionNode import ExerciseSelectionDecisionNode
+
+# Import decision nodes for nutrition planning
 from first_time_plans.Module_D.CalorieNeedsDecisionNode import CaloricNeedsDecisionNode
+from first_time_plans.Module_D.MacrosDistrubutionNodes import MacroDistributionDecisionNode
 from first_time_plans.Module_D.MealTimingDecion import MealTimingDecisionNode
 
+# Import integration module (if needed)
 from first_time_plans.Module_E.PlanIntegrationNode import PlanIntegrationNode
 
+# Import utility for LLM interactions
+from first_time_plans.call_llm_class import BaseLLM
+
+
+
+# Request model for incoming client data
 class BaseModelForRequest(BaseModel):
     userId: str
     profile: Dict[str, Any]
     measurements: Dict[str, Any]
 
-"""{"standardized_profile": {"body_composition": {"arm_circumference": 24.7, "calf_circumference": 34, "chest_circumference": 81, "forearm_circumference": 23.2, "hip_circumference": 85.2, "mid_thigh_circumference": 43.8, "neck_circumference": 30.3, "thigh_circumference": 50.3, "waist_circumference": 68.7, "waist_to_hip_ratio": 0.81, "wrist_circumference": 15.1}, "fitness": {"activity_level": "Active", "available_equipment": [Array], "avoided_exercises": [Array], "exercise_routine": "Effective", "fitness_knowledge": "I am quite experienced", "preferred_exercises": [Array], "session_duration_hours": 1.5, "training_experience_years": 2, "training_frequency_per_week": 5, "weekly_exercise_hours": 7.5}, "goals": {"desired_timeframe_weeks": 4, "expected_barriers": "Occasional shoulder pain limits some movements, and balancing training with other responsibilities can be a challenge. Maintaining a strict diet is also sometimes difficult due to time constraints.", "main_goals": [Array], "motivation_level": 5}, "lifestyle": {"daily_work_hours": 5, "sports_background": "Football untill the age of 18 then played time tim", "stress_level": "Stressful", "work_environment": "Sitting"}, "measurement_date": "2024-09-17T11:37:30.217+00:00", "nutrition": {"alcohol_units_per_week": 1.5, "diet_preference": "I prefer a balanced diet with a mix of Mediterranean, Italian, and Moroccan influences. I enjoy whole foods like vegetables, lean meats, grains (like couscous and quinoa), and a moderate amount of dairy. I like to avoid processed foods and prefer home-cooked meals.", "meal_schedule": [Object], "meals_per_day": 5, "supplements": [Array], "water_intake_liters": 2.5}, "personal_info": {"age": 25, "bmi": 24.86, "gender": "Male", "height_cm": 186, "name": "Sherki", "weight_kg": 86}, "user_id": "66e037ef43e9199baf5d"}, "status": "success"}"""
 
 @app.post("/first_time/")
 async def create_first_plan(base_model: BaseModelForRequest):
     try:
-        # core analysis A and B"
-        # Step 1:  Data Ingestion
+        # --- STEP 1: Data Ingestion ---
         client_data = base_model.dict()
         ingestion_module = DataIngestionModule()
         standardized_profile = ingestion_module.process_data(client_data)
-
-        simple_llm = SimpleLLMClient()
-
-
-        goal_llm_extract = GoalClarificationModule()
-        goal_analysis_two = goal_llm_extract._analyze_goals(standardized_profile, simple_llm)
-
-        # Step 2:  Client profile
-        profile_module = ClientProfileModule()
-        profile_analysis =  profile_module.process(standardized_profile)
-
-
-        # step 3: Goal Clarrification
-        goal_module  = GoalClarificationModule()
-        goal_analysis = goal_module.process(standardized_profile) 
-
-        # step 4: Composition Module
-        body_composition =  BodyCompositionModule()
-        body_analysis =  body_composition.process(standardized_profile)
-    
-
-        # step 5:  Training History Module
-        training_history =  TrainingHistoryModule()
-        history_analysis =  training_history.process(standardized_profile)
-
-        # step 6:  Recovery And lifestyle 
-        recovery_lifestyle = RecoveryAndLifestyleModule()
-        recovery_analysis = recovery_lifestyle.process(standardized_profile)
-        # recovery_lifesty
+            
+        # --- STEP 3: Client Profile Analysis ---  // I live might I want to use in the future but for now
+        #profile_module = ClientProfileModule()
+        #profile_analysis = profile_module.process(standardized_profile)
         
-        # Node parts Part C
-        training_split = TrainingSplitDecisionNode()
-        split_recommendation = training_split.process(profile_analysis, goal_analysis, body_analysis, history_analysis)
+        # --- STEP 4: Goal Clarification --- 
+        goal_module = GoalClarificationModule()
+        goal_analysis = goal_module.process(standardized_profile)
 
-        volume_decision = VolumeAndIntensityDecisionNode()
-        volume_guidelines = volume_decision.process(client_data, history_analysis, body_analysis, goal_analysis)
 
-        exercise_selection = ExerciseSelectionDecisionNode()
-        exercise_analysis = exercise_selection.process(standardized_profile, history_analysis, split_recommendation, volume_guidelines)
-
-        caloric_needs = CaloricNeedsDecisionNode()
-        caloric_targets = caloric_needs.process(profile_analysis, body_analysis, goal_analysis)
-
-        macro_distribution = MacroDistributionDecisionNode()
-        macro_plan = macro_distribution.process(
-            caloric_targets, profile_analysis, body_analysis, 
-            goal_analysis, history_analysis
+        """
+        
+        # --- STEP 5: Body Composition Analysis ---
+        body_module = BodyCompositionModule()
+        body_analysis = body_module.process(standardized_profile)
+        
+        # --- STEP 6: Training History Analysis ---
+        training_history_module = TrainingHistoryModule()
+        history_analysis = training_history_module.process(standardized_profile)
+        
+        # --- STEP 7: Recovery and Lifestyle Analysis ---
+        recovery_module = RecoveryAndLifestyleModule()
+        recovery_analysis = recovery_module.process(standardized_profile)
+        
+        # --- STEP 8: Decision Nodes for Workout Planning ---
+        training_split_node = TrainingSplitDecisionNode()
+        split_recommendation = training_split_node.process(
+            profile_analysis, goal_analysis, body_analysis, history_analysis
         )
-
-
-        meal_timing = MealTimingDecisionNode()
-        timing_recommendations = meal_timing.process(
-            macro_distribution,
-            split_recommendation,
-            profile_analysis,
-            goal_analysis,
-            recovery_analysis
+        
+        volume_node = VolumeAndIntensityDecisionNode()
+        volume_guidelines = volume_node.process(
+            client_data, history_analysis, body_analysis, goal_analysis
         )
-
-        #plan_integretion = PlanIntegrationNode.process()
-
-
+        
+        exercise_node = ExerciseSelectionDecisionNode()
+        exercise_analysis = exercise_node.process(
+            standardized_profile, history_analysis, split_recommendation, volume_guidelines
+        )
+        
+        # --- STEP 9: Decision Nodes for Nutrition Planning ---
+        caloric_node = CaloricNeedsDecisionNode()
+        caloric_targets = caloric_node.process(profile_analysis, body_analysis, goal_analysis)
+        
+        macro_node = MacroDistributionDecisionNode()
+        macro_plan = macro_node.process(
+            caloric_targets, profile_analysis, body_analysis, goal_analysis, history_analysis
+        )
+        
+        meal_timing_node = MealTimingDecisionNode()
+        timing_recommendations = meal_timing_node.process(
+            macro_plan, split_recommendation, profile_analysis, goal_analysis, recovery_analysis
+        )
+        
+        # --- (Optional) STEP 10: Integration & Final Output ---
+        # integration_node = PlanIntegrationNode()
+        # integrated_plan = integration_node.process(
+        #     workout_decisions={
+        #         "split": split_recommendation,
+        #         "volume": volume_guidelines,
+        #         "exercises": exercise_analysis
+        #     },
+        #     nutrition_decisions={
+        #         "caloric_targets": caloric_targets,
+        #         "macro_plan": macro_plan,
+        #         "meal_timing": timing_recommendations
+        #     }
+        # )
         
 
-    
-
+        """
+        # Prepare final response with all analysis components
         return {
             "status": "success",
-            "goal_deeeeeee":  goal_analysis_two, 
             "standardized_profile": standardized_profile,
-            "profile_analysis": profile_analysis,
             "goal_analysis": goal_analysis,
-            "history_analysis": history_analysis,
-            "body_composition": body_analysis,
-            "recovery_lifestyle": recovery_analysis,
-            "split_recomendation":  split_recommendation,
-            "volume_guidelines" : volume_guidelines,  
-            "exercise_analysis":  exercise_analysis,
-            "caloric_targets" : caloric_targets,
-            "macro_plan" : macro_plan, 
-            "timing_recommendations": timing_recommendations, 
+    #        "profile_analysis": profile_analysis,
+
+
         }
+    
+        """
+        "history_analysis": history_analysis,
+        "body_analysis": body_analysis,
+        "recovery_analysis": recovery_analysis,
+        "split_recommendation": split_recommendation,
+        "volume_guidelines": volume_guidelines,
+        "exercise_analysis": exercise_analysis,
+        "caloric_targets": caloric_targets,
+        "macro_plan": macro_plan,
+        "timing_recommendations": timing_recommendations
+        # "integrated_plan": integrated_plan  # Uncomment if integration is implemente
+        """
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+        
