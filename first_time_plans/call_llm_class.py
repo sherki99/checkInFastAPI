@@ -12,6 +12,7 @@ API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=API_KEY)
 OPENAI_MODEL = "gpt-4o-mini"
 
+
 class BaseLLM:
     """
     Super class for interacting with the LLM.
@@ -41,9 +42,6 @@ class BaseLLM:
         :param function_schema: A dictionary defining a function's schema for function calling.
         :return: The response from the LLM, parsed as JSON or plain text.
         """
-    
-
-        
 
         messages = [
             {"role": "system", "content": system_message},
@@ -67,14 +65,10 @@ class BaseLLM:
         
         # Case 2: Use structured JSON outputs if a Pydantic schema is provided
         elif schema:
-            response_format = {
-                "type": "json_schema",
-                "schema": schema.schema()
-            }
-            completion = self.llm_client.chat.completions.create(
+            completion = self.llm_client.beta.chat.completions.parse(
                 model=self.model,
                 messages=messages,
-                response_format=response_format
+                response_format=schema
             )
             return json.loads(completion.choices[0].message.content)
         
