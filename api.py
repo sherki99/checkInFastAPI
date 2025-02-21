@@ -285,16 +285,15 @@ async def create_first_plan(base_model: BaseModelForRequest):
 
 
         # --- STEP 9: Decision Nodes for Nutrition Planning ---
-          
+
+
+
+        """
+             
         training_split_node = TrainingSplitDecisionNode()
         split_recommendation = training_split_node.process(
            profile_analysis, goal_analysis, body_analysis, history_analysis
         )
-
-                : Dict[str, Any], 
-        goal_analysis: Dict[str, Any], 
-        body_analysis: Dict[str, Any], 
-        history_analysis: Dict[str, Any]
 
         training_split_node = TrainingSplitDecisionNode()
         split_recommendation = training_split_node.process(
@@ -306,10 +305,6 @@ async def create_first_plan(base_model: BaseModelForRequest):
         volume_guidelines = volume_node.process(
             client_data, history_analysis, body_analysis, goal_analysis
         )
-
-
-        """
-   
 
         
         exercise_node = ExerciseSelectionDecisionNode()
@@ -359,9 +354,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
             "history_analysis": history_analysis,
             "body_analysis": body_analysis,
             "recovery_analysis": recovery_analysis,
-            "split_recommendation": split_recommendation,
-            "volume_guidelines": volume_guidelines,
-            "exercise_analysis": exercise_analysis,
+         
 
     #       
         }
@@ -370,7 +363,13 @@ async def create_first_plan(base_model: BaseModelForRequest):
 
         
                      # last having with it also function schema
-     
+        "split_recommendation": split_recommendation,
+            "volume_guidelines": volume_guidelines,
+            "exercise_analysis": exercise_analysis,
+
+
+
+            
         "history_analysis": history_analysis,
         "body_analysis": body_analysis,
 
