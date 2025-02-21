@@ -298,18 +298,23 @@ async def create_first_plan(base_model: BaseModelForRequest):
         )
 
         # --- STEP 9: Decision Nodes for Nutrition Planning ---
-        caloric_node = CaloricNeedsDecisionNode()
-        caloric_targets = caloric_node.process(profile_analysis, body_analysis, goal_analysis)
+
 
         """
    
         
         # 
-        
+
+                caloric_node = CaloricNeedsDecisionNode()
+        caloric_targets = caloric_node.process(profile_analysis, body_analysis, goal_analysis)
+
+
         macro_node = MacroDistributionDecisionNode()
         macro_plan = macro_node.process(
             caloric_targets, profile_analysis, body_analysis, goal_analysis, history_analysis
         )
+        
+  
         
         meal_timing_node = MealTimingDecisionNode()
         timing_recommendations = meal_timing_node.process(
