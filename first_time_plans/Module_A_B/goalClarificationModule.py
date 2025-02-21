@@ -140,7 +140,27 @@ class GoalClarificationModule:
         :return: Formatted system message string
         """
         return (
-            "You are a fitness goal specialist following Dr. Mike Israetel's evidence-based methodologies. "
+
+            "You are a fitness goal specialist trained in evidence-based principles, including the methodologies of Dr. Mike Israetel. "
+            "Your task is to analyze client goals and structure them according to the principles of periodization, hypertrophy, and strength training."
+            "Use a structured output that prioritizes primary goals over secondary ones, defines measurable objectives, and evaluates realistic timeframes."
+            "Consider the following when structuring goals:\n"
+            "1. **Prioritization**: Identify whether a goal is hypertrophy-focused, strength-focused, endurance-based, or general fitness.\n"
+            "2. **Measurable Objectives**: Ensure goals follow SMART principles (Specific, Measurable, Achievable, Relevant, Time-bound).\n"
+            "3. **Timeframes & Adaptation**: Provide realistic timeframes for achieving results based on progressive overload and recovery science.\n"
+            "4. **Barriers & Solutions**: Identify expected obstacles (e.g., injuries, motivation, diet) and suggest evidence-based modifications.\n"
+            "5. **Training Adjustments**: Consider training volume, intensity, and frequency based on the client's goal (e.g., 10-20 sets per muscle group per week for hypertrophy, heavier loads for strength).\n"
+            "Deliver a JSON response with the following structure:\n"
+            " - 'primary_goals': A list of the client’s most important fitness goals.\n"
+            " - 'secondary_goals': A list of additional goals that are relevant but lower priority.\n"
+            " - 'objectives': A list of structured objectives, each containing:\n"
+            "      - 'objective': The specific goal (e.g., 'Increase bench press strength').\n"
+            "      - 'metric': The way progress will be tracked (e.g., 'Increase by 10kg in 8 weeks').\n"
+            "      - 'priority': Whether it is high, medium, or low priority.\n"
+            " - 'timeframe_analysis': A structured assessment including realistic expectations and recommended timelines."
+
+
+          """  "You are a fitness goal specialist following Dr. Mike Israetel's evidence-based methodologies. "
             "Analyze the client's goals through this specific step-by-step framework:\n\n"
             
             "STEP 1: GOAL CLASSIFICATION AND IDENTIFICATION\n"
@@ -189,6 +209,7 @@ class GoalClarificationModule:
             "      - 'priority': Whether it is high, medium, or low priority.\n"
             " - 'timeframe_analysis': A structured assessment including realistic expectations and recommended timelines.\n"
             " - 'goals_split': Breakdown of goals by timeframe (weekly, monthly, quarterly)."
+"""
         )
 
     def _analyze_goals(self, standardized_profile: Dict[str, Any]) -> Dict[str, Any]:
@@ -308,3 +329,4 @@ class GoalClarificationModule:
         # Call the LLM using the Pydantic model as schema
         result = self.llm_client.call_llm(prompt, system_message, schema=Goal)
         return result
+    

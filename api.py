@@ -269,11 +269,19 @@ async def create_first_plan(base_model: BaseModelForRequest):
         goal_analysis = goal_module.process(standardized_profile)
 
 
-        """
-        
-        # --- STEP 5: Body Composition Analysis ---
+        #--- STEP 5: Body Composition Analysis ---
         body_module = BodyCompositionModule()
         body_analysis = body_module.process(standardized_profile)
+
+
+        # --- STEP 6: Training History Analysis ---
+        training_history_module = TrainingHistoryModule()
+        history_analysis = training_history_module.process(standardized_profile)
+
+
+        """
+        
+        # 
         
         # --- STEP 6: Training History Analysis ---
         training_history_module = TrainingHistoryModule()
@@ -335,7 +343,11 @@ async def create_first_plan(base_model: BaseModelForRequest):
             "status": "success",
             "standardized_profile": standardized_profile,
             "goal_analysis": goal_analysis,
+            "history_analysis": history_analysis,
+            "body_analysis": body_analysis,
+            "recovery_analysis": recovery_analysis,
     #        "profile_analysis": profile_analysis,
+
 
 
         }
@@ -343,7 +355,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
         """
         "history_analysis": history_analysis,
         "body_analysis": body_analysis,
-        "recovery_analysis": recovery_analysis,
+
         "split_recommendation": split_recommendation,
         "volume_guidelines": volume_guidelines,
         "exercise_analysis": exercise_analysis,
