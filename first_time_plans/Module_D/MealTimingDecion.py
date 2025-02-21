@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from first_time_plans.call_llm_class import BaseLLM
 import json
@@ -8,63 +8,55 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-class MealDetails(BaseModel):
-    """Detailed information about a specific meal."""
-    meal_name: str = Field(..., description="Name of the meal (e.g., 'Breakfast', 'Pre-workout meal')")
-    timing: str = Field(..., description="Recommended timing (e.g., '7:00 AM', '1-2 hours before training')")
-    calorie_allocation: int = Field(..., description="Calories allocated to this meal")
-    protein: int = Field(..., description="Protein in grams")
-    carbohydrates: int = Field(..., description="Carbohydrates in grams")
-    fats: int = Field(..., description="Fats in grams")
-    hydration: str = Field(..., description="Fluid recommendations")
-    primary_purpose: str = Field(..., description="Main nutritional purpose of this meal")
-    food_suggestions: List[str] = Field(..., description="Suggested food sources")
-    notes: Optional[str] = Field(None, description="Additional considerations for this meal")
+class MealDetail(BaseModel):
+    """Details for a specific meal in the plan."""
+    meal_name: str = Field(..., description="Name of the meal (e.g., 'Breakfast', 'Pre-workout')")
+    timing: str = Field(..., description="Time of day for this meal")
+    caloric_allocation: int = Field(..., description="Calories allocated to this meal")
+    protein_target: int = Field(..., description="Protein target in grams")
+    carb_target: int = Field(..., description="Carbohydrate target in grams")
+    fat_target: int = Field(..., description="Fat target in grams")
+    meal_purpose: str = Field(..., description="Purpose of this meal (e.g., 'Recovery', 'Energy')")
+    food_suggestions: List[str] = Field(..., description="Example foods appropriate for this meal")
+    special_considerations: Optional[str] = Field(None, description="Any special notes for this meal")
 
 class TrainingDayPlan(BaseModel):
     """Complete meal timing plan for training days."""
-    day_type: str = Field(..., description="Type of training day (e.g., 'Upper Body Day', 'Rest Day')")
-    daily_macronutrient_targets: Dict[str, int] = Field(..., description="Daily macro targets in grams")
-    meal_schedule: List[MealDetails] = Field(..., description="Detailed meal timing and composition")
-    pre_workout_strategy: str = Field(..., description="Specific pre-workout nutrition approach")
-    intra_workout_strategy: Optional[str] = Field(None, description="Intra-workout nutrition if applicable")
-    post_workout_strategy: str = Field(..., description="Post-workout nutrition approach")
-    scientific_rationale: str = Field(..., description="Scientific basis for this meal timing approach")
+    total_meals: int = Field(..., description="Total number of meals for training days")
+    total_calories: int = Field(..., description="Total calories for training days")
+    meal_breakdown: List[MealDetail] = Field(..., description="Details for each meal on training days")
+    scientific_rationale: str = Field(..., description="Scientific basis for training day meal timing")
+    pre_workout_strategy: str = Field(..., description="Strategy for pre-workout nutrition")
+    post_workout_strategy: str = Field(..., description="Strategy for post-workout nutrition")
 
-class NutrientTimingPrinciples(BaseModel):
-    """Core scientific principles guiding the meal timing recommendations."""
-    protein_distribution: str = Field(..., description="Approach to protein distribution throughout the day")
-    carbohydrate_periodization: str = Field(..., description="Strategy for carbohydrate timing")
-    fat_timing_considerations: str = Field(..., description="Guidelines for fat consumption timing")
-    workout_nutrition_science: str = Field(..., description="Scientific basis for workout nutrition")
-    circadian_considerations: str = Field(..., description="How circadian rhythms influence meal timing")
+class RestDayPlan(BaseModel):
+    """Complete meal timing plan for rest days."""
+    total_meals: int = Field(..., description="Total number of meals for rest days")
+    total_calories: int = Field(..., description="Total calories for rest days")
+    meal_breakdown: List[MealDetail] = Field(..., description="Details for each meal on rest days")
+    scientific_rationale: str = Field(..., description="Scientific basis for rest day meal timing")
+    key_differences: str = Field(..., description="Key differences from training day structure")
 
-class ImplementationGuidelines(BaseModel):
-    """Practical guidelines for implementing the meal timing plan."""
-    meal_preparation_strategies: List[str] = Field(..., description="Strategies for meal prep and planning")
-    dining_out_recommendations: List[str] = Field(..., description="Guidelines for restaurant eating")
-    tracking_recommendations: str = Field(..., description="Approach to tracking nutrition")
-    adherence_strategies: List[str] = Field(..., description="Strategies to improve adherence")
-    adaptation_timeline: str = Field(..., description="Expected timeline for adaptation to plan")
-
-class MealTimingRecommendation(BaseModel):
-    """Complete meal timing recommendation plan."""
+class MealTimingPlan(BaseModel):
+    """Complete meal timing plan with scientific rationale."""
     client_name: str = Field(..., description="Client's name")
-    caloric_targets: Dict[str, int] = Field(..., description="Daily caloric targets")
-    training_day_plans: List[TrainingDayPlan] = Field(..., description="Meal timing plans for different day types")
-    scientific_principles: NutrientTimingPrinciples = Field(..., description="Scientific principles behind recommendations")
-    individual_adaptations: List[str] = Field(..., description="Client-specific adaptations to standard protocols")
-    implementation_guidelines: ImplementationGuidelines = Field(..., description="Practical implementation guidance")
-    progress_monitoring: List[str] = Field(..., description="Metrics to track for effectiveness")
-    adjustment_protocols: str = Field(..., description="Protocol for adjusting the plan based on results")
+    primary_goal: str = Field(..., description="Client's primary goal influencing meal timing")
+    training_day_plan: TrainingDayPlan = Field(..., description="Meal timing plan for training days")
+    rest_day_plan: RestDayPlan = Field(..., description="Meal timing plan for rest days")
+    nutrient_timing_principles: List[str] = Field(..., description="Scientific principles guiding the meal timing plan")
+    protein_distribution_strategy: str = Field(..., description="Strategy for distributing protein throughout the day")
+    carb_distribution_strategy: str = Field(..., description="Strategy for distributing carbs throughout the day")
+    fat_distribution_strategy: str = Field(..., description="Strategy for distributing fats throughout the day")
+    hydration_recommendations: str = Field(..., description="Guidelines for fluid intake throughout the day")
+    individual_adaptations: List[str] = Field(..., description="Client-specific adaptations to the meal timing plan")
+    implementation_guidelines: List[str] = Field(..., description="Practical tips for implementing the meal timing plan")
 
 class MealTimingDecisionNode:
     """
-    Determines optimal meal timing strategies based on client data, training schedule, and nutritional goals.
+    Determines optimal meal timing and nutrient distribution throughout the day.
     
-    This class uses scientific principles and LLM-driven decision process to
-    generate personalized meal timing recommendations that optimize nutrient partitioning,
-    training performance, and recovery.
+    This class creates evidence-based meal timing plans that align with the client's
+    training schedule, macronutrient targets, and lifestyle factors.
     """
     
     def __init__(self, llm_client: Optional[Any] = None):
@@ -85,21 +77,21 @@ class MealTimingDecisionNode:
         recovery_analysis: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
-        Process client data to determine optimal meal timing strategies.
+        Process client data to determine optimal meal timing and distribution.
         
-        This method integrates data from multiple analysis modules to develop
-        appropriate meal timing recommendations, considering:
-        - Macronutrient targets and distribution
-        - Training split and workout timing
-        - Client lifestyle and schedule
-        - Recovery capacity and needs
+        This method integrates data from multiple sources to create a
+        comprehensive meal timing plan based on:
+        - Macronutrient targets for training and rest days
+        - Training split and workout schedule
+        - Daily schedule and lifestyle factors
+        - Recovery needs and individual preferences
         
         Args:
             macro_plan: Macronutrient distribution plan
             split_recommendation: Training split recommendation
             client_data: Raw client profile data
-            goal_analysis: Client goals analysis
-            recovery_analysis: Recovery capacity analysis
+            goal_analysis: Client goals and objectives analysis
+            recovery_analysis: Recovery capacity and lifestyle analysis
             
         Returns:
             A dictionary containing structured meal timing recommendations
@@ -111,11 +103,11 @@ class MealTimingDecisionNode:
             )
             
             return {
-                "meal_timing_recommendation": schema_result
+                "meal_timing_plan": schema_result
             }
             
         except Exception as e:
-            logger.error(f"Error determining meal timing recommendations: {str(e)}")
+            logger.error(f"Error determining meal timing plan: {str(e)}")
             raise e
     
     def get_system_message(self) -> str:
@@ -129,28 +121,31 @@ class MealTimingDecisionNode:
             Formatted system message string
         """
         return (
-            "You are a nutrient timing specialist with expertise in sports nutrition and chronobiology. "
-            "Your task is to develop a personalized meal timing strategy that optimizes nutrient partitioning, "
-            "training performance, and recovery based on the client's training schedule, goals, and lifestyle.\n\n"
+            "You are a sports nutrition specialist with expertise in nutrient timing "
+            "and meal distribution strategies for athletes and fitness enthusiasts. "
+            "Your task is to create an optimal meal timing plan based on the client's "
+            "macronutrient targets, training schedule, lifestyle factors, and recovery needs.\n\n"
             
-            "Apply these scientific principles when determining meal timing strategies:\n"
-            "1. **Protein Distribution**: Optimal muscle protein synthesis occurs with protein doses of ~0.3g/kg "
-            "body weight distributed across 4-6 meals at 3-5 hour intervals.\n"
-            "2. **Carbohydrate Timing**: Strategic carbohydrate placement around training sessions improves "
-            "performance, glycogen replenishment, and recovery.\n"
-            "3. **Periworkout Nutrition**: Pre-workout meals 1-3 hours before training with protein and carbs; "
-            "post-workout nutrition within 30-60 minutes with focus on rapid absorption.\n"
-            "4. **Rest Day Adjustments**: Modified macronutrient distribution on non-training days with reduced "
-            "carbohydrate intake and maintained protein intake.\n"
-            "5. **Circadian Optimization**: Alignment of meal timing with circadian rhythms for optimal metabolic "
-            "function and hormone regulation.\n"
-            "6. **Individual Adaptations**: Customizations based on training schedule, sleep patterns, digestion, "
-            "and personal preferences.\n\n"
+            "Apply these scientific principles when designing meal timing plans:\n"
+            "1. **Protein Distribution**: Distribute protein evenly throughout the day in 4-6 meals "
+            "with 20-40g per meal to maximize muscle protein synthesis.\n"
+            "2. **Carbohydrate Timing**: Strategically place carbohydrates around training sessions "
+            "for performance and recovery, with higher amounts pre/post workout.\n"
+            "3. **Training Day Nutrition**: Prioritize carbohydrate intake before, during (if appropriate), "
+            "and after training sessions to support performance and recovery.\n"
+            "4. **Rest Day Adjustments**: Modify meal distribution on rest days to account for "
+            "different activity levels and recovery needs.\n"
+            "5. **Meal Frequency**: Consider lifestyle, hunger patterns, and practical constraints "
+            "when determining optimal meal frequency (typically 3-6 meals per day).\n"
+            "6. **Pre-Sleep Nutrition**: Consider slow-digesting protein sources before sleep "
+            "to support overnight recovery and muscle protein synthesis.\n"
+            "7. **Lifestyle Integration**: Account for work schedule, training time, and other "
+            "lifestyle factors when creating practical meal timing recommendations.\n\n"
             
-            "Your recommendation should include detailed meal-by-meal breakdowns for different training days, "
-            "scientific rationale, and practical implementation guidelines that respect the client's lifestyle and preferences."
+            "Your recommendation should include specific meal timing plans for both training "
+            "and rest days, with detailed macronutrient distribution for each meal."
         )
-
+    
     def _determine_meal_timing_schema(
         self,
         macro_plan: Dict[str, Any],
@@ -160,20 +155,79 @@ class MealTimingDecisionNode:
         recovery_analysis: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
-        Determine meal timing recommendations using Pydantic schema validation.
+        Determine meal timing plan using Pydantic schema validation.
         
         Args:
             macro_plan: Macronutrient distribution plan
             split_recommendation: Training split recommendation
             client_data: Raw client profile data
-            goal_analysis: Client goals analysis
-            recovery_analysis: Recovery capacity analysis
+            goal_analysis: Client goals and objectives analysis
+            recovery_analysis: Recovery capacity and lifestyle analysis
             
         Returns:
-            Structured meal timing recommendation as a Pydantic model
+            Structured meal timing plan as a Pydantic model
         """
         # Extract relevant data for prompt construction
         personal_info = client_data.get("personal_info", {}).get("data", {})
-        name = personal_info.get("name", "Client")
+        nutrition_info = client_data.get("nutrition", {}).get("data", {})
+        lifestyle_info = client_data.get("lifestyle", {}).get("data", {})
         
-        nutrition_info = client_data.get("nutrition", {}).get
+        macro_data = macro_plan.get("macro_plan", {})
+        split_data = split_recommendation.get("split_recommendation", {})
+        goals = goal_analysis.get("goal_analysis_schema", {})
+        primary_goals = goals.get("primary_goals", [])
+        recovery_data = recovery_analysis.get("recovery_analysis_schema", {})
+        
+        # Extract current meal timing if available
+        current_meal_schedule = nutrition_info.get("mealTime", "")
+        
+        # Construct detailed prompt with comprehensive client data
+        prompt = (
+            "Create an optimal meal timing plan for this client based on scientific principles "
+            "of nutrient timing and their individual needs. Design complete meal plans for both "
+            "training and rest days with specific macronutrient distribution for each meal.\n\n"
+            
+            f"CLIENT PROFILE SUMMARY:\n"
+            f"- Name: {personal_info.get('name', 'Client')}\n"
+            f"- Current Meal Schedule: {current_meal_schedule}\n"
+            f"- Meals Per Day: {nutrition_info.get('mealsPerDay', 'Unknown')}\n"
+            f"- Work Environment: {lifestyle_info.get('workEnvironment', 'Unknown')}\n"
+            f"- Training Time: {lifestyle_info.get('trainingTime', 'Unknown')}\n"
+            f"- Wake Time: {lifestyle_info.get('wakeTime', 'Unknown')}\n"
+            f"- Sleep Time: {lifestyle_info.get('sleepTime', 'Unknown')}\n"
+            f"- Primary Goals: {', '.join(primary_goals)}\n\n"
+            
+            f"MACRONUTRIENT PLAN:\n{self._format_dict(macro_data)}\n\n"
+            f"TRAINING SPLIT:\n{self._format_dict(split_data)}\n\n"
+            f"RECOVERY ANALYSIS:\n{self._format_dict(recovery_data)}\n\n"
+            
+            "Your meal timing plan should include:\n"
+            "1. Detailed meal breakdowns for training days, including timing, macros, and food suggestions\n"
+            "2. Detailed meal breakdowns for rest days, including timing, macros, and food suggestions\n"
+            "3. Strategic nutrient timing around workout sessions\n"
+            "4. Practical implementation guidelines based on the client's schedule\n"
+            "5. Scientific rationale for meal frequency and macronutrient distribution\n\n"
+            
+            "Create a complete meal timing plan that optimizes performance, recovery, and goal achievement "
+            "while being practical for implementation in the client's daily life."
+        )
+        
+        system_message = self.get_system_message()
+        result = self.llm_client.call_llm(prompt, system_message, schema=MealTimingPlan)
+        return result
+    
+    def _format_dict(self, data: Dict[str, Any]) -> str:
+        """
+        Format a dictionary as a readable string for inclusion in prompts.
+        
+        Args:
+            data: Dictionary to format
+            
+        Returns:
+            Formatted string representation
+        """
+        try:
+            return json.dumps(data, indent=2)
+        except:
+            # Fallback for non-serializable objects
+            return str(data)

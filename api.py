@@ -298,6 +298,23 @@ async def create_first_plan(base_model: BaseModelForRequest):
         )
 
 
+        caloric_node = CaloricNeedsDecisionNode()
+        caloric_targets = caloric_node.process(standardized_profile, body_analysis, goal_analysis)
+
+
+        macro_node = MacroDistributionDecisionNode()
+        macro_plan = macro_node.process(
+            caloric_targets, client_data, body_analysis, goal_analysis, history_analysis
+        )
+        
+  
+        
+        meal_timing_node = MealTimingDecisionNode()
+        timing_recommendations = meal_timing_node.process(
+            macro_plan, split_recommendation, standardized_profile, goal_analysis, recovery_analysis
+        )
+
+
         # --- STEP 9: Decision Nodes for Nutrition Planning ---
 
 
@@ -341,13 +358,13 @@ async def create_first_plan(base_model: BaseModelForRequest):
         return {
             "status": "success",
             "standardized_profile": standardized_profile,
-            "goal_analysis": goal_analysis,
-            "history_analysis": history_analysis,
-            "body_analysis": body_analysis,
-            "recovery_analysis": recovery_analysis,
             "split_recommendation": split_recommendation,
             "volume_guidelines": volume_guidelines,
-            "exercise_selection": exercise_selection 
+            "exercise_selection": exercise_selection,
+            "caloric_targets": caloric_targets,
+            "macro_plan": macro_plan,
+            "timing_recommendations": timing_recommendations
+
         }
     
         """
@@ -366,9 +383,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
 
        
 
-        "caloric_targets": caloric_targets,
-        "macro_plan": macro_plan,
-        "timing_recommendations": timing_recommendations
+       
         # "integrated_plan": integrated_plan  # Uncomment if integration is implemente
         """
     except Exception as e:
