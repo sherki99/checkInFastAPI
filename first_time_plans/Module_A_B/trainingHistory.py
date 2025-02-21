@@ -1,398 +1,302 @@
-from typing import Dict, Any, List, Set
+import json
+import logging
+from typing import Dict, Any, Optional, List
+from pydantic import BaseModel, Field
+from first_time_plans.call_llm_class import BaseLLM
+
+# Set up basic logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+class StepReasoningForHistoryAnalysis(BaseModel):
+    explanation: str = Field(
+        ...,
+        description="Detailed reasoning process explaining how training history data was analyzed. "
+        "Should include assessment of experience level, training consistency, exercise selection patterns, and adaptation responses."
+    )
+    output: str = Field(
+        ...,
+        description="The concrete assessment or conclusion derived from the reasoning process. "
+        "Should be concise, specific, and directly address training history implications."
+    )
+
+class ExercisePreference(BaseModel):
+    """Represents analysis of client's exercise preferences based on history."""
+    exercise_type: str = Field(
+        ..., 
+        description="The category or specific exercise (e.g., 'Compound lifts', 'Isolation movements', 'Bench Press')."
+    )
+    preference_level: str = Field(
+        ..., 
+        description="Client's preference level (e.g., 'Strongly preferred', 'Neutral', 'Disliked')."
+    )
+    effectiveness_assessment: str = Field(
+        ...,
+        description="Assessment of how effective this exercise type has been for the client historically."
+    )
+    inclusion_recommendation: str = Field(
+        ..., 
+        description="Recommendation for including this exercise: 'Primary', 'Secondary', 'Avoid', 'Modify'."
+    )
+    modification_notes: Optional[str] = Field(
+        None,
+        description="If modifications are needed, specific notes on how to adapt the exercise."
+    )
+
+class TrainingAdaptationHistory(BaseModel):
+    strength_adaptation: str = Field(
+        ...,
+        description="Assessment of client's historical response to strength training stimuli. "
+        "Should evaluate rate of strength gains, plateaus, and effective protocols."
+    )
+    hypertrophy_adaptation: str = Field(
+        ...,
+        description="Assessment of client's historical response to hypertrophy training. "
+        "Should evaluate muscle growth response, volume tolerance, and effective protocols."
+    )
+    recovery_capacity: str = Field(
+        ...,
+        description="Evaluation of the client's demonstrated recovery abilities based on training frequency and volume history. "
+        "Should identify optimal training frequencies and volume thresholds."
+    )
+
+class VolumeToleranceAssessment(BaseModel):
+    weekly_volume_tolerance: str = Field(
+        ...,
+        description="Assessment of total weekly training volume the client has demonstrated ability to recover from. "
+        "Should specify approximate set counts per muscle group and overall training volume."
+    )
+    frequency_tolerance: str = Field(
+        ...,
+        description="Evaluation of training frequency tolerance for different muscle groups. "
+        "Should specify optimal training frequency per muscle group based on historical response."
+    )
+    intensity_response: str = Field(
+        ...,
+        description="Analysis of client's response to different training intensities (percentage of 1RM). "
+        "Should identify intensity ranges that have produced optimal results."
+    )
+
+class TrainingHistory(BaseModel):
+    steps: List[StepReasoningForHistoryAnalysis] = Field(
+        default_factory=list,
+        description="Sequence of reasoning steps that trace the logical progression from training history data "
+        "to final assessment. Each step should build upon previous reasoning."
+    )
+    experience_level: str = Field(
+        ...,
+        description="Comprehensive assessment of client's training experience level beyond simple years training. "
+        "Should include qualitative evaluation of knowledge, consistency, and progression understanding."
+    )
+    exercise_preferences: List[ExercisePreference] = Field(
+        ...,
+        description="Detailed analysis of client's exercise preferences and their effectiveness. "
+        "Should evaluate both preferred and disliked exercises with recommendations."
+    )
+    adaptation_history: TrainingAdaptationHistory = Field(
+        ...,
+        description="Analysis of client's historical responses to different training stimuli. "
+        "Should identify patterns in adaptation to strength, hypertrophy, and endurance training."
+    )
+    volume_tolerance: VolumeToleranceAssessment = Field(
+        ...,
+        description="Assessment of client's demonstrated ability to recover from and adapt to training volume. "
+        "Should provide specific volume landmarks for program design."
+    )
+    progressive_overload_strategy: List[str] = Field(
+        ...,
+        description="Recommended progression strategies based on historical adaptation patterns. "
+        "Should include specific progression methods that have proven effective for this client."
+    )
+    technical_proficiency: Dict[str, str] = Field(
+        ...,
+        description="Assessment of technical proficiency in key movement patterns. Should rate proficiency "
+        "in patterns like squat, hinge, push, pull, and carry based on training history."
+    )
 
 class TrainingHistoryModule:
     """
-    Module responsible for assessing past training experience, exercise preferences,
-    and limitations to determine volume tolerance and exercise selection guidance.
-    """
+    Analyzes client training history and experience.
     
-    def __init__(self):
-        """Initialize the TrainingHistoryModule."""
-        self.training_parameters = {}
-        
-        # Define common movement patterns for categorization
-        self.movement_patterns = {
-            'push': {'bench press', 'overhead press', 'pushup', 'dips'},
-            'pull': {'pullup', 'row', 'lat pulldown', 'chin up'},
-            'squat': {'squat', 'leg press', 'front squat', 'hack squat'},
-            'hinge': {'deadlift', 'romanian deadlift', 'good morning'},
-            'lunge': {'lunge', 'split squat', 'bulgarian split squat'},
-            'carry': {'farmers walk', 'suitcase carry', 'overhead carry'},
-            'core': {'plank', 'crunch', 'leg raise', 'ab wheel'}
-        }
-        
+    Uses an LLM-driven approach to evaluate training experience, preferences,
+    adaptation patterns, and volume tolerance to inform program design decisions.
+    """
+    def __init__(self, llm_client: Optional[Any] = None):
+        # Use provided LLM client or fallback to the BaseLLM
+        self.llm_client = llm_client or BaseLLM()
+
     def process(self, standardized_profile: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Process the standardized profile to analyze training history.
+        Main processing method that returns a structured training history analysis.
         
-        Args:
-            standardized_profile: Standardized client profile
-            
-        Returns:
-            Training history analysis and parameters
+        :param standardized_profile: The standardized client profile.
+        :return: A dictionary containing the training history analysis.
         """
-        fitness_info = standardized_profile.get('fitness', {})
-        personal_info = standardized_profile.get('personal_info', {})
+        try:
+           # history_analysis = self._analyze_training_history(standardized_profile)
+            history_analysis_schema = self._analyze_training_history_schema(standardized_profile)
+            return {"history_analysis_schema": history_analysis_schema}
+        except Exception as e:
+            logger.error("Error during training history analysis: %s", e)
+            raise e
+
+    def get_history_analysis_system_message(self) -> str:
+        """
+        Returns an enhanced system message for training history analysis.
         
-        # Extract training history data
-        training_age = fitness_info.get('training_experience_years', 0)
-        weekly_frequency = fitness_info.get('training_frequency_per_week', 0)
-        session_duration = fitness_info.get('session_duration_hours', 0)
-        preferred_exercises = fitness_info.get('preferred_exercises', [])
-        avoided_exercises = fitness_info.get('avoided_exercises', [])
-        available_equipment = fitness_info.get('available_equipment', [])
+        This structured prompt guides the LLM through a comprehensive analysis
+        of training history following evidence-based principles.
         
-        # Analyze exercise preferences and limitations
-        movement_analysis = self._analyze_movement_patterns(preferred_exercises, avoided_exercises)
-        
-        # Calculate volume tolerance based on training history
-        volume_tolerance = self._calculate_volume_tolerance(
-            training_age,
-            weekly_frequency,
-            session_duration,
-            movement_analysis
+        :return: Formatted system message string
+        """
+        return (
+            "You are a strength training specialist with expertise in program design and adaptation analysis. "
+            "Your task is to analyze a client's training history to determine optimal programming variables "
+            "including volume, intensity, frequency, and exercise selection. Use a structured approach that "
+            "evaluates past training experience to predict future adaptation potential.\n\n"
+            
+            "Consider the following when analyzing training history:\n"
+            "1. **Experience Evaluation**: Assess true training age beyond calendar years, considering consistency and progression.\n"
+            "2. **Exercise Effectiveness**: Identify which movements have historically produced results for this client.\n"
+            "3. **Volume Landmarks**: Determine Minimum Effective Volume (MEV), Maximum Adaptive Volume (MAV), and Maximum Recoverable Volume (MRV).\n"
+            "4. **Adaptation Patterns**: Evaluate how quickly the client adapts to and plateaus with different training stimuli.\n"
+            "5. **Technical Proficiency**: Assess movement pattern skill based on training history and preferences.\n\n"
+            
+            "Use these analysis guidelines:\n"
+            "- True beginner status is determined by consistent, progressive training history, not merely time spent exercising\n"
+            "- Exercise effectiveness is evaluated based on documented progression, not just preference\n"
+            "- Volume tolerance should consider both per-session and weekly recovery demonstrated historically\n"
+            "- Progressive overload strategies should be tailored to demonstrated adaptation patterns\n"
+            "- Technical proficiency in key movement patterns informs exercise selection and progression rates\n\n"
+            
+            "Deliver a comprehensive analysis that provides specific programming guidelines based on the client's unique adaptation history."
         )
+
+    def _analyze_training_history(self, standardized_profile: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Uses an LLM function call to analyze training history and experience.
         
-        # Assess exercise technique proficiency
-        technique_proficiency = self._assess_technique_proficiency(
-            training_age,
-            preferred_exercises,
-            movement_analysis
+        :param standardized_profile: The standardized client profile.
+        :return: Structured training history analysis as a dictionary.
+        """
+        # Extract relevant data from the standardized profile
+        personal_info = standardized_profile.get("personal_info", {})
+        fitness_data = standardized_profile.get("fitness", {}).get("data", {})
+        
+        system_message = self.get_history_analysis_system_message()
+        
+        prompt = (
+            "Conduct a comprehensive analysis of this client's training history using evidence-based principles. "
+            "Follow a scientific approach to strength and hypertrophy training and document your reasoning for each conclusion.\n\n"
+            f"CLIENT PROFILE:\n{json.dumps(personal_info)}\n\n"
+            f"CLIENT FITNESS HISTORY:\n{json.dumps(fitness_data)}\n\n"
+            "Analyze this training history to determine experience level, exercise preferences, adaptation patterns, "
+            "volume tolerance, and technical proficiency. Focus on how these factors should influence program design.\n\n"
+            "Return your analysis as a JSON with the following keys: "
+            "'experience_level' (string describing true training age), "
+            "'exercise_preferences' (array of exercise assessments), "
+            "'adaptation_history' (object with strength, hypertrophy, and recovery assessments), "
+            "'volume_tolerance' (object with volume, frequency, and intensity assessments), "
+            "'progressive_overload_strategy' (array of effective progression methods), and "
+            "'technical_proficiency' (object mapping movement patterns to proficiency levels)."
         )
-        
-        # Identify potential red flags or limitations
-        limitations = self._identify_limitations(
-            avoided_exercises,
-            movement_analysis,
-            standardized_profile
-        )
-        
-        # Generate equipment-based exercise recommendations
-        equipment_based_exercises = self._generate_equipment_based_exercises(
-            available_equipment,
-            movement_analysis,
-            limitations
-        )
-        
-        # Compile training history parameters
-        self.training_parameters = {
-            'training_age': {
-                'years': training_age,
-                'category': self._categorize_training_age(training_age)
-            },
-            'volume_tolerance': volume_tolerance,
-            'movement_pattern_analysis': movement_analysis,
-            'technique_proficiency': technique_proficiency,
-            'training_limitations': limitations,
-            'recommended_exercises': equipment_based_exercises,
-            'weekly_training_capacity': {
-                'sessions_per_week': weekly_frequency,
-                'hours_per_session': session_duration,
-                'total_weekly_hours': weekly_frequency * session_duration
+
+        # Define the function schema that the LLM should adhere to:
+        function_schema = {
+            "name": "analyze_training_history",
+            "description": "Analyze training history to provide program design guidelines.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "steps": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "explanation": {"type": "string"},
+                                "output": {"type": "string"}
+                            },
+                            "required": ["explanation", "output"]
+                        }
+                    },
+                    "experience_level": {"type": "string"},
+                    "exercise_preferences": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "exercise_type": {"type": "string"},
+                                "preference_level": {"type": "string"},
+                                "effectiveness_assessment": {"type": "string"},
+                                "inclusion_recommendation": {"type": "string"},
+                                "modification_notes": {"type": "string", "nullable": True}
+                            },
+                            "required": ["exercise_type", "preference_level", "effectiveness_assessment", "inclusion_recommendation"]
+                        }
+                    },
+                    "adaptation_history": {
+                        "type": "object",
+                        "properties": {
+                            "strength_adaptation": {"type": "string"},
+                            "hypertrophy_adaptation": {"type": "string"},
+                            "recovery_capacity": {"type": "string"}
+                        },
+                        "required": ["strength_adaptation", "hypertrophy_adaptation", "recovery_capacity"]
+                    },
+                    "volume_tolerance": {
+                        "type": "object",
+                        "properties": {
+                            "weekly_volume_tolerance": {"type": "string"},
+                            "frequency_tolerance": {"type": "string"},
+                            "intensity_response": {"type": "string"}
+                        },
+                        "required": ["weekly_volume_tolerance", "frequency_tolerance", "intensity_response"]
+                    },
+                    "progressive_overload_strategy": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "technical_proficiency": {
+                        "type": "object",
+                        "additionalProperties": {"type": "string"}
+                    }
+                },
+                "required": [
+                    "steps", "experience_level", "exercise_preferences", "adaptation_history", 
+                    "volume_tolerance", "progressive_overload_strategy", "technical_proficiency"
+                ]
             }
-        }
-        
-        return self.training_parameters
-    
-    def _analyze_movement_patterns(self, 
-                                 preferred_exercises: List[str],
-                                 avoided_exercises: List[str]) -> Dict[str, Any]:
-        """
-        Analyze movement pattern preferences and limitations.
-        
-        Args:
-            preferred_exercises: List of preferred exercises
-            avoided_exercises: List of avoided exercises
-            
-        Returns:
-            Movement pattern analysis
-        """
-        # Convert to lowercase for matching
-        preferred_lower = [ex.lower() for ex in preferred_exercises]
-        avoided_lower = [ex.lower() for ex in avoided_exercises]
-        
-        pattern_analysis = {}
-        for pattern, exercises in self.movement_patterns.items():
-            preferred_count = sum(1 for ex in preferred_lower if any(p in ex for p in exercises))
-            avoided_count = sum(1 for ex in avoided_lower if any(p in ex for p in exercises))
-            
-            pattern_analysis[pattern] = {
-                'preference_score': preferred_count - avoided_count,
-                'preferred_movements': [ex for ex in preferred_lower if any(p in ex for p in exercises)],
-                'avoided_movements': [ex for ex in avoided_lower if any(p in ex for p in exercises)],
-                'status': 'preferred' if preferred_count > avoided_count else 'avoided' if avoided_count > preferred_count else 'neutral'
-            }
-        
-        return pattern_analysis
-    
-    def _calculate_volume_tolerance(self,
-                                  training_age: float,
-                                  weekly_frequency: int,
-                                  session_duration: float,
-                                  movement_analysis: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Calculate volume tolerance based on training history.
-        
-        Args:
-            training_age: Years of training experience
-            weekly_frequency: Training sessions per week
-            session_duration: Hours per session
-            movement_analysis: Movement pattern analysis
-            
-        Returns:
-            Volume tolerance parameters
-        """
-        # Base volume tolerance factors
-        base_tolerance = {
-            'beginner': {'sets_per_movement': 8, 'frequency_multiplier': 1.0},
-            'intermediate': {'sets_per_movement': 12, 'frequency_multiplier': 1.2},
-            'advanced': {'sets_per_movement': 15, 'frequency_multiplier': 1.4}
-        }
-        
-        training_category = self._categorize_training_age(training_age)
-        base_metrics = base_tolerance[training_category]
-        
-        # Calculate adjusted volume metrics
-        weekly_volume_capacity = weekly_frequency * session_duration * 60  # Convert to minutes
-        
-        # Adjust for movement pattern preferences
-        pattern_adjustments = {}
-        for pattern, analysis in movement_analysis.items():
-            if analysis['status'] == 'preferred':
-                adjustment = 1.2  # 20% more volume for preferred patterns
-            elif analysis['status'] == 'avoided':
-                adjustment = 0.8  # 20% less volume for avoided patterns
-            else:
-                adjustment = 1.0
-                
-            pattern_adjustments[pattern] = {
-                'sets_per_session': round(base_metrics['sets_per_movement'] * adjustment),
-                'weekly_frequency': round(weekly_frequency * base_metrics['frequency_multiplier'] * adjustment),
-                'recovery_requirement': 'high' if adjustment < 1 else 'normal'
-            }
-        
-        return {
-            'base_weekly_volume_capacity': weekly_volume_capacity,
-            'pattern_specific_tolerance': pattern_adjustments,
-            'volume_category': training_category
-        }
-    
-    def _assess_technique_proficiency(self,
-                                    training_age: float,
-                                    preferred_exercises: List[str],
-                                    movement_analysis: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Assess exercise technique proficiency based on experience.
-        
-        Args:
-            training_age: Years of training experience
-            preferred_exercises: List of preferred exercises
-            movement_analysis: Movement pattern analysis
-            
-        Returns:
-            Technique proficiency assessment
-        """
-        # Base proficiency levels
-        base_proficiency = {
-            'beginner': 1,      # Needs constant form correction
-            'intermediate': 2,   # Can maintain form with occasional checks
-            'advanced': 3        # Mastered basic movement patterns
-        }
-        
-        training_category = self._categorize_training_age(training_age)
-        base_level = base_proficiency[training_category]
-        
-        # Assess pattern-specific proficiency
-        pattern_proficiency = {}
-        for pattern, analysis in movement_analysis.items():
-            # Adjust base level based on pattern preference
-            if analysis['status'] == 'preferred':
-                adjusted_level = min(base_level + 1, 3)
-            elif analysis['status'] == 'avoided':
-                adjusted_level = max(base_level - 1, 1)
-            else:
-                adjusted_level = base_level
-                
-            pattern_proficiency[pattern] = {
-                'level': adjusted_level,
-                'description': self._get_proficiency_description(adjusted_level),
-                'recommended_supervision': adjusted_level == 1
-            }
-        
-        return {
-            'overall_level': base_level,
-            'pattern_proficiency': pattern_proficiency,
-            'training_focus_needed': [pattern for pattern, prof in pattern_proficiency.items() 
-                                    if prof['level'] == 1]
-        }
-    
-    def _identify_limitations(self,
-                            avoided_exercises: List[str],
-                            movement_analysis: Dict[str, Any],
-                            standardized_profile: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Identify training limitations and potential red flags.
-        
-        Args:
-            avoided_exercises: List of avoided exercises
-            movement_analysis: Movement pattern analysis
-            standardized_profile: Complete standardized profile
-            
-        Returns:
-            Identified limitations and recommendations
-        """
-        limitations = {
-            'movement_restrictions': [],
-            'equipment_limitations': [],
-            'recovery_concerns': [],
-            'technique_limitations': []
-        }
-        
-        # Check for movement pattern limitations
-        for pattern, analysis in movement_analysis.items():
-            if analysis['status'] == 'avoided':
-                limitations['movement_restrictions'].append({
-                    'pattern': pattern,
-                    'avoided_exercises': analysis['avoided_movements'],
-                    'alternative_patterns': self._suggest_alternative_patterns(pattern)
-                })
-        
-        # Check equipment availability
-        available_equipment = standardized_profile.get('fitness', {}).get('available_equipment', [])
-        if not available_equipment:
-            limitations['equipment_limitations'].append('Limited equipment access')
-        
-        # Check recovery factors
-        lifestyle = standardized_profile.get('lifestyle', {})
-        if lifestyle.get('stress_level') == 'High' or lifestyle.get('daily_work_hours', 0) > 10:
-            limitations['recovery_concerns'].append('High stress / long work hours may impact recovery')
-        
-        return limitations
-    
-    def _generate_equipment_based_exercises(self,
-                                          available_equipment: List[str],
-                                          movement_analysis: Dict[str, Any],
-                                          limitations: Dict[str, Any]) -> Dict[str, List[str]]:
-        """
-        Generate exercise recommendations based on available equipment.
-        
-        Args:
-            available_equipment: List of available equipment
-            movement_analysis: Movement pattern analysis
-            limitations: Identified limitations
-            
-        Returns:
-            Equipment-based exercise recommendations
-        """
-        recommendations = {}
-        
-        for pattern, analysis in movement_analysis.items():
-            pattern_exercises = []
-            
-            # Check if pattern is restricted
-            is_restricted = any(
-                restriction['pattern'] == pattern 
-                for restriction in limitations.get('movement_restrictions', [])
-            )
-            
-            if not is_restricted:
-                # Generate exercises based on available equipment
-                if 'barbell' in available_equipment:
-                    pattern_exercises.extend(self._get_barbell_exercises(pattern))
-                if 'dumbbell' in available_equipment:
-                    pattern_exercises.extend(self._get_dumbbell_exercises(pattern))
-                if 'bodyweight' in available_equipment:
-                    pattern_exercises.extend(self._get_bodyweight_exercises(pattern))
-                if 'machines' in available_equipment:
-                    pattern_exercises.extend(self._get_machine_exercises(pattern))
-            
-            recommendations[pattern] = pattern_exercises
-        
-        return recommendations
-    
-    @staticmethod
-    def _categorize_training_age(years: float) -> str:
-        """Categorize training age into experience levels."""
-        if years < 1:
-            return 'beginner'
-        elif years < 3:
-            return 'intermediate'
-        else:
-            return 'advanced'
-    
-    @staticmethod
-    def _get_proficiency_description(level: int) -> str:
-        """Get description for proficiency level."""
-        descriptions = {
-            1: "Needs regular form correction and supervision",
-            2: "Can maintain proper form with occasional checks",
-            3: "Mastered basic movement patterns and can self-correct"
-        }
-        return descriptions.get(level, "Unknown proficiency level")
-    
-    @staticmethod
-    def _suggest_alternative_patterns(pattern: str) -> List[str]:
-        """Suggest alternative movement patterns."""
-        alternatives = {
-            'push': ['pull', 'core'],
-            'pull': ['push', 'core'],
-            'squat': ['hinge', 'lunge'],
-            'hinge': ['squat', 'lunge'],
-            'lunge': ['squat', 'hinge'],
-            'carry': ['core', 'pull'],
-            'core': ['carry', 'push', 'pull']
-        }
-        return alternatives.get(pattern, [])
-    
-    @staticmethod
-    def _get_barbell_exercises(pattern: str) -> List[str]:
-        """Get barbell exercises for movement pattern."""
-        exercises = {
-            'push': ['Bench Press', 'Overhead Press', 'Close Grip Bench Press'],
-            'pull': ['Barbell Row', 'Pendlay Row', 'Power Clean'],
-            'squat': ['Back Squat', 'Front Squat', 'Box Squat'],
-            'hinge': ['Deadlift', 'Romanian Deadlift', 'Good Morning'],
-            'lunge': ['Walking Lunge', 'Split Squat', 'Reverse Lunge'],
-            'carry': ['Farmers Walk'],
-            'core': ['Landmine Rotation', 'Ab Rollout']
-        }
-        return exercises.get(pattern, [])
-    
-    @staticmethod
-    def _get_dumbbell_exercises(pattern: str) -> List[str]:
-        """Get dumbbell exercises for movement pattern."""
-        exercises = {
-            'push': ['Dumbbell Press', 'Shoulder Press', 'Incline Press'],
-            'pull': ['Single Arm Row', 'Renegade Row', 'Meadows Row'],
-            'squat': ['Goblet Squat', 'Dumbbell Squat'],
-            'hinge': ['Single Leg RDL', 'Dumbbell RDL'],
-            'lunge': ['Dumbbell Lunge', 'Bulgarian Split Squat'],
-            'carry': ['Farmers Walk', 'Suitcase Carry'],
-            'core': ['Russian Twist', 'Side Bend']
-        }
-        return exercises.get(pattern, [])
-    
-    @staticmethod
-    def _get_bodyweight_exercises(pattern: str) -> List[str]:
-        """Get bodyweight exercises for movement pattern."""
-        exercises = {
-            'push': ['Pushup', 'Dips', 'Pike Pushup'],
-            'pull': ['Pullup', 'Chinup', 'Inverted Row'],
-            'squat': ['Air Squat', 'Jump Squat', 'Pistol Squat'],
-            'hinge': ['Back Extension', 'Nordic Curl'],
-            'lunge': ['Walking Lunge', 'Reverse Lunge', 'Jump Lunge'],
-            'carry': [],  # No strict body
         }
 
-        return exercises.get(pattern, [])
+        # Call the LLM using the defined function schema
+        result = self.llm_client.call_llm(prompt, system_message, function_schema=function_schema)
+        return result
     
+    def _analyze_training_history_schema(self, standardized_profile: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Uses an LLM with Pydantic schema to analyze training history.
+        
+        :param standardized_profile: The standardized client profile.
+        :return: Structured training history analysis as a Pydantic model.
+        """
+        personal_info = standardized_profile.get("personal_info", {})
+        fitness_data = standardized_profile.get("fitness", {}).get("data", {})
 
-    # need to be imlen correctly 
-    @staticmethod
-    def _get_machine_exercises(self) -> List[str]:
-        """
-        Retrieve a list of machine-based exercises.
-        Returns:
-            A list of machine-based exercises.
-        """
-        return ["leg press", "lat pulldown", "chest press", "seated row"]
+        system_message = self.get_history_analysis_system_message()
+        
+        prompt = (
+            "Analyze this client's training history using principles of exercise science and adaptation theory. "
+            "Document your reasoning process and assessment methodology for each conclusion.\n\n"
+            f"CLIENT PROFILE:\n{json.dumps(personal_info)}\n\n"
+            f"CLIENT FITNESS HISTORY:\n{json.dumps(fitness_data)}\n\n"
+            "Provide a detailed analysis that evaluates true training experience, exercise effectiveness, "
+            "volume tolerance, and adaptation patterns. Use concepts from scientific training literature "
+            "including MEV, MAV, MRV, and SRA (Stimulus-Recovery-Adaptation) principles.\n\n"
+            "Be specific about volume recommendations (sets per muscle group), intensity ranges (% of 1RM), "
+            "and frequency guidelines (sessions per muscle group per week) based on the training history.\n\n"
+            "Return your analysis as a properly structured JSON conforming to the TrainingHistory model schema."
+        )
+        
+        # Call the LLM using the Pydantic model as schema
+        result = self.llm_client.call_llm(prompt, system_message, schema=TrainingHistory)
+        return result

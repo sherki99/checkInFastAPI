@@ -261,16 +261,12 @@ async def create_first_plan(base_model: BaseModelForRequest):
         ingestion_module = DataIngestionModule()
         standardized_profile = ingestion_module.process_data(client_data)
             
-        # --- STEP 3: Client Profile Analysis ---  // I live might I want to use in the future but for now
-        #profile_module = ClientProfileModule()
-        #profile_analysis = profile_module.process(standardized_profile)
-        
-        # --- STEP 4: Goal Clarification --- 
+        # --- STEP 2: Goal Clarification --- 
         goal_module = GoalClarificationModule()
         goal_analysis = goal_module.process(standardized_profile)
 
 
-        #--- STEP 5: Body Composition Analysis ---
+        #--- STEP 3:Client Body Composition Analysis ---
         body_module = BodyCompositionModule()
         body_analysis = body_module.process(standardized_profile)
 
@@ -345,7 +341,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
             "body_analysis": body_analysis,
             "recovery_analysis": recovery_analysis,
             "split_recommendation": split_recommendation,
-    #        "profile_analysis": profile_analysis,
+    #       
         }
     
         """

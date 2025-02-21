@@ -124,9 +124,9 @@ class BodyCompositionModule:
         :return: A dictionary containing the body composition analysis.
         """
         try:
-            body_analysis = self._analyze_body_composition(standardized_profile)
+           ##  body_analysis = self._analyze_body_composition(standardized_profile)
             body_analysis_schema = self._analyze_body_composition_schema(standardized_profile)
-            return {"body_analysis_function": body_analysis, "body_analysis_schema": body_analysis_schema}
+            return {"body_analysis_schema": body_analysis_schema}
         except Exception as e:
             logger.error("Error during body composition analysis: %s", e)
             raise e

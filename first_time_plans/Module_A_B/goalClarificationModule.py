@@ -123,9 +123,9 @@ class GoalClarificationModule:
         :return: A dictionary containing the goal analysis.
         """
         try:
-            goal_analysis = self._analyze_goals(standardized_profile)
+          #  goal_analysis = self._analyze_goals(standardized_profile)
             goal_analysis_schema = self._analyze_goals_schema(standardized_profile)
-            return {"goal_analysis_function": goal_analysis, "goal_analysis_schema": goal_analysis_schema}
+            return {"goal_analysis_schema": goal_analysis_schema}
         except Exception as e:
             logger.error("Error during goal clarification: %s", e)
             raise e

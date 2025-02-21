@@ -87,9 +87,9 @@ class TrainingSplitDecisionNode:
         """
         try:
             # Process using the function-calling approach
-            function_result = self._determine_training_split_function(
-                profile_analysis, goal_analysis, body_analysis, history_analysis
-            )
+      #      function_result = self._determine_training_split_function(
+        #        profile_analysis, goal_analysis, body_analysis, history_analysis
+       #     )
             
             # Process using the schema-based approach
             schema_result = self._determine_training_split_schema(
@@ -98,7 +98,7 @@ class TrainingSplitDecisionNode:
             
             # Combine results from both approaches
             return {
-                "split_recommendation_function": function_result,
+                #"split_recommendation_function": function_result,
                 "split_recommendation_schema": schema_result
             }
             
