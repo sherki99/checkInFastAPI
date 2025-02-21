@@ -1,377 +1,273 @@
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
+from pydantic import BaseModel, Field
+from first_time_plans.call_llm_class import BaseLLM
+import json
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+class NutrientTimingWindow(BaseModel):
+    """Specific timing window for nutrient intake."""
+    window_name: str = Field(..., description="Name of this timing window (e.g., 'Pre-workout', 'Post-workout')")
+    timing_description: str = Field(..., description="When this window occurs relative to training")
+    duration: str = Field(..., description="Duration of this timing window")
+    primary_purpose: str = Field(..., description="Physiological purpose of this timing window")
+    protein_recommendation: str = Field(..., description="Protein intake recommendation during this window")
+    carb_recommendation: str = Field(..., description="Carbohydrate intake recommendation during this window")
+    fat_recommendation: str = Field(..., description="Fat intake recommendation during this window")
+    hydration_recommendation: str = Field(..., description="Hydration recommendation during this window")
+    ideal_food_sources: List[str] = Field(..., description="Optimal food choices for this window")
+    scientific_rationale: str = Field(..., description="Research-based explanation for these recommendations")
+
+class ScheduledMeal(BaseModel):
+    """Details for a specific scheduled meal."""
+    meal_name: str = Field(..., description="Name of the meal (e.g., 'Breakfast', 'Lunch')")
+    recommended_timing: str = Field(..., description="Recommended time of day for this meal")
+    purpose: str = Field(..., description="Primary nutritional purpose of this meal")
+    macronutrient_composition: Dict[str, Any] = Field(..., description="Macronutrient targets for this meal")
+    caloric_content: int = Field(..., description="Caloric target for this meal")
+    meal_size_classification: str = Field(..., description="Size classification (Major/Minor)")
+    hydration_recommendation: str = Field(..., description="Water intake with this meal")
+    sample_meal_ideas: List[str] = Field(..., description="Example meal compositions that meet requirements")
+    timing_flexibility: str = Field(..., description="How flexible the timing can be for this meal")
+
+class TrainingDayMealPlan(BaseModel):
+    """Complete meal plan for a training day."""
+    day_type: str = Field(..., description="Type of training day (e.g., 'Upper Body', 'Lower Body', 'Rest')")
+    training_time: str = Field(..., description="Time of day when training occurs")
+    total_meals: int = Field(..., description="Total number of meals/snacks for this day")
+    caloric_distribution: Dict[str, float] = Field(..., description="Percentage of calories at each meal")
+    scheduled_meals: List[ScheduledMeal] = Field(..., description="Detailed plan for each meal")
+    nutrient_timing_windows: List[NutrientTimingWindow] = Field(..., description="Critical nutrient timing windows")
+    hydration_schedule: Dict[str, str] = Field(..., description="Timing and amounts for fluid intake")
+    supplement_timing: Dict[str, str] = Field(..., description="Timing for any recommended supplements")
+
+class MealTimingRecommendation(BaseModel):
+    """Complete meal timing recommendation plan."""
+    client_name: str = Field(..., description="Client's name")
+    primary_goal: str = Field(..., description="Client's primary nutritional goal")
+    training_day_plans: List[TrainingDayMealPlan] = Field(..., description="Meal plans for different training days")
+    rest_day_plan: TrainingDayMealPlan = Field(..., description="Meal plan for rest days")
+    meal_timing_principles: List[str] = Field(..., description="Key scientific principles guiding the timing recommendations")
+    circadian_rhythm_considerations: str = Field(..., description="How the plan accounts for circadian biology")
+    sleep_optimization_strategy: str = Field(..., description="Nutrition timing to support sleep quality")
+    schedule_adaptation_guidelines: str = Field(..., description="How to adapt timing for schedule changes")
+    meal_preparation_strategies: List[str] = Field(..., description="Practical implementation strategies")
+    consistency_recommendations: str = Field(..., description="Guidance on maintaining consistent meal timing")
 
 class MealTimingDecisionNode:
-    def __init__(self):
-        """Initialize the MealTimingDecisionNode."""
-        self.meal_timing_plan = {}
+    """
+    Determines optimal meal timing and nutrient distribution throughout the day
+    based on the client's training schedule, macronutrient targets, and lifestyle.
     
-    def process(self, macro_distribution: Dict[str, Any], training_split: Dict[str, Any],
-                client_profile: Dict[str, Any], goal_analysis: Dict[str, Any],
-                recovery_analysis: Dict[str, Any]) -> Dict[str, Any]:
+    This class uses an LLM-driven decision process to establish precise meal timing
+    recommendations that maximize nutrient utilization, training performance, and
+    recovery while accommodating the client's daily schedule and preferences.
+    """
+    
+    def __init__(self, llm_client: Optional[Any] = None):
         """
-        Determine optimal meal timing based on training schedule and other factors.
+        Initialize the MealTimingDecisionNode with an optional custom LLM client.
         
         Args:
-            macro_distribution: Output from MacroDistributionDecisionNode
-            training_split: Training split recommendations
-            client_profile: Client profile analysis
+            llm_client: Custom LLM client implementation. If None, uses the default BaseLLM.
+        """
+        self.llm_client = llm_client or BaseLLM()
+    
+    def process(
+        self,
+        macro_distribution: Dict[str, Any],
+        split_recommendation: Dict[str, Any],
+        profile_analysis: Dict[str, Any],
+        goal_analysis: Dict[str, Any],
+        recovery_analysis: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Process client data to determine optimal meal timing and nutrient distribution.
+        
+        This method integrates data from previous analysis modules to establish
+        detailed meal timing recommendations considering:
+        - Training schedule and workout timing
+        - Macronutrient distribution requirements
+        - Sleep schedule and circadian rhythm
+        - Work/school schedule constraints
+        - Digestive tolerance and preferences
+        - Recovery capacity and needs
+        
+        Args:
+            macro_distribution: Macronutrient distribution plan from previous node
+            split_recommendation: Recommended training split and schedule
+            profile_analysis: Client demographic and metrics analysis
             goal_analysis: Goal clarification analysis
-            recovery_analysis: Recovery and lifestyle analysis
+            recovery_analysis: Recovery capacity and lifestyle analysis
             
         Returns:
-            Dictionary containing meal timing recommendations
+            A dictionary containing structured meal timing recommendations
         """
-        # Extract relevant data
-        daily_calories = macro_distribution.get('daily_calories', 0)
-        macros = macro_distribution.get('macronutrients', {})
-        training_days = training_split.get('training_days', [])
-        training_frequency = client_profile.get('weekly_training_frequency', 5)
-        session_duration = client_profile.get('session_duration_hours', 1.5)
-        primary_goal = goal_analysis.get('primary_goal', '').lower()
-        barriers = goal_analysis.get('barriers', {})
-        lifestyle = recovery_analysis.get('lifestyle_factors', {})
-        
-        # Generate timing recommendations
-        self.meal_timing_plan = {
-            'general_structure': self._generate_daily_structure(
-                daily_calories, training_frequency, session_duration, barriers
-            ),
-            'training_day_timing': self._generate_training_day_plan(
-                macros, training_days, primary_goal, session_duration
-            ),
-            'non_training_day_timing': self._generate_non_training_day_plan(
-                macros, primary_goal, barriers
-            ),
-            'meal_spacing': self._calculate_meal_spacing(
-                lifestyle, barriers, training_days
-            ),
-            'timing_adjustments': self._generate_timing_adjustments(
-                primary_goal, barriers, lifestyle
-            ),
-            'special_considerations': self._handle_special_considerations(
+        try:
+            # Process using the schema-based approach
+            schema_result = self._determine_meal_timing_schema(
+                macro_distribution, split_recommendation, profile_analysis, 
                 goal_analysis, recovery_analysis
             )
-        }
-        
-        return self.meal_timing_plan
-    
-    def _generate_daily_structure(self, daily_calories: int, training_frequency: int,
-                                session_duration: float, barriers: Dict[str, bool]) -> Dict[str, Any]:
-        """Generate the basic daily meal structure."""
-        # Determine optimal meal frequency
-        base_meals = 3 if barriers.get('time_constraints', False) else 4
-        
-        if daily_calories > 2500 and not barriers.get('time_constraints', False):
-            base_meals += 1
-        
-        return {
-            'recommended_meals': base_meals,
-            'meal_size_distribution': self._calculate_meal_sizes(base_meals, daily_calories),
-            'minimum_meal_frequency': max(3, base_meals - 1),
-            'maximum_meal_frequency': base_meals + 1,
-            'snack_recommendations': self._generate_snack_recommendations(
-                daily_calories, training_frequency, barriers
-            )
-        }
-    
-    def _generate_training_day_plan(self, macros: Dict[str, Any], training_days: list,
-                                  primary_goal: str, session_duration: float) -> Dict[str, Any]:
-        """Generate specific timing recommendations for training days."""
-        pre_workout_window = 2  # hours before training
-        post_workout_window = 1  # hours after training
-        
-        plan = {
-            'pre_workout_meal': {
-                'timing': f"{pre_workout_window} hours before training",
-                'protein': f"{round(macros.get('protein', {}).get('grams', 0) * 0.25)}g protein",
-                'carbohydrates': f"{round(macros.get('carbohydrates', {}).get('grams', 0) * 0.3)}g carbs",
-                'fats': f"{round(macros.get('fats', {}).get('grams', 0) * 0.15)}g fats"
-            },
-            'post_workout_meal': {
-                'timing': f"Within {post_workout_window} hour after training",
-                'protein': f"{round(macros.get('protein', {}).get('grams', 0) * 0.25)}g protein",
-                'carbohydrates': f"{round(macros.get('carbohydrates', {}).get('grams', 0) * 0.35)}g carbs",
-                'fats': f"{round(macros.get('fats', {}).get('grams', 0) * 0.15)}g fats"
-            }
-        }
-        
-        if session_duration > 1.5:
-            plan['intra_workout'] = {
-                'recommendation': 'Consider intra-workout nutrition',
-                'carbohydrates': '15-30g fast-acting carbs per hour',
-                'hydration': '500-750ml water per hour'
-            }
-        
-        return plan
-    
-    def _generate_non_training_day_plan(self, macros: Dict[str, Any],
-                                      primary_goal: str, barriers: Dict[str, bool]) -> Dict[str, Any]:
-        """Generate meal timing recommendations for non-training days."""
-        return {
-            'meal_distribution': {
-                'breakfast': {
-                    'timing': 'Within 1-2 hours of waking',
-                    'protein': f"{round(macros.get('protein', {}).get('grams', 0) * 0.25)}g protein",
-                    'carbohydrates': f"{round(macros.get('carbohydrates', {}).get('grams', 0) * 0.25)}g carbs",
-                    'fats': f"{round(macros.get('fats', {}).get('grams', 0) * 0.3)}g fats"
-                },
-                'lunch': {
-                    'timing': '3-4 hours after breakfast',
-                    'protein': f"{round(macros.get('protein', {}).get('grams', 0) * 0.25)}g protein",
-                    'carbohydrates': f"{round(macros.get('carbohydrates', {}).get('grams', 0) * 0.25)}g carbs",
-                    'fats': f"{round(macros.get('fats', {}).get('grams', 0) * 0.3)}g fats"
-                },
-                'dinner': {
-                    'timing': '3-4 hours after lunch',
-                    'protein': f"{round(macros.get('protein', {}).get('grams', 0) * 0.25)}g protein",
-                    'carbohydrates': f"{round(macros.get('carbohydrates', {}).get('grams', 0) * 0.25)}g carbs",
-                    'fats': f"{round(macros.get('fats', {}).get('grams', 0) * 0.3)}g fats"
-                }
-            },
-            'flexibility_guidelines': self._get_flexibility_guidelines(primary_goal, barriers)
-        }
-    
-    def _calculate_meal_spacing(self, lifestyle: Dict[str, Any], barriers: Dict[str, bool],
-                              training_days: list) -> Dict[str, Any]:
-        """Calculate optimal meal spacing based on lifestyle factors."""
-        base_spacing = 3  # hours between meals
-        
-        if barriers.get('time_constraints', False):
-            base_spacing = 4
-        
-        return {
-            'minimum_spacing': f"{base_spacing - 0.5} hours between meals",
-            'optimal_spacing': f"{base_spacing} hours between meals",
-            'maximum_spacing': f"{base_spacing + 2} hours between meals",
-            'overnight_fasting': '8-12 hours',
-            'spacing_guidelines': self._get_spacing_guidelines(lifestyle, barriers)
-        }
-    
-    def _calculate_meal_sizes(self, meal_count: int, daily_calories: int) -> Dict[str, str]:
-        """Calculate the size distribution of meals throughout the day."""
-        if meal_count == 3:
-            return {
-                'breakfast': f"{round(daily_calories * 0.3)}kcal (30%)",
-                'lunch': f"{round(daily_calories * 0.35)}kcal (35%)",
-                'dinner': f"{round(daily_calories * 0.35)}kcal (35%)"
-            }
-        elif meal_count == 4:
-            return {
-                'breakfast': f"{round(daily_calories * 0.25)}kcal (25%)",
-                'lunch': f"{round(daily_calories * 0.30)}kcal (30%)",
-                'afternoon_meal': f"{round(daily_calories * 0.20)}kcal (20%)",
-                'dinner': f"{round(daily_calories * 0.25)}kcal (25%)"
-            }
-        else:  # 5 meals
-            return {
-                'breakfast': f"{round(daily_calories * 0.20)}kcal (20%)",
-                'morning_snack': f"{round(daily_calories * 0.15)}kcal (15%)",
-                'lunch': f"{round(daily_calories * 0.25)}kcal (25%)",
-                'afternoon_snack': f"{round(daily_calories * 0.15)}kcal (15%)",
-                'dinner': f"{round(daily_calories * 0.25)}kcal (25%)"
-            }
-    
-    def _generate_snack_recommendations(self, daily_calories: int,
-                                      training_frequency: int,
-                                      barriers: Dict[str, bool]) -> Dict[str, Any]:
-        """Generate snack timing and composition recommendations."""
-        return {
-            'timing': {
-                'pre_workout': '1-2 hours before training',
-                'post_workout': 'Within 30 minutes after training',
-                'between_meals': '2-3 hours after main meals'
-            },
-            'composition': {
-                'pre_workout': 'Easily digestible carbs with moderate protein',
-                'post_workout': 'Fast-digesting protein with high-glycemic carbs',
-                'between_meals': 'Balanced protein and fats for satiety'
-            },
-            'examples': self._get_snack_examples(daily_calories, barriers)
-        }
-    
-    def _get_flexibility_guidelines(self, primary_goal: str,
-                                  barriers: Dict[str, bool]) -> Dict[str, str]:
-        """Generate flexibility guidelines for meal timing."""
-        guidelines = {
-            'meal_window_flexibility': '±30 minutes for most meals',
-            'priority_meals': 'Pre and post-workout meals require stricter timing',
-            'weekend_adjustment': 'Allow ±1 hour flexibility on weekends'
-        }
-        
-        if barriers.get('time_constraints', False):
-            guidelines['practical_tips'] = 'Focus on hitting daily targets rather than perfect timing'
-            guidelines['meal_prep'] = 'Prepare meals in advance for busy days'
-        
-        return guidelines
-    
-    def _get_spacing_guidelines(self, lifestyle: Dict[str, Any],
-                              barriers: Dict[str, bool]) -> Dict[str, str]:
-        """Generate specific guidelines for meal spacing."""
-        return {
-            'minimum_time_after_waking': '30 minutes',
-            'last_meal_timing': '2-3 hours before bed',
-            'workout_considerations': 'Adjust meal timing around training sessions',
-            'practical_adjustments': self._get_practical_adjustments(lifestyle, barriers)
-        }
-    
-    def _get_snack_examples(self, daily_calories: int,
-                           barriers: Dict[str, bool]) -> Dict[str, list]:
-        """Provide specific snack examples based on daily caloric needs."""
-        return {
-            'pre_workout': [
-                'Greek yogurt with berries',
-                'Apple with protein shake',
-                'Rice cakes with jam'
-            ],
-            'post_workout': [
-                'Protein shake with banana',
-                'Rice cakes with tuna',
-                'Protein bar with fruit'
-            ],
-            'between_meals': [
-                'Nuts and dried fruit',
-                'Protein shake with almonds',
-                'Cottage cheese with fruit'
-            ]
-        }
-    
-    def _get_practical_adjustments(self, lifestyle: Dict[str, Any],
-                                 barriers: Dict[str, bool]) -> Dict[str, str]:
-        """Generate practical adjustments for different lifestyle scenarios."""
-        adjustments = {
-            'early_morning_training': 'Light pre-workout meal or training fasted if preferred',
-            'late_night_training': 'Reduce post-workout meal size if close to bedtime',
-            'busy_work_schedule': 'Prepare meals in advance and use meal prep strategies'
-        }
-        
-        if barriers.get('time_constraints', False):
-            adjustments['quick_meals'] = 'Keep ready-to-eat protein sources available'
-        
-        return adjustments
-    
-    def _generate_timing_adjustments(self, primary_goal: str, barriers: Dict[str, bool],
-                                   lifestyle: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate specific timing adjustments based on goals and lifestyle."""
-        adjustments = {
-            'goal_specific': self._get_goal_specific_adjustments(primary_goal),
-            'barrier_specific': self._get_barrier_specific_adjustments(barriers),
-            'lifestyle_specific': self._get_lifestyle_specific_adjustments(lifestyle)
-        }
-        
-        return adjustments
-    
-    def _handle_special_considerations(self, goal_analysis: Dict[str, Any],
-                                     recovery_analysis: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle any special considerations for meal timing."""
-        considerations = {
-            'sleep_quality': {
-                'last_meal_timing': '2-3 hours before bed',
-                'protein_before_bed': 'Consider slow-digesting protein source',
-                'carb_timing': 'Adjust based on sleep quality and recovery needs'
-            },
-            'recovery_optimization': {
-                'post_workout_window': 'Priority on post-workout nutrition timing',
-                'protein_distribution': 'Evenly space protein feedings',
-                'carb_timing': 'Concentrate around training for performance'
-            }
-        }
-        
-        return considerations
-    
-    def _get_goal_specific_adjustments(self, primary_goal: str) -> Dict[str, str]:
-        """
-        Generate timing adjustments specific to the client's primary goal.
-        
-        Args:
-            primary_goal: Client's primary goal
             
-        Returns:
-            Dictionary of goal-specific timing adjustments
+            return {
+                "meal_timing_recommendation": schema_result
+            }
+            
+        except Exception as e:
+            logger.error(f"Error determining meal timing: {str(e)}")
+            raise e
+    
+    def get_system_message(self) -> str:
         """
-        adjustments = {}
+        Returns the system message to guide the LLM in meal timing decision-making.
         
-        if 'muscle' in primary_goal or 'hypertrophy' in primary_goal:
-            adjustments = {
-                'meal_frequency': 'Higher meal frequency (4-6 meals) to support muscle growth',
-                'protein_timing': 'Every 3-4 hours to maximize muscle protein synthesis',
-                'carb_timing': 'Higher carbs pre/post workout for performance and recovery',
-                'pre_bed': 'Slow-digesting protein before bed to support overnight recovery'
-            }
-        elif 'fat loss' in primary_goal or 'cut' in primary_goal:
-            adjustments = {
-                'meal_frequency': 'Moderate meal frequency (3-4 meals) for better adherence',
-                'meal_timing': 'Larger meals earlier in the day',
-                'carb_timing': 'Concentrate carbs around training sessions',
-                'evening_meals': 'Lower carb evening meals to support fat loss'
-            }
-        else:  # maintenance or general fitness
-            adjustments = {
-                'meal_frequency': 'Moderate meal frequency (3-5 meals) based on preference',
-                'timing_flexibility': 'More flexible meal timing windows',
-                'nutrient_distribution': 'Even distribution of nutrients throughout day',
-                'workout_nutrition': 'Moderate focus on workout nutrition timing'
-            }
+        The system message establishes the context and criteria for determining
+        optimal meal timing according to scientific principles of nutrient timing,
+        chronobiology, and performance nutrition.
         
-        return adjustments
+        Returns:
+            Formatted system message string
+        """
+        return (
+            "You are a nutrient timing specialist with expertise in sports nutrition, chronobiology, "
+            "and performance optimization. Your task is to determine optimal meal timing and nutrient "
+            "distribution throughout the day based on the client's training schedule, macronutrient targets, "
+            "recovery capacity, and lifestyle factors.\n\n"
+            
+            "Apply these scientific principles when determining meal timing:\n"
+            "1. **Peri-workout Nutrition**: Optimize pre-, intra-, and post-workout nutrition windows "
+            "to maximize performance, minimize muscle protein breakdown, and enhance recovery.\n"
+            "2. **Protein Distribution**: Distribute protein intake evenly across meals to maximize "
+            "muscle protein synthesis, with appropriate leucine thresholds (~2.5-3g) per meal.\n"
+            "3. **Carbohydrate Timing**: Prioritize carbohydrate intake around training sessions for "
+            "glycogen replenishment and performance, with consideration for training intensity and duration.\n"
+            "4. **Circadian Biology**: Align meal timing with circadian rhythm for optimal metabolic "
+            "function, considering time-restricted feeding windows if appropriate.\n"
+            "5. **Sleep Optimization**: Limit food intake 2-3 hours before sleep, with consideration "
+            "for sleep-promoting nutrients if needed (e.g., casein protein, tryptophan-rich foods).\n"
+            "6. **Gastric Emptying**: Account for gastric emptying rates of different macronutrients "
+            "when timing meals around workouts and throughout the day.\n"
+            "7. **Practical Adherence**: Balance physiological optimality with lifestyle factors and "
+            "preferences to ensure long-term consistency.\n\n"
+            
+            "Your meal timing recommendations should include specific timing windows for each meal, "
+            "nutrient composition for each meal, critical timing windows around workouts, and strategies "
+            "for adapting the plan to accommodate schedule variations."
+        )
 
-    def _get_barrier_specific_adjustments(self, barriers: Dict[str, bool]) -> Dict[str, str]:
+    def _determine_meal_timing_schema(
+        self,
+        macro_distribution: Dict[str, Any],
+        split_recommendation: Dict[str, Any],
+        profile_analysis: Dict[str, Any],
+        goal_analysis: Dict[str, Any],
+        recovery_analysis: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
-        Generate timing adjustments based on client-specific barriers.
+        Determine meal timing using Pydantic schema validation.
         
         Args:
-            barriers: Dictionary of client barriers
+            macro_distribution: Macronutrient distribution plan
+            split_recommendation: Recommended training split and schedule
+            profile_analysis: Client demographic and metrics analysis
+            goal_analysis: Goal clarification analysis
+            recovery_analysis: Recovery capacity and lifestyle analysis
             
         Returns:
-            Dictionary of barrier-specific timing adjustments
+            Structured meal timing recommendation as a Pydantic model
         """
-        adjustments = {}
+        # Extract relevant data from macro distribution
+        macro_plan = macro_distribution.get("macro_distribution_plan", {})
+        total_calories = macro_plan.get("total_daily_calories", 0)
+        protein_strategy = macro_plan.get("protein_strategy", "")
+        carb_strategy = macro_plan.get("carbohydrate_strategy", "")
+        fat_strategy = macro_plan.get("fat_strategy", "")
         
-        if barriers.get('time_constraints', False):
-            adjustments['scheduling'] = 'Simplified meal timing with wider windows'
-            adjustments['preparation'] = 'Batch cooking and meal prep strategies'
-            adjustments['meal_frequency'] = 'Lower meal frequency with larger portions'
+        # Extract training split information
+        split_schema = split_recommendation.get("split_recommendation_schema", {})
+        split_name = split_schema.get("split_name", "")
+        weekly_schedule = split_schema.get("weekly_schedule", {})
         
-        if barriers.get('stress', False):
-            adjustments['cortisol_management'] = 'Avoid large meals close to bedtime'
-            adjustments['meal_spacing'] = 'Regular meal timing to stabilize blood sugar'
+        # Extract client profile information
+        standardized_profile = {}  # This would normally come from the full standardized profile
+        wake_time = standardized_profile.get("lifestyle", {}).get("data", {}).get("wakeTime", "6:00 AM")
+        bed_time = standardized_profile.get("lifestyle", {}).get("data", {}).get("bedTime", "10:00 PM")
+        work_hours = standardized_profile.get("lifestyle", {}).get("data", {}).get("workHours", "")
         
-        if barriers.get('sleep', False):
-            adjustments['evening_timing'] = 'Last meal 3 hours before bed'
-            adjustments['carb_timing'] = 'Consider moderate carbs at dinner for sleep'
+        # Extract recovery information
+        recovery_capacity = recovery_analysis.get("recovery_capacity", {})
+        stress_level = recovery_capacity.get("stress_level", "")
+        sleep_quality = recovery_capacity.get("sleep_quality", "")
         
-        if barriers.get('digestion', False):
-            adjustments['meal_spacing'] = 'Longer intervals between meals for digestion'
-            adjustments['meal_size'] = 'Smaller, more frequent meals if needed'
+        # Extract current meal timing patterns
+        current_meal_pattern = standardized_profile.get("nutrition", {}).get("data", {}).get("mealTime", "")
         
-        return adjustments
+        # Extract client name and primary goal
+        client_name = profile_analysis.get("client_profile", {}).get("personal_info", {}).get("name", "Client")
+        primary_goal = goal_analysis.get("goals", {}).get("primary_goal", "")
+        
+        # Construct detailed prompt with comprehensive client data
+        prompt = (
+            "Determine the optimal meal timing and nutrient distribution throughout the day for this client "
+            "based on their training schedule, macronutrient targets, recovery capacity, and lifestyle. "
+            "Create comprehensive meal timing recommendations for training and rest days.\n\n"
+            
+            f"CLIENT PROFILE:\n"
+            f"- Name: {client_name}\n"
+            f"- Primary Goal: {primary_goal}\n"
+            f"- Wake Time: {wake_time}\n"
+            f"- Bed Time: {bed_time}\n"
+            f"- Work/Study Hours: {work_hours}\n"
+            f"- Current Meal Pattern: {current_meal_pattern}\n\n"
+            
+            f"TRAINING SPLIT: {split_name}\n"
+            f"Weekly Schedule:\n{self._format_dict(weekly_schedule)}\n\n"
+            
+            f"MACRONUTRIENT PLAN:\n"
+            f"- Total Daily Calories: {total_calories}\n"
+            f"- Protein Strategy: {protein_strategy}\n"
+            f"- Carbohydrate Strategy: {carb_strategy}\n"
+            f"- Fat Strategy: {fat_strategy}\n\n"
+            
+            f"RECOVERY PROFILE:\n"
+            f"- Stress Level: {stress_level}\n"
+            f"- Sleep Quality: {sleep_quality}\n"
+            f"- Recovery Capacity: {self._format_dict(recovery_capacity)}\n\n"
+            
+            "Your meal timing recommendations should include:\n"
+            "1. Specific meal plans for different types of training days and rest days\n"
+            "2. Optimal nutrient timing windows around workouts (pre, intra, post)\n"
+            "3. Meal-by-meal macronutrient distribution throughout the day\n"
+            "4. Hydration strategy integrated with meal timing\n"
+            "5. Supplement timing recommendations if applicable\n"
+            "6. Strategies to optimize circadian rhythm and sleep quality\n"
+            "7. Practical guidelines for implementing the timing recommendations\n\n"
+            
+            "Consider meal timing through the lens of current sports nutrition research, particularly "
+            "the International Society of Sports Nutrition position stands on nutrient timing, "
+            "meal frequency, and research on time-restricted feeding and circadian biology."
+        )
+        
+        system_message = self.get_system_message()
+        result = self.llm_client.call_llm(prompt, system_message, schema=MealTimingRecommendation)
+        return result
     
-
-    def _get_lifestyle_specific_adjustments(self, lifestyle: Dict[str, Any]) -> Dict[str, str]:
+    def _format_dict(self, data: Dict[str, Any]) -> str:
         """
-        Generate timing adjustments based on lifestyle factors.
+        Format a dictionary as a readable string for inclusion in prompts.
         
         Args:
-            lifestyle: Dictionary of lifestyle factors
+            data: Dictionary to format
             
         Returns:
-            Dictionary of lifestyle-specific timing adjustments
+            Formatted string representation
         """
-        adjustments = {}
-        
-        work_schedule = lifestyle.get('work_schedule', 'standard')
-        stress_level = lifestyle.get('stress_level', 'moderate')
-        sleep_schedule = lifestyle.get('sleep_schedule', 'regular')
-        
-        if work_schedule == 'shift_work':
-            adjustments['meal_timing'] = 'Adjust meal timing to match shift schedule'
-            adjustments['sleep_consideration'] = 'Maintain consistent meal patterns despite varying sleep'
-        
-        if stress_level == 'high':
-            adjustments['cortisol_management'] = 'Regular meal timing to manage stress response'
-            adjustments['evening_nutrition'] = 'Emphasis on relaxing evening meal routine'
-        
-        if sleep_schedule == 'irregular':
-            adjustments['consistency'] = 'Focus on meal spacing rather than specific times'
-            adjustments['flexibility'] = 'Adaptable meal windows based on sleep/wake cycle'
-        
-        return adjustments
+        try:
+            return json.dumps(data, indent=2)
+        except:
+            # Fallback for non-serializable objects
+            return str(data)

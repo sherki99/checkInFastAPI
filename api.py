@@ -281,7 +281,14 @@ async def create_first_plan(base_model: BaseModelForRequest):
 
 
         #--- STEP 8: Decision Nodes for Workout Planning ---
-        training_split_node = TrainingSplitDecisionNode()
+
+
+        # --- STEP 9: Decision Nodes for Nutrition Planning ---
+
+
+        """
+   
+                training_split_node = TrainingSplitDecisionNode()
         split_recommendation = training_split_node.process(
            goal_analysis, body_analysis, history_analysis
         )
@@ -296,13 +303,6 @@ async def create_first_plan(base_model: BaseModelForRequest):
         exercise_analysis = exercise_node.process(
             standardized_profile, history_analysis, split_recommendation, volume_guidelines
         )
-
-        # --- STEP 9: Decision Nodes for Nutrition Planning ---
-
-
-        """
-   
-        
         # 
 
                 caloric_node = CaloricNeedsDecisionNode()
@@ -346,13 +346,16 @@ async def create_first_plan(base_model: BaseModelForRequest):
             "history_analysis": history_analysis,
             "body_analysis": body_analysis,
             "recovery_analysis": recovery_analysis,
-            "split_recommendation": split_recommendation,  # last having with it also function schema
-            "volume_guidelines": volume_guidelines,
-            "exercise_analysis": exercise_analysis,
+
     #       
         }
     
         """
+
+        
+                    "split_recommendation": split_recommendation,  # last having with it also function schema
+            "volume_guidelines": volume_guidelines,
+            "exercise_analysis": exercise_analysis,
         "history_analysis": history_analysis,
         "body_analysis": body_analysis,
 
