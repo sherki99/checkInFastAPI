@@ -94,7 +94,7 @@ class RecoveryAndLifestyle(BaseModel):
         description="Analysis of meal timing and composition relative to training schedule. "
         "Should provide specific recommendations for optimizing nutritional recovery."
     )
-    recovery_modalities: Dict[str, str] = Field(
+    recovery_modalities: List[Tuple[str, str]] = Field(
         ...,
         description="Assessment of current recovery practices and recommendations for optimization. "
         "Should evaluate active and passive recovery methods and their appropriateness."

@@ -1,20 +1,21 @@
 import json
 import logging
-from typing import Dict, Any, Optional, List, Annotated
-from pydantic import BaseModel, Field, model_validator
+from typing import Dict, Any, Optional, List
+from pydantic import BaseModel, Field
 from first_time_plans.call_llm_class import BaseLLM
 
 # Set up basic logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-# Modified model definitions for compatibility with OpenAI's beta parsing API
 class StepReasoningForHistoryAnalysis(BaseModel):
     explanation: str = Field(
+        ...,
         description="Detailed reasoning process explaining how training history data was analyzed. "
         "Should include assessment of experience level, training consistency, exercise selection patterns, and adaptation responses."
     )
     output: str = Field(
+        ...,
         description="The concrete assessment or conclusion derived from the reasoning process. "
         "Should be concise, specific, and directly address training history implications."
     )
@@ -22,15 +23,19 @@ class StepReasoningForHistoryAnalysis(BaseModel):
 class ExercisePreference(BaseModel):
     """Represents analysis of client's exercise preferences based on history."""
     exercise_type: str = Field(
+        ..., 
         description="The category or specific exercise (e.g., 'Compound lifts', 'Isolation movements', 'Bench Press')."
     )
     preference_level: str = Field(
+        ..., 
         description="Client's preference level (e.g., 'Strongly preferred', 'Neutral', 'Disliked')."
     )
     effectiveness_assessment: str = Field(
+        ...,
         description="Assessment of how effective this exercise type has been for the client historically."
     )
     inclusion_recommendation: str = Field(
+        ..., 
         description="Recommendation for including this exercise: 'Primary', 'Secondary', 'Avoid', 'Modify'."
     )
     modification_notes: Optional[str] = Field(
@@ -40,28 +45,34 @@ class ExercisePreference(BaseModel):
 
 class TrainingAdaptationHistory(BaseModel):
     strength_adaptation: str = Field(
+        ...,
         description="Assessment of client's historical response to strength training stimuli. "
         "Should evaluate rate of strength gains, plateaus, and effective protocols."
     )
     hypertrophy_adaptation: str = Field(
+        ...,
         description="Assessment of client's historical response to hypertrophy training. "
         "Should evaluate muscle growth response, volume tolerance, and effective protocols."
     )
     recovery_capacity: str = Field(
+        ...,
         description="Evaluation of the client's demonstrated recovery abilities based on training frequency and volume history. "
         "Should identify optimal training frequencies and volume thresholds."
     )
 
 class VolumeToleranceAssessment(BaseModel):
     weekly_volume_tolerance: str = Field(
+        ...,
         description="Assessment of total weekly training volume the client has demonstrated ability to recover from. "
         "Should specify approximate set counts per muscle group and overall training volume."
     )
     frequency_tolerance: str = Field(
+        ...,
         description="Evaluation of training frequency tolerance for different muscle groups. "
         "Should specify optimal training frequency per muscle group based on historical response."
     )
     intensity_response: str = Field(
+        ...,
         description="Analysis of client's response to different training intensities (percentage of 1RM). "
         "Should identify intensity ranges that have produced optimal results."
     )
@@ -73,39 +84,35 @@ class TrainingHistory(BaseModel):
         "to final assessment. Each step should build upon previous reasoning."
     )
     experience_level: str = Field(
+        ...,
         description="Comprehensive assessment of client's training experience level beyond simple years training. "
         "Should include qualitative evaluation of knowledge, consistency, and progression understanding."
     )
     exercise_preferences: List[ExercisePreference] = Field(
+        ...,
         description="Detailed analysis of client's exercise preferences and their effectiveness. "
         "Should evaluate both preferred and disliked exercises with recommendations."
     )
     adaptation_history: TrainingAdaptationHistory = Field(
+        ...,
         description="Analysis of client's historical responses to different training stimuli. "
         "Should identify patterns in adaptation to strength, hypertrophy, and endurance training."
     )
     volume_tolerance: VolumeToleranceAssessment = Field(
+        ...,
         description="Assessment of client's demonstrated ability to recover from and adapt to training volume. "
         "Should provide specific volume landmarks for program design."
     )
     progressive_overload_strategy: List[str] = Field(
+        ...,
         description="Recommended progression strategies based on historical adaptation patterns. "
         "Should include specific progression methods that have proven effective for this client."
     )
-
-    
-    model_config = {
-        "json_schema_extra": {
-            "required": [
-                "experience_level", 
-                "exercise_preferences", 
-                "adaptation_history", 
-                "volume_tolerance", 
-                "progressive_overload_strategy", 
-                "technical_proficiency"
-            ]
-        }
-    }
+    technical_proficiency: List[Tuple[str, str]] = Field(
+        ...,
+        description="Assessment of technical proficiency in key movement patterns. Should rate proficiency "
+        "in patterns like squat, hinge, push, pull, and carry based on training history."
+    )
 
 class TrainingHistoryModule:
     """
@@ -126,6 +133,7 @@ class TrainingHistoryModule:
         :return: A dictionary containing the training history analysis.
         """
         try:
+           # history_analysis = self._analyze_training_history(standardized_profile)
             history_analysis_schema = self._analyze_training_history_schema(standardized_profile)
             return {"history_analysis_schema": history_analysis_schema}
         except Exception as e:
@@ -164,6 +172,7 @@ class TrainingHistoryModule:
             "Deliver a comprehensive analysis that provides specific programming guidelines based on the client's unique adaptation history."
         )
 
+
     def _analyze_training_history_schema(self, standardized_profile: Dict[str, Any]) -> Dict[str, Any]:
         """
         Uses an LLM with Pydantic schema to analyze training history.
@@ -186,39 +195,14 @@ class TrainingHistoryModule:
             "including MEV, MAV, MRV, and SRA (Stimulus-Recovery-Adaptation) principles.\n\n"
             "Be specific about volume recommendations (sets per muscle group), intensity ranges (% of 1RM), "
             "and frequency guidelines (sessions per muscle group per week) based on the training history.\n\n"
-            "Return your analysis as a properly structured JSON conforming to the TrainingHistory model schema, "
-            "with all required fields included."
+            "Return your analysis as a properly structured JSON conforming to the TrainingHistory model schema."
         )
         
-        try:
-            # Pass the Pydantic model directly to the beta parse API
-            result = self.llm_client.call_llm(prompt, system_message, schema=TrainingHistory)
-            
-            # Parse the result back into a Pydantic model for validation
-            if isinstance(result, dict):
-                validated_result = TrainingHistory.model_validate(result)
-                return validated_result.model_dump()
-            return result
-        except Exception as e:
-            logger.error(f"Error in training history analysis with schema: {str(e)}")
-            # If schema parsing fails, try fallback approach
-            logger.info("Attempting fallback approach without schema...")
-            result = self.llm_client.call_llm(prompt, system_message)
-            if isinstance(result, str):
-                try:
-                    # Attempt to parse a JSON string
-                    result_dict = json.loads(result)
-                    validated_result = TrainingHistory.model_validate(result_dict)
-                    return validated_result.model_dump()
-                except Exception as parse_error:
-                    logger.error(f"Fallback parsing failed: {str(parse_error)}")
-                    raise
-            return result
-
-
-
+        # Call the LLM using the Pydantic model as schema
+        result = self.llm_client.call_llm(prompt, system_message, schema=TrainingHistory)
+        return result
     
-    def _analyze_training_history(self, standardized_profile: Dict[str, Any]) -> Dict[str, Any]:
+        def _analyze_training_history(self, standardized_profile: Dict[str, Any]) -> Dict[str, Any]:
         """
         Uses an LLM function call to analyze training history and experience.
         
