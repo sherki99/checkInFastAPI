@@ -95,11 +95,23 @@ class RecoveryAndLifestyle(BaseModel):
         "Should provide specific recommendations for optimizing nutritional recovery."
     )
     # here it was list of tuple [str, str ] # for same erro I have decide to use in thi
-    recovery_modalities: List[Tuple[str, str]]= = Field(  
-        ..., 
-        description="Assessment of current recovery practices and recommendations for optimization. "
-        "Should evaluate active and passive recovery methods and their appropriateness."
+
+    recovery_modalities: List[str] = Field(
+        ...,
+        description=(
+            "A list representing the assessment of current recovery practices and their effectiveness. "
+            "Each entry follows the format 'modality: effectiveness'. The assessed modalities include both active "
+            "and passive recovery methods, such as stretching, foam rolling, sleep quality, hydration, and massage. "
+            "Effectiveness should be rated based on observed benefits and can be 'poor', 'average', or 'excellent'.\n"
+            "Example:\n"
+            "  - 'stretching: excellent'\n"
+            "  - 'foam rolling: average'\n"
+            "  - 'sleep quality: poor'\n"
+            "  - 'hydration: excellent'\n"
+            "  - 'massage: average'"
+        )
     )
+
     training_schedule_recommendations: List[str] = Field(
         ...,
         description="Specific recommendations for optimal training scheduling based on lifestyle factors. "
