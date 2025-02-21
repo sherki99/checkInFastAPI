@@ -1,408 +1,328 @@
-from dataclasses import dataclass
+import logging
 from typing import Dict, Any, List, Optional
-from enum import Enum
+from pydantic import BaseModel, Field
+from first_time_plans.call_llm_class import BaseLLM
 
-class ExerciseCategory(Enum):
-    COMPOUND = "compound"
-    ISOLATION = "isolation"
-    ACCESSORY = "accessory"
+# Configure logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
-@dataclass
-class Exercise:
-    name: str
-    category: ExerciseCategory
-    target_muscles: List[str]
-    equipment_needed: List[str]
-    technical_difficulty: int  # 1-5 scale
-    joint_stress: int  # 1-5 scale
-    recommended_rep_range: tuple[int, int]
+class ExerciseFrequency(BaseModel):
+    """Represents recommended training frequency for a specific muscle group."""
+    muscle_group: str = Field(..., description="Name of the muscle group (e.g., 'Chest', 'Back', 'Legs')")
+    sessions_per_week: int = Field(..., description="Recommended number of weekly training sessions for this muscle group")
+    recovery_requirement: str = Field(..., description="Assessment of recovery needs based on volume tolerance and training age")
+    volume_per_session: str = Field(..., description="Recommended volume guideline per session (e.g., '12-15 working sets')")
 
-class ExerciseSelectionDecisionNode:
+class WeeklySchedule(BaseModel):
+    """Detailed day-by-day training schedule recommendation."""
+    monday: str = Field(..., description="Monday's training focus and key muscle groups")
+    tuesday: str = Field(..., description="Tuesday's training focus and key muscle groups")
+    wednesday: str = Field(..., description="Wednesday's training focus and key muscle groups")
+    thursday: str = Field(..., description="Thursday's training focus and key muscle groups")
+    friday: str = Field(..., description="Friday's training focus and key muscle groups")
+    saturday: str = Field(..., description="Saturday's training focus and key muscle groups")
+    sunday: str = Field(..., description="Sunday's training focus and key muscle groups")
+
+class SplitJustification(BaseModel):
+    """Reasoning for the selected training split based on scientific principles."""
+    scientific_basis: str = Field(..., description="Scientific principles supporting this split structure")
+    volume_distribution: str = Field(..., description="How training volume is distributed to optimize recovery and growth")
+    frequency_rationale: str = Field(..., description="Explanation of why specific frequency was selected")
+    individual_adaptations: str = Field(..., description="How this split accounts for individual recovery capacity and goals")
+
+class TrainingSplit(BaseModel):
+    """Complete training split recommendation with justification and schedule."""
+    split_name: str = Field(..., description="Name of the recommended training split (e.g., 'Upper/Lower', 'Push/Pull/Legs')")
+    split_type: str = Field(..., description="Category of split (e.g., 'Body Part', 'Movement Pattern', 'Upper/Lower')")
+    training_days_per_week: int = Field(..., description="Total number of training days per week")
+    muscle_group_frequencies: List[ExerciseFrequency] = Field(..., description="Breakdown of training frequency by muscle group")
+    weekly_schedule: WeeklySchedule = Field(..., description="Day-by-day training schedule")
+    justification: SplitJustification = Field(..., description="Scientific reasoning behind the recommended split")
+    special_considerations: List[str] = Field(..., description="Additional factors that influenced the recommendation")
+
+class TrainingSplitDecisionNode:
     """
-    Determines optimal exercise selection based on split type, available equipment,
-    and client factors.
+    Determines the optimal training split based on client data and analysis from previous modules.
+    
+    This class uses an LLM-driven decision process to generate a scientifically-grounded 
+    training split recommendation that aligns with the client's goals, recovery capacity, 
+    and individual constraints.
     """
     
-    def __init__(self):
-        self.exercise_library = self._initialize_exercise_library()
-        
-    def process(self, 
-                client_data: Dict[str, Any],
-                training_history: Dict[str,Any], 
-                split_recommendation: Dict[str, Any],
-                volume_guidelines: Dict[str, Any]) -> Dict[str, Any]:
+    def __init__(self, llm_client: Optional[Any] = None):
         """
-        Process client data to determine exercise selection.
+        Initialize the TrainingSplitDecisionNode with an optional custom LLM client.
+        
+        Args:
+            llm_client: Custom LLM client implementation. If None, uses the default BaseLLM.
         """
-        # Extract relevant data
-        available_equipment = client_data.get('fitness', {}).get('available_equipment', [])
-        movement_restrictions = training_history.get('training_limitations', {}).get('movement_restrictions', [])
+        self.llm_client = llm_client or BaseLLM()
+    
+    def process(
+        self, 
+        profile_analysis: Dict[str, Any], 
+        goal_analysis: Dict[str, Any], 
+        body_analysis: Dict[str, Any], 
+        history_analysis: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Process client data to determine optimal training split.
         
-        # Get training schedule
-        training_schedule = split_recommendation.get('schedule', [])
+        This method integrates data from multiple analysis modules to determine
+        the most appropriate training split for the client, considering:
+        - Primary and secondary goals
+        - Recovery capacity and training experience
+        - Time availability and schedule constraints
+        - Body composition and muscle development priorities
         
-        # Generate exercise selection for each training day
-        exercise_selection = []
-        for day in training_schedule:
-            day_exercises = self._select_exercises_for_day(
-                day,
-                available_equipment,
-                movement_restrictions,
-                volume_guidelines,
-                training_history
+        Args:
+            profile_analysis: Client demographics and metrics analysis
+            goal_analysis: Client goals and objectives analysis
+            body_analysis: Body composition and measurement analysis
+            history_analysis: Training history and experience analysis
+            
+        Returns:
+            A dictionary containing the structured training split recommendation
+        """
+        try:
+            # Process using the function-calling approach
+            function_result = self._determine_training_split_function(
+                profile_analysis, goal_analysis, body_analysis, history_analysis
             )
-            exercise_selection.append({
-                'day': day['day'],
-                'focus': day['focus'],
-                'exercises': day_exercises,
-                'notes': self._generate_exercise_notes(day_exercises, training_history)
-            })
-        
-        return {
-            'training_days': exercise_selection,
-            'exercise_rotation_strategy': self._generate_rotation_strategy(training_history),
-            'technical_guidelines': self._generate_technical_guidelines(training_history)
-        }
-    
-    def _initialize_exercise_library(self) -> Dict[str, Dict[str, Exercise]]:
-        """
-        Initialize the exercise library with categorized exercises.
-        """
-        library = {
-            'push': {
-                'bench_press': Exercise(
-                    name="Barbell Bench Press",
-                    category=ExerciseCategory.COMPOUND,
-                    target_muscles=['chest', 'shoulders', 'triceps'],
-                    equipment_needed=['barbell', 'bench'],
-                    technical_difficulty=3,
-                    joint_stress=3,
-                    recommended_rep_range=(6, 12)
-                ),
-                'overhead_press': Exercise(
-                    name="Standing Overhead Press",
-                    category=ExerciseCategory.COMPOUND,
-                    target_muscles=['shoulders', 'triceps'],
-                    equipment_needed=['barbell'],
-                    technical_difficulty=3,
-                    joint_stress=3,
-                    recommended_rep_range=(6, 12)
-                ),
-                # Add more push exercises...
-            },
-            'pull': {
-                'pullup': Exercise(
-                    name="Pull-up",
-                    category=ExerciseCategory.COMPOUND,
-                    target_muscles=['back', 'biceps'],
-                    equipment_needed=['pullup_bar'],
-                    technical_difficulty=3,
-                    joint_stress=2,
-                    recommended_rep_range=(6, 12)
-                ),
-                'row': Exercise(
-                    name="Barbell Row",
-                    category=ExerciseCategory.COMPOUND,
-                    target_muscles=['back', 'biceps', 'rear_delts'],
-                    equipment_needed=['barbell'],
-                    technical_difficulty=3,
-                    joint_stress=3,
-                    recommended_rep_range=(8, 12)
-                ),
-                # Add more pull exercises...
-            },
-            'legs': {
-                'squat': Exercise(
-                    name="Barbell Back Squat",
-                    category=ExerciseCategory.COMPOUND,
-                    target_muscles=['quads', 'glutes', 'core'],
-                    equipment_needed=['barbell', 'rack'],
-                    technical_difficulty=4,
-                    joint_stress=4,
-                    recommended_rep_range=(5, 10)
-                ),
-                'deadlift': Exercise(
-                    name="Conventional Deadlift",
-                    category=ExerciseCategory.COMPOUND,
-                    target_muscles=['hamstrings', 'back', 'glutes'],
-                    equipment_needed=['barbell'],
-                    technical_difficulty=4,
-                    joint_stress=4,
-                    recommended_rep_range=(5, 8)
-                ),
-                # Add more leg exercises...
-            }
-        }
-        
-        return library
-    
-    def _select_exercises_for_day(self,
-                                day: Dict[str, Any],
-                                available_equipment: List[str],
-                                movement_restrictions: List[str],
-                                volume_guidelines: Dict[str, Any],
-                                training_history: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """
-        Select appropriate exercises for a training day.
-        """
-        focus = day['focus'].lower()
-        target_muscles = day.get('target_muscles', [])
-        
-        # Get relevant exercises from library
-        potential_exercises = self._filter_exercises_by_constraints(
-            focus,
-            available_equipment,
-            movement_restrictions,
-            training_history
-        )
-        
-        # Determine exercise distribution
-        exercise_distribution = self._determine_exercise_distribution(
-            focus,
-            volume_guidelines,
-            training_history
-        )
-        
-        selected_exercises = []
-        
-        # Select compound movements first
-        compound_exercises = self._select_compound_exercises(
-            potential_exercises,
-            exercise_distribution['compound'],
-            target_muscles,
-            training_history
-        )
-        selected_exercises.extend(compound_exercises)
-        
-        # Select isolation exercises
-        isolation_exercises = self._select_isolation_exercises(
-            potential_exercises,
-            exercise_distribution['isolation'],
-            target_muscles,
-            training_history,
-            [ex['name'] for ex in compound_exercises]
-        )
-        selected_exercises.extend(isolation_exercises)
-        
-        return selected_exercises
-    
-    def _filter_exercises_by_constraints(self,
-                                       focus: str,
-                                       available_equipment: List[str],
-                                       movement_restrictions: List[str],
-                                       training_history: Dict[str, Any]) -> List[Exercise]:
-        """
-        Filter exercises based on equipment and movement restrictions.
-        """
-        filtered_exercises = []
-        relevant_exercises = self.exercise_library.get(focus, {})
-        
-        for exercise in relevant_exercises.values():
-            # Check if required equipment is available
-            if not all(eq in available_equipment for eq in exercise.equipment_needed):
-                continue
-                
-            # Check for movement restrictions
-            if any(restriction in exercise.name.lower() for restriction in movement_restrictions):
-                continue
-                
-            # Check technical difficulty against training age
-            training_age = training_history.get('training_age', {}).get('category', 'intermediate').lower()
-            if training_age == 'beginner' and exercise.technical_difficulty > 3:
-                continue
-                
-            filtered_exercises.append(exercise)
             
-        return filtered_exercises
-    
-    def _determine_exercise_distribution(self,
-                                       focus: str,
-                                       volume_guidelines: Dict[str, Any],
-                                       training_history: Dict[str, Any]) -> Dict[str, int]:
-        """
-        Determine the distribution of compound vs isolation exercises.
-        """
-        training_age = training_history.get('training_age', {}).get('category', 'intermediate').lower()
-        
-        # Base distributions by training age
-        distributions = {
-            'beginner': {'compound': 2, 'isolation': 1},
-            'intermediate': {'compound': 2, 'isolation': 2},
-            'advanced': {'compound': 3, 'isolation': 2}
-        }
-        
-        base_distribution = distributions.get(training_age, distributions['intermediate'])
-        
-        # Adjust based on volume guidelines
-        muscle_volumes = volume_guidelines.get('volume_guidelines', {})
-        if any(volume.maximum_adaptive_volume > 15 for volume in muscle_volumes.values()):
-            base_distribution['isolation'] += 1
+            # Process using the schema-based approach
+            schema_result = self._determine_training_split_schema(
+                profile_analysis, goal_analysis, body_analysis, history_analysis
+            )
             
-        return base_distribution
-    
-    def _select_compound_exercises(self,
-                                 available_exercises: List[Exercise],
-                                 num_compounds: int,
-                                 target_muscles: List[str],
-                                 training_history: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """
-        Select appropriate compound exercises.
-        """
-        compound_exercises = [ex for ex in available_exercises 
-                            if ex.category == ExerciseCategory.COMPOUND]
-        
-        # Sort by technical proficiency
-        technique_proficiency = training_history.get('technique_proficiency', {})
-        compound_exercises.sort(
-            key=lambda x: technique_proficiency.get(x.name, 3),
-            reverse=True
-        )
-        
-        selected = []
-        for _ in range(min(num_compounds, len(compound_exercises))):
-            exercise = compound_exercises.pop(0)
-            selected.append({
-                'name': exercise.name,
-                'category': exercise.category.value,
-                'sets': self._determine_sets_for_exercise(exercise, training_history),
-                'rep_range': exercise.recommended_rep_range,
-                'notes': self._generate_exercise_specific_notes(exercise, training_history)
-            })
-            
-        return selected
-    
-    def _select_isolation_exercises(self,
-                                  available_exercises: List[Exercise],
-                                  num_isolations: int,
-                                  target_muscles: List[str],
-                                  training_history: Dict[str, Any],
-                                  selected_exercises: List[str]) -> List[Dict[str, Any]]:
-        """
-        Select appropriate isolation exercises.
-        """
-        isolation_exercises = [ex for ex in available_exercises 
-                             if ex.category == ExerciseCategory.ISOLATION]
-        
-        # Prioritize exercises for underdeveloped muscles
-        muscle_distribution = training_history.get('movement_pattern_analysis', {})
-        isolation_exercises.sort(
-            key=lambda x: any(muscle in str(muscle_distribution.get('underdeveloped', []))
-                            for muscle in x.target_muscles),
-            reverse=True
-        )
-        
-        selected = []
-        for _ in range(min(num_isolations, len(isolation_exercises))):
-            exercise = isolation_exercises.pop(0)
-            selected.append({
-                'name': exercise.name,
-                'category': exercise.category.value,
-                'sets': self._determine_sets_for_exercise(exercise, training_history),
-                'rep_range': exercise.recommended_rep_range,
-                'notes': self._generate_exercise_specific_notes(exercise, training_history)
-            })
-            
-        return selected
-    
-    def _determine_sets_for_exercise(self,
-                                   exercise: Exercise,
-                                   training_history: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Determine appropriate sets for an exercise.
-        """
-        training_age = training_history.get('training_age', {}).get('category', 'intermediate').lower()
-        volume_tolerance = training_history.get('volume_tolerance', {}).get('volume_category', 'moderate').lower()
-        
-        base_sets = {
-            'beginner': {'warmup': 2, 'working': 3},
-            'intermediate': {'warmup': 2, 'working': 4},
-            'advanced': {'warmup': 3, 'working': 5}
-        }
-        
-        sets = base_sets.get(training_age, base_sets['intermediate'])
-        
-        # Adjust for volume tolerance
-        if volume_tolerance == 'high':
-            sets['working'] += 1
-        elif volume_tolerance == 'low':
-            sets['working'] -= 1
-            
-        return sets
-    
-    def _generate_exercise_specific_notes(self,
-                                        exercise: Exercise,
-                                        training_history: Dict[str, Any]) -> str:
-        """
-        Generate specific notes for an exercise based on client factors.
-        """
-        notes = []
-        
-        # Check technical proficiency
-        technique_level = training_history.get('technique_proficiency', {}).get('overall_level', 2)
-        if technique_level < 3 and exercise.technical_difficulty > 3:
-            notes.append("Focus on form and controlled execution")
-            
-        # Check joint stress considerations
-        if exercise.joint_stress >= 4:
-            notes.append("Monitor joint stress and adjust load as needed")
-            
-        # Add exercise-specific cues
-        if 'squat' in exercise.name.lower():
-            notes.append("Maintain proper depth and knee tracking")
-        elif 'deadlift' in exercise.name.lower():
-            notes.append("Focus on maintaining neutral spine")
-            
-        return '. '.join(notes) if notes else "Standard execution"
-    
-    def _generate_rotation_strategy(self, training_history: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Generate strategy for exercise rotation.
-        """
-        training_age = training_history.get('training_age', {}).get('category', 'intermediate').lower()
-        
-        strategies = {
-            'beginner': {
-                'rotation_frequency': 'Every 8-12 weeks',
-                'exercise_substitution': 'Minimal - focus on mastering basic movements',
-                'variation_strategy': 'Progressive overload on main lifts'
-            },
-            'intermediate': {
-                'rotation_frequency': 'Every 4-6 weeks',
-                'exercise_substitution': 'Moderate - introduce variations of main lifts',
-                'variation_strategy': 'Alternate between main lifts and variations'
-            },
-            'advanced': {
-                'rotation_frequency': 'Every 2-4 weeks',
-                'exercise_substitution': 'Regular - utilize wide exercise selection',
-                'variation_strategy': 'Frequent variation while maintaining movement patterns'
-            }
-        }
-        
-        return strategies.get(training_age, strategies['intermediate'])
-    
-    def _generate_technical_guidelines(self, training_history: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Generate technical guidelines based on training history.
-        """
-        technique_level = training_history.get('technique_proficiency', {}).get('overall_level', 2)
-        
-        if technique_level <= 2:
+            # Combine results from both approaches
             return {
-                'focus_areas': ['Movement pattern mastery', 'Basic technique development'],
-                'cues': ['Control the eccentric', 'Maintain proper positioning'],
-                'progression_approach': 'Master form before increasing load'
+                "split_recommendation_function": function_result,
+                "split_recommendation_schema": schema_result
             }
-        elif technique_level <= 3:
-            return {
-                'focus_areas': ['Advanced technique refinement', 'Movement efficiency'],
-                'cues': ['Optimize bar path', 'Speed control'],
-                'progression_approach': 'Balance load increases with technique maintenance'
+            
+        except Exception as e:
+            logger.error(f"Error determining training split: {str(e)}")
+            raise e
+    
+    def get_system_message(self) -> str:
+        """
+        Returns the system message to guide the LLM in training split decision-making.
+        
+        The system message establishes the context and criteria for determining
+        an optimal training split according to scientific principles.
+        
+        Returns:
+            Formatted system message string
+        """
+        return (
+            "You are a training program design specialist with expertise in exercise science, "
+            "following the methodologies of Dr. Mike Israetel, Dr. Eric Helms, and Dr. Brad Schoenfeld. "
+            "Your task is to determine the optimal training split for a client based on their goals, "
+            "recovery capacity, training history, and body composition analysis.\n\n"
+            
+            "Apply these scientific principles when designing training splits:\n"
+            "1. **Frequency Optimization**: Each muscle group should be trained 2-3 times per week for optimal protein synthesis.\n"
+            "2. **Recovery Management**: Volume must be distributed to allow 48-72 hours between sessions for the same muscle group.\n"
+            "3. **Volume Landmarks**: Consider MEV (Minimum Effective Volume), MAV (Maximum Adaptive Volume), and MRV (Maximum Recoverable Volume).\n"
+            "4. **Individual Variability**: Account for training age, recovery capacity, and muscle fiber type predominance.\n"
+            "5. **Goal Specificity**: Split design should reflect primary goals (hypertrophy, strength, endurance).\n"
+            "6. **Time Efficiency**: Account for the client's available training time and frequency preferences.\n"
+            "7. **Overlap Management**: Consider systemic fatigue from compound movements and overlapping muscle groups.\n\n"
+            
+            "For hypertrophy goals, prioritize sufficient volume distribution (10-20 sets per muscle group per week).\n"
+            "For strength goals, prioritize fresh neural drive and sufficient frequency for skill practice.\n"
+            "For general fitness, balance training stimulus across all major movement patterns.\n\n"
+            
+            "Your recommendation must include scientific justification, frequency guidelines, and a detailed weekly schedule."
+        )
+    
+    def _determine_training_split_function(
+        self, 
+        profile_analysis: Dict[str, Any], 
+        goal_analysis: Dict[str, Any], 
+        body_analysis: Dict[str, Any], 
+        history_analysis: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Determine training split using LLM function calling.
+        
+        Args:
+            profile_analysis: Client demographics and metrics analysis
+            goal_analysis: Client goals and objectives analysis  
+            body_analysis: Body composition and measurement analysis
+            history_analysis: Training history and experience analysis
+            
+        Returns:
+            Structured training split recommendation as a dictionary
+        """
+        # Extract relevant data for prompt construction
+        goals = goal_analysis.get("goal_analysis_function", {})
+        primary_goals = goals.get("primary_goals", [])
+        training_experience = history_analysis.get("experience_level", "Intermediate")
+        training_frequency = history_analysis.get("current_frequency", "Unknown")
+        recovery_capacity = history_analysis.get("recovery_capacity", "Average")
+        
+        # Construct prompt with comprehensive client data
+        prompt = (
+            "Determine the optimal training split for this client based on their analysis data. "
+            "Your response should include split type, frequency, and detailed schedule.\n\n"
+            
+            f"CLIENT PROFILE SUMMARY:\n"
+            f"- Training experience: {training_experience}\n"
+            f"- Current training frequency: {training_frequency}\n"
+            f"- Recovery capacity: {recovery_capacity}\n"
+            f"- Primary goals: {', '.join(primary_goals)}\n\n"
+            
+            f"FULL GOAL ANALYSIS:\n{self._format_dict(goals)}\n\n"
+            f"BODY COMPOSITION ANALYSIS:\n{self._format_dict(body_analysis)}\n\n"
+            f"TRAINING HISTORY ANALYSIS:\n{self._format_dict(history_analysis)}\n\n"
+            
+            "Based on this data, determine the optimal training split that will maximize results "
+            "while respecting recovery capacity. Consider frequency optimization, volume distribution, "
+            "overlap management, and goal specificity.\n\n"
+            
+            "Provide a complete split recommendation including:\n"
+            "1. Split name and type\n"
+            "2. Training days per week\n"
+            "3. Frequency recommendations for each muscle group\n"
+            "4. Day-by-day schedule\n"
+            "5. Scientific justification for your recommendation\n"
+            "6. Any special considerations for this client"
+        )
+        
+        function_schema = {
+            "name": "determine_training_split",
+            "description": "Determine the optimal training split based on client data and scientific principles",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "split_name": {"type": "string"},
+                    "split_type": {"type": "string"},
+                    "training_days_per_week": {"type": "integer"},
+                    "muscle_group_frequencies": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "muscle_group": {"type": "string"},
+                                "sessions_per_week": {"type": "integer"},
+                                "recovery_requirement": {"type": "string"},
+                                "volume_per_session": {"type": "string"}
+                            },
+                            "required": ["muscle_group", "sessions_per_week", "recovery_requirement", "volume_per_session"]
+                        }
+                    },
+                    "weekly_schedule": {
+                        "type": "object",
+                        "properties": {
+                            "monday": {"type": "string"},
+                            "tuesday": {"type": "string"},
+                            "wednesday": {"type": "string"},
+                            "thursday": {"type": "string"},
+                            "friday": {"type": "string"},
+                            "saturday": {"type": "string"},
+                            "sunday": {"type": "string"}
+                        },
+                        "required": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+                    },
+                    "justification": {
+                        "type": "object",
+                        "properties": {
+                            "scientific_basis": {"type": "string"},
+                            "volume_distribution": {"type": "string"},
+                            "frequency_rationale": {"type": "string"},
+                            "individual_adaptations": {"type": "string"}
+                        },
+                        "required": ["scientific_basis", "volume_distribution", "frequency_rationale", "individual_adaptations"]
+                    },
+                    "special_considerations": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    }
+                },
+                "required": [
+                    "split_name", "split_type", "training_days_per_week", 
+                    "muscle_group_frequencies", "weekly_schedule", 
+                    "justification", "special_considerations"
+                ]
             }
-        else:
-            return {
-                'focus_areas': ['Technical mastery', 'Movement optimization'],
-                'cues': ['Position-specific power application', 'Advanced tempo manipulation'],
-                'progression_approach': 'Implement advanced variations while maintaining technique'
-            }
-
-
+        }
+        
+        system_message = self.get_system_message()
+        result = self.llm_client.call_llm(prompt, system_message, function_schema=function_schema)
+        return result
+    
+    def _determine_training_split_schema(
+        self, 
+        profile_analysis: Dict[str, Any], 
+        goal_analysis: Dict[str, Any], 
+        body_analysis: Dict[str, Any], 
+        history_analysis: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Determine training split using Pydantic schema validation.
+        
+        Args:
+            profile_analysis: Client demographics and metrics analysis
+            goal_analysis: Client goals and objectives analysis
+            body_analysis: Body composition and measurement analysis
+            history_analysis: Training history and experience analysis
+            
+        Returns:
+            Structured training split recommendation as a Pydantic model
+        """
+        # Extract relevant data for prompt construction
+        goals = goal_analysis.get("goal_analysis_schema", {})
+        primary_goals = goals.get("primary_goals", [])
+        training_experience = history_analysis.get("experience_level", "Intermediate")
+        training_frequency = history_analysis.get("current_frequency", "Unknown")
+        recovery_capacity = history_analysis.get("recovery_capacity", "Average")
+        
+        # Construct detailed prompt with comprehensive client data
+        prompt = (
+            "Design the optimal science-based training split for this client. Apply Dr. Mike Israetel's "
+            "volume landmarks and frequency principles to create a sustainable and effective program.\n\n"
+            
+            f"CLIENT PROFILE SUMMARY:\n"
+            f"- Training experience: {training_experience}\n"
+            f"- Current training frequency: {training_frequency}\n"
+            f"- Recovery capacity: {recovery_capacity}\n"
+            f"- Primary goals: {', '.join(primary_goals)}\n\n"
+            
+            f"FULL GOAL ANALYSIS:\n{self._format_dict(goals)}\n\n"
+            f"BODY COMPOSITION ANALYSIS:\n{self._format_dict(body_analysis)}\n\n"
+            f"TRAINING HISTORY ANALYSIS:\n{self._format_dict(history_analysis)}\n\n"
+            
+            "Your training split recommendation should prioritize these factors:\n"
+            "1. Optimal frequency for the client's primary muscle groups (2-3x/week for hypertrophy)\n"
+            "2. Appropriate volume distribution based on recovery capacity\n"
+            "3. Strategic exercise selection and ordering within each session\n"
+            "4. Rest periods that support the primary training goal\n"
+            "5. Periodization structure that allows for progressive overload\n\n"
+            
+            "Create a complete weekly training schedule with detailed justification for your choices. "
+            "Explain how this split optimizes the scientific principles of muscular adaptation while "
+            "addressing this client's specific needs and constraints."
+        )
+        
+        system_message = self.get_system_message()
+        result = self.llm_client.call_llm(prompt, system_message, schema=TrainingSplit)
+        return result
+    
+    def _format_dict(self, data: Dict[str, Any]) -> str:
+        """
+        Format a dictionary as a readable string for inclusion in prompts.
+        
+        Args:
+            data: Dictionary to format
+            
+        Returns:
+            Formatted string representation
+        """
+        try:
+            return json.dumps(data, indent=2)
+        except:
+            # Fallback for non-serializable objects
+            return str(data)

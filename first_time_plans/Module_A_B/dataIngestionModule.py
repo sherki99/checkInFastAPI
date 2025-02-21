@@ -81,7 +81,7 @@ class DataIngestionModule:
         """
         Extract body composition measurements.
         """
-        return measurements_data.get("body_composition", {})
+        return measurements_data.get("measurements", {})
 
     
 

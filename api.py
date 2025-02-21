@@ -285,13 +285,15 @@ async def create_first_plan(base_model: BaseModelForRequest):
         recovery_analysis = recovery_module.process(standardized_profile)
 
 
-        """
-        
-        # --- STEP 8: Decision Nodes for Workout Planning ---
+        #--- STEP 8: Decision Nodes for Workout Planning ---
         training_split_node = TrainingSplitDecisionNode()
         split_recommendation = training_split_node.process(
             profile_analysis, goal_analysis, body_analysis, history_analysis
         )
+
+        """
+        
+        # 
         
         volume_node = VolumeAndIntensityDecisionNode()
         volume_guidelines = volume_node.process(
@@ -342,6 +344,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
             "history_analysis": history_analysis,
             "body_analysis": body_analysis,
             "recovery_analysis": recovery_analysis,
+            "split_recommendation": split_recommendation,
     #        "profile_analysis": profile_analysis,
         }
     
@@ -349,7 +352,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
         "history_analysis": history_analysis,
         "body_analysis": body_analysis,
 
-        "split_recommendation": split_recommendation,
+       
         "volume_guidelines": volume_guidelines,
         "exercise_analysis": exercise_analysis,
         "caloric_targets": caloric_targets,
