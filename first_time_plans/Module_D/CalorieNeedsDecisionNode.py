@@ -1,4 +1,4 @@
-Copyfrom typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from first_time_plans.call_llm_class import BaseLLM
 import json
@@ -179,6 +179,12 @@ class CaloricNeedsDecisionNode:
         goal_timeframe = goal_analysis.get("goal_timeframe", "Unknown")
         goal_intensity = goal_analysis.get("goal_intensity", "Unknown")
         
+
+
+
+
+
+
 
 """
             primary_goals: List[str] = Field(
