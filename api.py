@@ -221,7 +221,6 @@ async def receive_check_in(data: CheckInData):
 
 # Import modules for data processing and analysis
 from first_time_plans.Module_A_B.dataIngestionModule import DataIngestionModule
-from first_time_plans.Module_A_B.clientProfileModule import ClientProfileModule
 from first_time_plans.Module_A_B.goalClarificationModule import GoalClarificationModule
 from first_time_plans.Module_A_B.bodyCompositionModule import BodyCompositionModule
 from first_time_plans.Module_A_B.trainingHistory import TrainingHistoryModule
@@ -288,9 +287,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
         )
 
         """
-        
-        # 
-        
+                
         volume_node = VolumeAndIntensityDecisionNode()
         volume_guidelines = volume_node.process(
             client_data, history_analysis, body_analysis, goal_analysis
