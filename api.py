@@ -345,7 +345,9 @@ async def create_first_plan(base_model: BaseModelForRequest):
             "history_analysis": history_analysis,
             "body_analysis": body_analysis,
             "recovery_analysis": recovery_analysis,
-            "split_recommendation": split_recommendation,    
+            "split_recommendation": split_recommendation,
+            "volume_guidelines": volume_guidelines,
+            "exercise_selection": exercise_selection 
         }
     
         """
