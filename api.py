@@ -288,8 +288,13 @@ async def create_first_plan(base_model: BaseModelForRequest):
           
         training_split_node = TrainingSplitDecisionNode()
         split_recommendation = training_split_node.process(
-           goal_analysis, body_analysis, history_analysis
+           profile_analysis, goal_analysis, body_analysis, history_analysis
         )
+
+                : Dict[str, Any], 
+        goal_analysis: Dict[str, Any], 
+        body_analysis: Dict[str, Any], 
+        history_analysis: Dict[str, Any]
 
         training_split_node = TrainingSplitDecisionNode()
         split_recommendation = training_split_node.process(
