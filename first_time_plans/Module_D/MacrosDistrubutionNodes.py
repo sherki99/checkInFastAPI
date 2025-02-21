@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
 from first_time_plans.call_llm_class import BaseLLM
 import json
@@ -8,51 +8,63 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-class MacroNutrientTarget(BaseModel):
-    """Specification for a single macronutrient target."""
-    name: str = Field(..., description="Name of the macronutrient (Protein, Carbohydrate, Fat)")
-    absolute_grams: int = Field(..., description="Daily target in grams")
-    percentage_of_total: float = Field(..., description="Percentage of total caloric intake")
-    calories_provided: int = Field(..., description="Calories provided by this macronutrient")
-    grams_per_kg_bodyweight: float = Field(..., description="Target expressed as g/kg of bodyweight")
-    scientific_rationale: str = Field(..., description="Evidence-based reasoning for this target")
-    adjustment_strategy: str = Field(..., description="How to adjust this macro based on progress")
+class MacroSplit(BaseModel):
+    """Macronutrient split details."""
+    protein_percentage: int = Field(..., description="Protein percentage of total calories")
+    protein_grams: int = Field(..., description="Daily protein in grams")
+    carb_percentage: int = Field(..., description="Carbohydrate percentage of total calories")
+    carb_grams: int = Field(..., description="Daily carbohydrates in grams")
+    fat_percentage: int = Field(..., description="Fat percentage of total calories")
+    fat_grams: int = Field(..., description="Daily fat in grams")
+    scientific_rationale: str = Field(..., description="Scientific explanation for this macro split")
 
-class MealSpecificMacros(BaseModel):
-    """Macronutrient distribution for a specific meal."""
-    meal_name: str = Field(..., description="Name of the meal (e.g., 'Breakfast', 'Post-workout')")
-    meal_timing: str = Field(..., description="Recommended timing for this meal")
-    protein_grams: int = Field(..., description="Protein target for this meal in grams")
-    carbohydrate_grams: int = Field(..., description="Carbohydrate target for this meal in grams")
-    fat_grams: int = Field(..., description="Fat target for this meal in grams")
-    total_calories: int = Field(..., description="Total calories for this meal")
-    purpose: str = Field(..., description="Physiological purpose of this meal")
-    food_suggestions: List[str] = Field(..., description="Suggested food sources aligned with preferences")
+class MealNutritionBreakdown(BaseModel):
+    """Nutritional breakdown for a specific meal."""
+    meal_name: str = Field(..., description="Name of the meal (e.g., 'Breakfast', 'Pre-workout')")
+    calorie_allocation: int = Field(..., description="Calories allocated to this meal")
+    protein_grams: int = Field(..., description="Protein for this meal in grams")
+    carb_grams: int = Field(..., description="Carbohydrates for this meal in grams")
+    fat_grams: int = Field(..., description="Fats for this meal in grams")
+    meal_purpose: str = Field(..., description="Primary purpose/goal of this meal")
+    timing_recommendation: str = Field(..., description="Optimal timing for this meal")
+    food_recommendations: List[str] = Field(..., description="Suggested food sources")
+
+class NutrientTiming(BaseModel):
+    """Nutrient timing strategies based on scientific principles."""
+    training_day_strategy: str = Field(..., description="Nutrient distribution approach on training days")
+    rest_day_strategy: str = Field(..., description="Nutrient distribution approach on rest days")
+    pre_workout_strategy: str = Field(..., description="Pre-workout nutrition recommendation")
+    post_workout_strategy: str = Field(..., description="Post-workout nutrition recommendation")
+    scientific_basis: str = Field(..., description="Scientific explanation for timing strategies")
+
+class SupplementRecommendation(BaseModel):
+    """Detailed supplement recommendation."""
+    supplement_name: str = Field(..., description="Name of the supplement")
+    purpose: str = Field(..., description="Primary purpose/benefit")
+    daily_dosage: str = Field(..., description="Recommended daily dosage")
+    timing: str = Field(..., description="Optimal timing for consumption")
+    evidential_support: str = Field(..., description="Level of scientific evidence supporting use")
+    priority_level: str = Field(..., description="Importance level (Essential/Beneficial/Optional)")
 
 class MacroDistributionPlan(BaseModel):
     """Complete macronutrient distribution plan."""
-    client_name: str = Field(..., description="Client's name")
-    primary_goal: str = Field(..., description="Client's primary nutritional goal")
-    total_daily_calories: int = Field(..., description="Total daily caloric target")
-    macronutrient_targets: List[MacroNutrientTarget] = Field(..., description="Targets for each macronutrient")
-    protein_strategy: str = Field(..., description="Overall protein strategy based on goals and training")
-    carbohydrate_strategy: str = Field(..., description="Carbohydrate approach based on activity and goals")
-    fat_strategy: str = Field(..., description="Fat intake strategy for hormonal health and preferences")
-    meal_specific_recommendations: List[MealSpecificMacros] = Field(..., description="Macros broken down by meal")
-    nutrient_timing_principles: List[str] = Field(..., description="Key principles for nutrient timing")
-    fiber_recommendation: str = Field(..., description="Daily fiber intake recommendation")
-    water_recommendation: str = Field(..., description="Daily hydration recommendation")
-    supplement_recommendations: List[str] = Field(..., description="Recommended supplements to support macros")
-    adaptation_protocol: str = Field(..., description="How to adapt macros as goals or conditions change")
+    daily_caloric_target: int = Field(..., description="Total daily caloric target")
+    primary_goal: str = Field(..., description="Primary nutritional goal")
+    macro_split: MacroSplit = Field(..., description="Macronutrient distribution")
+    daily_meals: List[MealNutritionBreakdown] = Field(..., description="Individual meal breakdown")
+    nutrient_timing: NutrientTiming = Field(..., description="Nutrient timing strategies")
+    supplement_recommendations: List[SupplementRecommendation] = Field(..., description="Supplement recommendations")
+    dietary_preferences_accommodations: List[str] = Field(..., description="Accommodations for dietary preferences")
+    adjustment_strategy: str = Field(..., description="Strategy for adjusting macros based on progress")
+    scientific_explanation: str = Field(..., description="Comprehensive scientific explanation")
 
 class MacroDistributionDecisionNode:
     """
-    Determines optimal macronutrient distribution based on client profile,
-    body composition, goals, and caloric targets.
+    Determines optimal macronutrient distribution based on client data and caloric targets.
     
-    This class uses an LLM-driven decision process to establish precise macronutrient
-    targets that align with the client's physiological needs, training demands,
-    and dietary preferences while supporting their primary goals.
+    This class uses scientific principles and LLM-driven decision process to
+    generate personalized macronutrient recommendations aligned with the client's
+    goals, body composition, and individual nutritional needs.
     """
     
     def __init__(self, llm_client: Optional[Any] = None):
@@ -67,7 +79,7 @@ class MacroDistributionDecisionNode:
     def process(
         self,
         caloric_targets: Dict[str, Any],
-        profile_analysis: Dict[str, Any],
+        client_data: Dict[str, Any],
         body_analysis: Dict[str, Any],
         goal_analysis: Dict[str, Any],
         history_analysis: Dict[str, Any]
@@ -75,29 +87,27 @@ class MacroDistributionDecisionNode:
         """
         Process client data to determine optimal macronutrient distribution.
         
-        This method integrates data from previous analysis modules to establish
-        precise macronutrient targets considering:
-        - Total caloric needs
-        - Primary training and body composition goals
-        - Individual metabolic factors
-        - Training volume and intensity
-        - Dietary preferences and restrictions
-        - Meal timing relative to training
+        This method integrates data from multiple analysis modules to develop
+        appropriate macronutrient targets, considering:
+        - Total caloric intake
+        - Training goals and body composition
+        - Meal timing and nutrient partitioning
+        - Individual dietary preferences
         
         Args:
-            caloric_targets: Caloric requirements determined by previous node
-            profile_analysis: Client demographic and metrics analysis
+            caloric_targets: Caloric needs analysis
+            client_data: Raw client profile data
             body_analysis: Body composition analysis
-            goal_analysis: Goal clarification analysis
+            goal_analysis: Client goals analysis
             history_analysis: Training history analysis
             
         Returns:
-            A dictionary containing the structured macronutrient distribution plan
+            A dictionary containing structured macronutrient recommendations
         """
         try:
             # Process using the schema-based approach
             schema_result = self._determine_macro_distribution_schema(
-                caloric_targets, profile_analysis, body_analysis, goal_analysis, history_analysis
+                caloric_targets, client_data, body_analysis, goal_analysis, history_analysis
             )
             
             return {
@@ -110,46 +120,42 @@ class MacroDistributionDecisionNode:
     
     def get_system_message(self) -> str:
         """
-        Returns the system message to guide the LLM in macronutrient distribution decision-making.
+        Returns the system message to guide the LLM in macro distribution determination.
         
         The system message establishes the context and criteria for determining
-        optimal macronutrient ratios according to scientific principles of sports nutrition.
+        optimal macronutrient ratios according to scientific principles.
         
         Returns:
             Formatted system message string
         """
         return (
-            "You are a sports nutrition specialist with expertise in macronutrient optimization, "
-            "nutrient timing, and performance nutrition. Your task is to determine optimal "
-            "macronutrient distributions for a client based on their caloric needs, body composition, "
-            "training goals, exercise regimen, and dietary preferences.\n\n"
+            "You are a sports nutrition specialist with expertise in determining optimal macronutrient "
+            "distribution based on scientific principles. Your task is to develop a personalized "
+            "macronutrient plan that aligns with the client's caloric targets, training goals, and "
+            "individual preferences.\n\n"
             
-            "Apply these scientific principles when determining macronutrient distributions:\n"
-            "1. **Protein Requirements**: Calculate based on lean body mass, training intensity, and "
-            "goal (0.8-1.0g/lb for maintenance, 1.0-1.2g/lb for muscle gain, 1.2-1.5g/lb for fat loss "
-            "while preserving muscle).\n"
-            "2. **Carbohydrate Periodization**: Align carbohydrate intake with training volume and intensity, "
-            "considering training-day vs. rest-day needs and workout timing.\n"
-            "3. **Strategic Fat Distribution**: Ensure essential fatty acid intake while balancing saturated, "
-            "monounsaturated, and polyunsaturated sources for hormonal health.\n"
-            "4. **Nutrient Timing**: Structure macronutrient intake around training for optimal performance "
-            "and recovery, with consideration for the anabolic window and glycogen replenishment.\n"
-            "5. **Individual Metabolic Factors**: Account for insulin sensitivity, metabolic rate variations, "
-            "and previous dietary patterns.\n"
-            "6. **Dietary Adherence**: Balance optimal nutritional science with psychological factors and "
-            "food preferences to maximize long-term compliance.\n"
-            "7. **Meal Frequency**: Optimize protein distribution across meals to maximize muscle protein "
-            "synthesis throughout the day.\n\n"
+            "Apply these scientific principles when determining macronutrient distribution:\n"
+            "1. **Protein Requirements**: 1.6-2.2g/kg bodyweight for muscle gain/maintenance, with higher "
+            "end for caloric deficits and lower body fat percentages.\n"
+            "2. **Carbohydrate Allocation**: Higher carbohydrate intake (3-5g/kg) for performance-focused "
+            "goals and around training; moderate (2-3g/kg) for general hypertrophy.\n"
+            "3. **Fat Distribution**: Minimum 0.5g/kg body weight to support hormonal function, with remainder "
+            "of calories allocated to complete caloric targets.\n"
+            "4. **Meal Timing**: Strategic distribution of macronutrients around training windows to "
+            "optimize performance and recovery.\n"
+            "5. **Individual Adjustments**: Modifications based on dietary preferences, food sensitivities, "
+            "and individual response to macronutrient ratios.\n"
+            "6. **Supplement Integration**: Evidence-based supplement recommendations that complement "
+            "the macronutrient strategy.\n\n"
             
-            "Your macronutrient plan should include precise targets for each macronutrient, meal-specific "
-            "recommendations, nutrient timing strategies relative to training, and protocols for adjusting "
-            "macros based on progress assessment."
+            "Your recommendation should include detailed macronutrient calculations, meal-by-meal breakdown, "
+            "nutrient timing strategies, and scientific rationale that aligns with the client's goals and lifestyle."
         )
 
     def _determine_macro_distribution_schema(
         self,
         caloric_targets: Dict[str, Any],
-        profile_analysis: Dict[str, Any],
+        client_data: Dict[str, Any],
         body_analysis: Dict[str, Any],
         goal_analysis: Dict[str, Any],
         history_analysis: Dict[str, Any]
@@ -158,79 +164,64 @@ class MacroDistributionDecisionNode:
         Determine macronutrient distribution using Pydantic schema validation.
         
         Args:
-            caloric_targets: Caloric requirements determined by previous node
-            profile_analysis: Client demographic and metrics analysis
+            caloric_targets: Caloric needs analysis
+            client_data: Raw client profile data
             body_analysis: Body composition analysis
-            goal_analysis: Goal clarification analysis
+            goal_analysis: Client goals analysis
             history_analysis: Training history analysis
             
         Returns:
             Structured macronutrient distribution plan as a Pydantic model
         """
-        # Extract relevant data from caloric targets
-        caloric_recommendation = caloric_targets.get("caloric_recommendation", {})
-        total_calories = caloric_recommendation.get("maintenance_calories", 0)
-        adjusted_calories = caloric_recommendation.get("goal_adjusted_calories", 0)
+        # Extract relevant data for prompt construction
+        personal_info = client_data.get("personal_info", {}).get("data", {})
+        name = personal_info.get("name", "Client")
+        weight = personal_info.get("weight", "86 kg").split()[0]
         
-        # Extract client information
-        client_name = profile_analysis.get("client_profile", {}).get("personal_info", {}).get("name", "Client")
-        weight_kg = body_analysis.get("body_composition", {}).get("current_weight_kg", 0)
-        lean_mass_kg = body_analysis.get("body_composition", {}).get("estimated_lean_mass_kg", 0)
+        nutrition_info = client_data.get("nutrition", {}).get("data", {})
+        diet_preference = nutrition_info.get("dietPreference", "Balanced diet")
+        meals_per_day = nutrition_info.get("mealsPerDay", "5")
+        supplements = nutrition_info.get("supplements", "Whey protein, creatine")
         
-        # Extract dietary preferences
-        standardized_profile = {}  # This would normally come from the full standardized profile
-        diet_preference = standardized_profile.get("nutrition", {}).get("data", {}).get("dietPreference", "")
-        supplements = standardized_profile.get("nutrition", {}).get("data", {}).get("supplements", "")
-        meal_timing = standardized_profile.get("nutrition", {}).get("data", {}).get("mealTime", "")
+        caloric_rec = caloric_targets.get("caloric_needs_recommendation", {})
+        daily_calories = caloric_rec.get("daily_caloric_target", 2800)
         
-        # Extract primary goal
-        primary_goal = goal_analysis.get("goals", {}).get("primary_goal", "")
-        training_phase = goal_analysis.get("goals", {}).get("training_phase", "")
+        goals = goal_analysis.get("goal_analysis_schema", {})
+        primary_goals = goals.get("primary_goals", [])
         
-        # Extract training information
-        training_frequency = history_analysis.get("training_profile", {}).get("training_frequency_weekly", 0)
-        training_intensity = history_analysis.get("training_profile", {}).get("intensity_level", "")
+        training_info = history_analysis.get("history_analysis_schema", {})
+        training_frequency = client_data.get("fitness", {}).get("data", {}).get("trainingFrequency", "5x Week")
         
         # Construct detailed prompt with comprehensive client data
         prompt = (
-            "Determine the optimal macronutrient distribution for this client based on their "
-            "caloric needs, body composition, training goals, and dietary preferences. Create a "
-            "comprehensive macronutrient plan with meal-specific recommendations.\n\n"
+            "Develop a comprehensive macronutrient distribution plan for this client based on scientific "
+            "principles of sports nutrition. Consider their caloric targets, training goals, body composition, "
+            "and individual preferences.\n\n"
             
-            f"CLIENT PROFILE:\n"
-            f"- Name: {client_name}\n"
-            f"- Body Weight: {weight_kg} kg\n"
-            f"- Estimated Lean Mass: {lean_mass_kg} kg\n"
-            f"- Dietary Preferences: {diet_preference}\n"
-            f"- Current Supplements: {supplements}\n"
-            f"- Typical Meal Timing: {meal_timing}\n\n"
+            f"CLIENT PROFILE SUMMARY:\n"
+            f"- Name: {name}\n"
+            f"- Weight: {weight} kg\n"
+            f"- Daily caloric target: {daily_calories} calories\n"
+            f"- Training frequency: {training_frequency}\n"
+            f"- Primary goals: {', '.join(primary_goals)}\n"
+            f"- Meals per day: {meals_per_day}\n"
+            f"- Dietary preferences: {diet_preference}\n"
+            f"- Current supplements: {supplements}\n\n"
             
-            f"CALORIC TARGETS:\n"
-            f"- Maintenance Calories: {total_calories} kcal\n"
-            f"- Goal-Adjusted Calories: {adjusted_calories} kcal\n\n"
-            
-            f"GOAL INFORMATION:\n"
-            f"- Primary Goal: {primary_goal}\n"
-            f"- Training Phase: {training_phase}\n\n"
-            
-            f"TRAINING PROFILE:\n"
-            f"- Weekly Training Frequency: {training_frequency} sessions\n"
-            f"- Training Intensity: {training_intensity}\n\n"
-            
-            f"BODY COMPOSITION ANALYSIS:\n{self._format_dict(body_analysis)}\n\n"
+            f"CALORIC TARGETS ANALYSIS:\n{self._format_dict(caloric_rec)}\n\n"
+            f"FULL GOAL ANALYSIS:\n{self._format_dict(goals)}\n\n"
+            f"TRAINING HISTORY ANALYSIS:\n{self._format_dict(training_info)}\n\n"
             
             "Your macronutrient distribution plan should include:\n"
-            "1. Precise targets for protein, carbohydrates, and fats (in grams and percentages)\n"
-            "2. Scientific rationale for each macronutrient target based on research\n"
-            "3. Meal-by-meal breakdown of macronutrients\n"
-            "4. Nutrient timing strategies relative to training sessions\n"
-            "5. Fiber and water intake recommendations\n"
-            "6. Supplement recommendations to support the macronutrient plan\n"
-            "7. Protocols for adjusting macros based on progress\n\n"
+            "1. Comprehensive macronutrient split with percentages and gram amounts\n"
+            "2. Meal-by-meal breakdown with specific macro allocations\n"
+            "3. Nutrient timing strategies for training and rest days\n"
+            "4. Evidence-based supplement recommendations\n"
+            "5. Adaptations for individual dietary preferences\n"
+            "6. Scientific rationale for all recommendations\n\n"
             
-            "Consider macronutrient distribution through the lens of current sports nutrition "
-            "research, particularly the International Society of Sports Nutrition position stands "
-            "on protein, nutrient timing, and body composition."
+            "Provide a detailed macronutrient plan that optimizes performance and recovery while "
+            "respecting individual preferences and lifestyle factors."
         )
         
         system_message = self.get_system_message()

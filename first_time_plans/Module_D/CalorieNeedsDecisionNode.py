@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
 from first_time_plans.call_llm_class import BaseLLM
 import json
@@ -8,53 +8,55 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-class CalorieCalculation(BaseModel):
-    """Breakdown of the calorie calculation process."""
-    bmr_formula_used: str = Field(..., description="BMR formula used (e.g., 'Mifflin-St Jeor', 'Harris-Benedict')")
-    bmr_value: float = Field(..., description="Calculated Basal Metabolic Rate in calories")
-    activity_multiplier: float = Field(..., description="Activity factor applied to BMR")
-    tdee_calculation: float = Field(..., description="Total Daily Energy Expenditure (BMR × activity factor)")
-    exercise_adjustment: float = Field(..., description="Additional calories for exercise activity")
-    non_exercise_adjustment: float = Field(..., description="Adjustment for NEAT (Non-Exercise Activity Thermogenesis)")
-    goal_adjustment: float = Field(..., description="Caloric adjustment based on goals (surplus/deficit)")
-    final_caloric_target: float = Field(..., description="Final recommended daily caloric intake")
+class ActivityMultiplier(BaseModel):
+    """Activity level multiplier for TDEE calculation."""
+    multiplier: float = Field(..., description="Numeric multiplier for BMR")
+    justification: str = Field(..., description="Explanation for the multiplier selection")
 
-class CaloriePhasing(BaseModel):
-    """Caloric intake phasing recommendations."""
-    initial_phase_calories: float = Field(..., description="Starting caloric target")
-    initial_phase_duration: str = Field(..., description="Duration of initial phase (e.g., '2 weeks')")
-    subsequent_phases: List[Dict[str, Any]] = Field(..., description="Future caloric adjustments")
-    adaptation_indicators: List[str] = Field(..., description="Signs indicating need for caloric adjustment")
+class BmrCalculation(BaseModel):
+    """Basal Metabolic Rate calculation details."""
+    formula_used: str = Field(..., description="Formula used (e.g., 'Mifflin-St Jeor', 'Harris-Benedict')")
+    calculated_bmr: float = Field(..., description="Calculated BMR in calories")
+    factors_considered: List[str] = Field(..., description="Factors considered in BMR calculation")
+
+class TdeeCalculation(BaseModel):
+    """Total Daily Energy Expenditure calculation details."""
+    activity_multiplier: ActivityMultiplier = Field(..., description="Activity level multiplier")
+    calculated_tdee: float = Field(..., description="Calculated TDEE in calories")
+    explanation: str = Field(..., description="Explanation of TDEE calculation")
+
+class CalorieAdjustment(BaseModel):
+    """Caloric adjustment based on client goals."""
+    adjustment_type: str = Field(..., description="Type of adjustment (surplus/deficit/maintenance)")
+    adjustment_amount: int = Field(..., description="Amount of caloric adjustment in calories")
+    adjusted_calories: int = Field(..., description="Final caloric target after adjustment")
+    scientific_rationale: str = Field(..., description="Scientific explanation for adjustment amount")
+
+class WeeklyAdjustmentStrategy(BaseModel):
+    """Strategy for weekly caloric adjustments."""
+    initial_adjustment: str = Field(..., description="Initial caloric adjustment approach")
+    progress_monitoring: List[str] = Field(..., description="Metrics to monitor for progress")
+    adjustment_thresholds: List[str] = Field(..., description="Thresholds for making further adjustments")
     plateau_strategy: str = Field(..., description="Strategy for handling plateaus")
 
-class MealStructureGuidelines(BaseModel):
-    """Guidelines for meal structure and timing."""
-    recommended_meal_frequency: int = Field(..., description="Optimal number of meals per day")
-    calorie_distribution: Dict[str, float] = Field(..., description="Percentage of calories per meal")
-    pre_workout_guidelines: str = Field(..., description="Pre-workout nutrition recommendations")
-    post_workout_guidelines: str = Field(..., description="Post-workout nutrition recommendations")
-    meal_timing_rationale: str = Field(..., description="Scientific basis for meal timing recommendations")
-
 class CaloricNeedsRecommendation(BaseModel):
-    """Comprehensive caloric needs recommendation."""
-    client_name: str = Field(..., description="Client's name")
-    primary_goal: str = Field(..., description="Client's primary nutritional goal")
-    calorie_targets: CalorieCalculation = Field(..., description="Detailed calorie calculation")
-    calorie_phasing: CaloriePhasing = Field(..., description="Progressive calorie adjustment plan")
-    meal_structure: MealStructureGuidelines = Field(..., description="Meal timing and structure recommendations")
-    refeed_strategy: Optional[str] = Field(None, description="Refeed/diet break recommendations if applicable")
-    goal_timeline_estimate: str = Field(..., description="Estimated timeline to reach nutritional goals")
-    monitoring_metrics: List[str] = Field(..., description="Metrics to track for adjusting caloric intake")
-    scientific_rationale: str = Field(..., description="Scientific basis for caloric recommendations")
+    """Complete caloric needs recommendation."""
+    bmr_calculation: BmrCalculation = Field(..., description="BMR calculation details")
+    tdee_calculation: TdeeCalculation = Field(..., description="TDEE calculation details")
+    goal_based_adjustment: CalorieAdjustment = Field(..., description="Goal-based caloric adjustment")
+    daily_caloric_target: int = Field(..., description="Final daily caloric target")
+    weekly_adjustment_strategy: WeeklyAdjustmentStrategy = Field(..., description="Weekly adjustment strategy")
+    caloric_cycling_approach: str = Field(..., description="Approach to caloric cycling if applicable")
+    scientific_explanation: str = Field(..., description="Comprehensive scientific explanation")
+    individual_considerations: List[str] = Field(..., description="Individual factors considered")
 
 class CaloricNeedsDecisionNode:
     """
-    Determines optimal caloric intake based on client profile, body composition,
-    and goal analysis.
+    Determines optimal caloric intake based on client data and analysis.
     
-    This class uses an LLM-driven decision process to calculate appropriate
-    caloric targets considering metabolic rate, activity level, body composition,
-    and specific goals, while incorporating scientific principles of energy balance.
+    This class uses scientific formulas and LLM-driven decision process to
+    generate personalized caloric recommendations aligned with the client's
+    goals, body composition, and individual factors.
     """
     
     def __init__(self, llm_client: Optional[Any] = None):
@@ -68,33 +70,32 @@ class CaloricNeedsDecisionNode:
     
     def process(
         self,
-        profile_analysis: Dict[str, Any],
+        client_data: Dict[str, Any],
         body_analysis: Dict[str, Any],
         goal_analysis: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
-        Process client data to determine optimal caloric needs.
+        Process client data to determine optimal caloric intake.
         
-        This method integrates data from previous analysis modules to calculate
-        appropriate caloric targets considering:
-        - Basal metabolic rate based on body composition
-        - Activity level and exercise expenditure
-        - Specific goals (muscle gain, fat loss, performance)
-        - Adaptive thermogenesis considerations
-        - Progressive caloric adjustment strategy
+        This method integrates data from multiple analysis modules to calculate
+        appropriate caloric targets, considering:
+        - Basal Metabolic Rate (BMR)
+        - Total Daily Energy Expenditure (TDEE)
+        - Goal-specific caloric adjustments
+        - Individual considerations
         
         Args:
-            profile_analysis: Client profile analysis
+            client_data: Raw client profile data
             body_analysis: Body composition analysis
-            goal_analysis: Goal clarification analysis
+            goal_analysis: Client goals analysis
             
         Returns:
-            A dictionary containing the structured caloric needs recommendation
+            A dictionary containing structured caloric recommendations
         """
         try:
             # Process using the schema-based approach
             schema_result = self._determine_caloric_needs_schema(
-                profile_analysis, body_analysis, goal_analysis
+                client_data, body_analysis, goal_analysis
             )
             
             return {
@@ -107,45 +108,36 @@ class CaloricNeedsDecisionNode:
     
     def get_system_message(self) -> str:
         """
-        Returns the system message to guide the LLM in caloric needs decision-making.
+        Returns the system message to guide the LLM in caloric needs determination.
         
         The system message establishes the context and criteria for determining
-        optimal caloric intake according to scientific principles of energy balance
-        and nutritional science.
+        optimal caloric intake according to scientific principles.
         
         Returns:
             Formatted system message string
         """
         return (
-            "You are a nutrition specialist with expertise in energy metabolism, "
-            "body composition analysis, and sports nutrition. Your task is to determine "
-            "optimal caloric targets for a client based on their profile, body composition, "
-            "and specific goals.\n\n"
+            "You are a nutrition specialist with expertise in determining optimal caloric needs "
+            "based on scientific principles. Your task is to calculate appropriate caloric targets "
+            "based on the client's body composition, goals, and individual factors.\n\n"
             
-            "Apply these scientific principles when calculating caloric needs:\n"
-            "1. **Energy Balance Equation**: Consider the relationship between energy intake, "
-            "expenditure, and storage to establish appropriate caloric targets.\n"
-            "2. **Metabolic Adaptation**: Account for adaptive thermogenesis and metabolic "
-            "flexibility when planning long-term caloric strategies.\n"
-            "3. **Body Composition Considerations**: Use fat-free mass as a primary driver "
-            "for basal metabolic rate calculations.\n"
-            "4. **Goal-Specific Energy Requirements**: Adjust caloric targets based on whether "
-            "the goal is muscle hypertrophy, fat loss, performance, or maintenance.\n"
-            "5. **Progressive Implementation**: Design caloric phases that gradually adapt to "
-            "changes in metabolism and body composition.\n"
-            "6. **Individual Variability**: Account for genetic, hormonal, and lifestyle factors "
-            "that influence metabolic rate and energy partitioning.\n"
-            "7. **Activity Energy Expenditure**: Differentiate between exercise activity thermogenesis "
-            "and non-exercise activity thermogenesis.\n\n"
+            "Apply these scientific principles when determining caloric needs:\n"
+            "1. **BMR Calculation**: Use established formulas (Mifflin-St Jeor or Harris-Benedict) to estimate BMR.\n"
+            "2. **TDEE Calculation**: Apply appropriate activity multipliers based on lifestyle and training frequency.\n"
+            "3. **Goal Adjustment**: Implement evidence-based caloric adjustments:\n"
+            "   - Weight loss: 20-25% deficit (maximum 500-750 cal/day) for sustainable fat loss\n"
+            "   - Muscle gain: 10-20% surplus (250-500 cal/day) for optimal muscle growth with minimal fat gain\n"
+            "   - Maintenance: TDEE ±100 calories with emphasis on nutrient timing\n"
+            "4. **Individual Considerations**: Account for metabolic variations, training history, and recovery capacity.\n"
+            "5. **Progressive Adjustment**: Include strategies for weekly caloric adjustments based on progress metrics.\n\n"
             
-            "Your caloric recommendations should include both immediate targets and a progressive "
-            "adjustment strategy, along with meal timing considerations that align with the client's "
-            "training schedule and metabolic needs."
+            "Your recommendation should include detailed calculations, scientific rationale, and a clear "
+            "implementation strategy that aligns with the client's goals and lifestyle."
         )
 
     def _determine_caloric_needs_schema(
         self,
-        profile_analysis: Dict[str, Any],
+        client_data: Dict[str, Any],
         body_analysis: Dict[str, Any],
         goal_analysis: Dict[str, Any]
     ) -> Dict[str, Any]:
@@ -153,33 +145,76 @@ class CaloricNeedsDecisionNode:
         Determine caloric needs using Pydantic schema validation.
         
         Args:
-            profile_analysis: Client profile analysis
+            client_data: Raw client profile data
             body_analysis: Body composition analysis
-            goal_analysis: Goal clarification analysis
+            goal_analysis: Client goals analysis
             
         Returns:
             Structured caloric needs recommendation as a Pydantic model
         """
-
-        profile_analysis = profile_analysis.get("data")
-        # Extract relevant data from profile analysis
-        client_name = profile_analysis.get("name", "Client")
-        age = profile_analysis.get("age", "Unknown")
-        gender = profile_analysis.get("gender", "Unknown")
-        activity_level = profile_analysis.get("activity_level", "Unknown")
+        # Extract relevant data for prompt construction
+        personal_info = client_data.get("personal_info", {}).get("data", {})
+        age = personal_info.get("age", "25")
+        gender = personal_info.get("gender", "Male")
+        height = personal_info.get("height", "186 cm").split()[0]
+        weight = personal_info.get("weight", "86 kg").split()[0]
         
-        # Extract body composition data
-        height = profile_analysis.get("height", "Unknown")
-        weight = profile_analysis.get("weight", "Unknown")
-        body_fat_percentage = body_analysis.get("body_fat_percentage", "Unknown")
-        fat_free_mass = body_analysis.get("fat_free_mass", "Unknown")
+        fitness_info = client_data.get("fitness", {}).get("data", {})
+        activity_level = fitness_info.get("activityLevel", "Active")
+        training_frequency = fitness_info.get("trainingFrequency", "5x Week")
         
-        # Extract goal information
-        primary_goal = goal_analysis.get("primary_goal", "Unknown")
-        goal_timeframe = goal_analysis.get("goal_timeframe", "Unknown")
-        goal_intensity = goal_analysis.get("goal_intensity", "Unknown")
+        goals = goal_analysis.get("goal_analysis_schema", {})
+        primary_goals = goals.get("primary_goals", [])
         
-
-
-
-
+        body_comp = body_analysis.get("body_analysis_schema", {})
+        body_fat = body_comp.get("composition_estimates", {}).get("estimated_body_fat_percentage", "15-18%")
+        
+        # Construct detailed prompt with comprehensive client data
+        prompt = (
+            "Calculate the optimal caloric needs for this client based on scientific principles "
+            "of nutrition and exercise physiology. Apply appropriate BMR formulas, activity multipliers, "
+            "and goal-specific adjustments.\n\n"
+            
+            f"CLIENT PROFILE SUMMARY:\n"
+            f"- Age: {age}\n"
+            f"- Gender: {gender}\n"
+            f"- Height: {height} cm\n"
+            f"- Weight: {weight} kg\n"
+            f"- Activity level: {activity_level}\n"
+            f"- Training frequency: {training_frequency}\n"
+            f"- Primary goals: {', '.join(primary_goals)}\n"
+            f"- Estimated body fat: {body_fat}\n\n"
+            
+            f"FULL GOAL ANALYSIS:\n{self._format_dict(goals)}\n\n"
+            f"BODY COMPOSITION ANALYSIS:\n{self._format_dict(body_comp)}\n\n"
+            
+            "Your caloric needs recommendation should include:\n"
+            "1. Detailed BMR calculation using appropriate formula\n"
+            "2. TDEE calculation with justified activity multiplier\n"
+            "3. Goal-specific caloric adjustment with scientific rationale\n"
+            "4. Clear daily caloric target\n"
+            "5. Strategy for weekly adjustments based on progress\n"
+            "6. Consideration of individual factors\n\n"
+            
+            "Provide a comprehensive caloric needs assessment with scientific justification for your recommendations."
+        )
+        
+        system_message = self.get_system_message()
+        result = self.llm_client.call_llm(prompt, system_message, schema=CaloricNeedsRecommendation)
+        return result
+    
+    def _format_dict(self, data: Dict[str, Any]) -> str:
+        """
+        Format a dictionary as a readable string for inclusion in prompts.
+        
+        Args:
+            data: Dictionary to format
+            
+        Returns:
+            Formatted string representation
+        """
+        try:
+            return json.dumps(data, indent=2)
+        except:
+            # Fallback for non-serializable objects
+            return str(data)
