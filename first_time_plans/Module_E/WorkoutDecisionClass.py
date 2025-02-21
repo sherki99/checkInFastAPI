@@ -154,8 +154,8 @@ class WorkoutDecisionClass:
             CompletePlan object containing the complete workout plan
         """
         # Extract relevant client info
-        client_name = client_data.get("personal_info", {}).get("name", "Client")
-        primary_goals = goal_analysis.get("goal_analysis_schema", {}).get("primary_goals", [])
+        client_name = client_data.get("personal_info", {}).get("data", {}).get("name", "Client")
+        primary_goals = goal_analysis.get("goal_analysis_schema", {}).get("data", {}).get("primary_goals", [])
         
         # Get training split details
         split_type = split_recommendation.get("split_type", "Full Body")
