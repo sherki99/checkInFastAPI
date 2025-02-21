@@ -138,9 +138,99 @@ class TrainingSplitDecisionNode:
             "Your recommendation must include scientific justification, frequency guidelines, and a detailed weekly schedule."
         )
     
+
+    def _determine_training_split_schema(
+        self, 
+        goal_analysis: Dict[str, Any], 
+        body_analysis: Dict[str, Any], 
+        history_analysis: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Determine training split using Pydantic schema validation.
+        
+        Args:
+            profile_analysis: Client demographics and metrics analysis
+            goal_analysis: Client goals and objectives analysis
+            body_analysis: Body composition and measurement analysis
+            history_analysis: Training history and experience analysis
+            
+        Returns:
+            Structured training split recommendation as a Pydantic model
+        """
+        # Extract relevant data for prompt construction
+        goals = goal_analysis.get("goal_analysis_schema", {})
+        primary_goals = goals.get("primary_goals", [])
+        training_experience = history_analysis.get("experience_level", "Intermediate")
+        training_frequency = history_analysis.get("current_frequency", "Unknown")
+        recovery_capacity = history_analysis.get("recovery_capacity", "Average")
+        
+        # Construct detailed prompt with comprehensive client data
+        prompt = (
+            "Design the optimal science-based training split for this client. Apply Dr. Mike Israetel's "
+            "volume landmarks and frequency principles to create a sustainable and effective program.\n\n"
+            
+            f"CLIENT PROFILE SUMMARY:\n"
+            f"- Training experience: {training_experience}\n"
+            f"- Current training frequency: {training_frequency}\n"
+            f"- Recovery capacity: {recovery_capacity}\n"
+            f"- Primary goals: {', '.join(primary_goals)}\n\n"
+            
+            f"FULL GOAL ANALYSIS:\n{self._format_dict(goals)}\n\n"
+            f"BODY COMPOSITION ANALYSIS:\n{self._format_dict(body_analysis)}\n\n"
+            f"TRAINING HISTORY ANALYSIS:\n{self._format_dict(history_analysis)}\n\n"
+            
+            "Your training split recommendation should prioritize these factors:\n"
+            "1. Optimal frequency for the client's primary muscle groups (2-3x/week for hypertrophy)\n"
+            "2. Appropriate volume distribution based on recovery capacity\n"
+            "3. Strategic exercise selection and ordering within each session\n"
+            "4. Rest periods that support the primary training goal\n"
+            "5. Periodization structure that allows for progressive overload\n\n"
+            
+            "Create a complete weekly training schedule with detailed justification for your choices. "
+            "Explain how this split optimizes the scientific principles of muscular adaptation while "
+            "addressing this client's specific needs and constraints."
+        )
+        
+        system_message = self.get_system_message()
+        result = self.llm_client.call_llm(prompt, system_message, schema=TrainingSplit)
+        return result
+    
+    def _format_dict(self, data: Dict[str, Any]) -> str:
+
+        """
+        Format a dictionary as a readable string for inclusion in prompts.
+        
+        Args:
+            data: Dictionary to format
+            
+        Returns:
+            Formatted string representation
+        """
+        try:
+            return json.dumps(data, indent=2)
+        except:
+            # Fallback for non-serializable objects
+            return str(data)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def _determine_training_split_function(
         self, 
-        profile_analysis: Dict[str, Any], 
         goal_analysis: Dict[str, Any], 
         body_analysis: Dict[str, Any], 
         history_analysis: Dict[str, Any]
@@ -254,75 +344,3 @@ class TrainingSplitDecisionNode:
         result = self.llm_client.call_llm(prompt, system_message, function_schema=function_schema)
         return result
     
-    def _determine_training_split_schema(
-        self, 
-        profile_analysis: Dict[str, Any], 
-        goal_analysis: Dict[str, Any], 
-        body_analysis: Dict[str, Any], 
-        history_analysis: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """
-        Determine training split using Pydantic schema validation.
-        
-        Args:
-            profile_analysis: Client demographics and metrics analysis
-            goal_analysis: Client goals and objectives analysis
-            body_analysis: Body composition and measurement analysis
-            history_analysis: Training history and experience analysis
-            
-        Returns:
-            Structured training split recommendation as a Pydantic model
-        """
-        # Extract relevant data for prompt construction
-        goals = goal_analysis.get("goal_analysis_schema", {})
-        primary_goals = goals.get("primary_goals", [])
-        training_experience = history_analysis.get("experience_level", "Intermediate")
-        training_frequency = history_analysis.get("current_frequency", "Unknown")
-        recovery_capacity = history_analysis.get("recovery_capacity", "Average")
-        
-        # Construct detailed prompt with comprehensive client data
-        prompt = (
-            "Design the optimal science-based training split for this client. Apply Dr. Mike Israetel's "
-            "volume landmarks and frequency principles to create a sustainable and effective program.\n\n"
-            
-            f"CLIENT PROFILE SUMMARY:\n"
-            f"- Training experience: {training_experience}\n"
-            f"- Current training frequency: {training_frequency}\n"
-            f"- Recovery capacity: {recovery_capacity}\n"
-            f"- Primary goals: {', '.join(primary_goals)}\n\n"
-            
-            f"FULL GOAL ANALYSIS:\n{self._format_dict(goals)}\n\n"
-            f"BODY COMPOSITION ANALYSIS:\n{self._format_dict(body_analysis)}\n\n"
-            f"TRAINING HISTORY ANALYSIS:\n{self._format_dict(history_analysis)}\n\n"
-            
-            "Your training split recommendation should prioritize these factors:\n"
-            "1. Optimal frequency for the client's primary muscle groups (2-3x/week for hypertrophy)\n"
-            "2. Appropriate volume distribution based on recovery capacity\n"
-            "3. Strategic exercise selection and ordering within each session\n"
-            "4. Rest periods that support the primary training goal\n"
-            "5. Periodization structure that allows for progressive overload\n\n"
-            
-            "Create a complete weekly training schedule with detailed justification for your choices. "
-            "Explain how this split optimizes the scientific principles of muscular adaptation while "
-            "addressing this client's specific needs and constraints."
-        )
-        
-        system_message = self.get_system_message()
-        result = self.llm_client.call_llm(prompt, system_message, schema=TrainingSplit)
-        return result
-    
-    def _format_dict(self, data: Dict[str, Any]) -> str:
-        """
-        Format a dictionary as a readable string for inclusion in prompts.
-        
-        Args:
-            data: Dictionary to format
-            
-        Returns:
-            Formatted string representation
-        """
-        try:
-            return json.dumps(data, indent=2)
-        except:
-            # Fallback for non-serializable objects
-            return str(data)
