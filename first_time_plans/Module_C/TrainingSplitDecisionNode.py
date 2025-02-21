@@ -1,53 +1,51 @@
-import logging
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from first_time_plans.call_llm_class import BaseLLM
+import json
+import logging
 
 # Configure logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-class ExerciseFrequency(BaseModel):
-    """Represents recommended training frequency for a specific muscle group."""
-    muscle_group: str = Field(..., description="Name of the muscle group (e.g., 'Chest', 'Back', 'Legs')")
-    sessions_per_week: int = Field(..., description="Recommended number of weekly training sessions for this muscle group")
-    recovery_requirement: str = Field(..., description="Assessment of recovery needs based on volume tolerance and training age")
-    volume_per_session: str = Field(..., description="Recommended volume guideline per session (e.g., '12-15 working sets')")
+class SplitDayDetails(BaseModel):
+    """Details for a specific training day in the split."""
+    day_name: str = Field(..., description="Name of the training day (e.g., 'Push Day', 'Upper Body')")
+    primary_muscle_groups: List[str] = Field(..., description="Primary muscle groups targeted in this day")
+    secondary_muscle_groups: List[str] = Field(..., description="Secondary/accessory muscle groups")
+    volume_allocation: str = Field(..., description="Volume allocation guidance (e.g., '15-20 sets total')")
+    exercise_count_recommendation: str = Field(..., description="Recommended number of exercises (e.g., '4-6 exercises')")
+    key_exercise_types: List[str] = Field(..., description="Types of exercises to include (e.g., 'Compound push', 'Isolation')")
+    sample_exercises: List[str] = Field(..., description="Example exercises for this training day")
+    intensity_guideline: str = Field(..., description="Intensity guidelines specific to this day")
+    
+class SplitSchedulingGuideline(BaseModel):
+    """Guidelines for implementing the training split schedule."""
+    weekly_structure: str = Field(..., description="Weekly training day arrangement (e.g., 'M-W-F rest pattern')")
+    rest_day_recommendations: str = Field(..., description="Guidance on scheduling rest days")
+    deload_strategy: str = Field(..., description="Approach to scheduling deloads in the split")
+    recovery_considerations: List[str] = Field(..., description="Recovery factors to consider when scheduling")
+    flexibility_options: List[str] = Field(..., description="Ways to adapt the split for schedule changes")
 
-class WeeklySchedule(BaseModel):
-    """Detailed day-by-day training schedule recommendation."""
-    monday: str = Field(..., description="Monday's training focus and key muscle groups")
-    tuesday: str = Field(..., description="Tuesday's training focus and key muscle groups")
-    wednesday: str = Field(..., description="Wednesday's training focus and key muscle groups")
-    thursday: str = Field(..., description="Thursday's training focus and key muscle groups")
-    friday: str = Field(..., description="Friday's training focus and key muscle groups")
-    saturday: str = Field(..., description="Saturday's training focus and key muscle groups")
-    sunday: str = Field(..., description="Sunday's training focus and key muscle groups")
-
-class SplitJustification(BaseModel):
-    """Reasoning for the selected training split based on scientific principles."""
-    scientific_basis: str = Field(..., description="Scientific principles supporting this split structure")
-    volume_distribution: str = Field(..., description="How training volume is distributed to optimize recovery and growth")
-    frequency_rationale: str = Field(..., description="Explanation of why specific frequency was selected")
-    individual_adaptations: str = Field(..., description="How this split accounts for individual recovery capacity and goals")
-
-class TrainingSplit(BaseModel):
-    """Complete training split recommendation with justification and schedule."""
-    split_name: str = Field(..., description="Name of the recommended training split (e.g., 'Upper/Lower', 'Push/Pull/Legs')")
-    split_type: str = Field(..., description="Category of split (e.g., 'Body Part', 'Movement Pattern', 'Upper/Lower')")
-    training_days_per_week: int = Field(..., description="Total number of training days per week")
-    muscle_group_frequencies: List[ExerciseFrequency] = Field(..., description="Breakdown of training frequency by muscle group")
-    weekly_schedule: WeeklySchedule = Field(..., description="Day-by-day training schedule")
-    justification: SplitJustification = Field(..., description="Scientific reasoning behind the recommended split")
-    special_considerations: List[str] = Field(..., description="Additional factors that influenced the recommendation")
+class TrainingSplitRecommendation(BaseModel):
+    """Complete training split recommendation with scientific rationale."""
+    split_type: str = Field(..., description="Type of split recommended (e.g., 'Upper/Lower', 'Push/Pull/Legs')")
+    training_frequency: int = Field(..., description="Total training days per week")
+    muscle_group_frequency: str = Field(..., description="Frequency each muscle group is trained per week")
+    split_days: List[SplitDayDetails] = Field(..., description="Details for each training day in the split")
+    scheduling_guidelines: SplitSchedulingGuideline = Field(..., description="Guidelines for implementing the split")
+    key_benefits: List[str] = Field(..., description="Primary benefits of this split for the client")
+    scientific_rationale: str = Field(..., description="Scientific justification for this split recommendation")
+    individual_considerations: List[str] = Field(..., description="Client-specific factors considered in recommendation")
+    progression_strategy: str = Field(..., description="How to progress the split over time")
 
 class TrainingSplitDecisionNode:
     """
     Determines the optimal training split based on client data and analysis from previous modules.
     
-    This class uses an LLM-driven decision process to generate a scientifically-grounded 
-    training split recommendation that aligns with the client's goals, recovery capacity, 
-    and individual constraints.
+    This class uses an LLM-driven decision process to generate a scientifically-grounded
+    training split recommendation that aligns with the client's goals, recovery capacity,
+    training experience, individual constraints, and preferences.
     """
     
     def __init__(self, llm_client: Optional[Any] = None):
@@ -60,46 +58,42 @@ class TrainingSplitDecisionNode:
         self.llm_client = llm_client or BaseLLM()
     
     def process(
-        self, 
-        profile_analysis: Dict[str, Any], 
-        goal_analysis: Dict[str, Any], 
-        body_analysis: Dict[str, Any], 
-        history_analysis: Dict[str, Any]
+        self,
+        client_profile: Dict[str, Any],
+        goal_analysis: Dict[str, Any],
+        body_analysis: Dict[str, Any],
+        history_analysis: Dict[str, Any],
+        recovery_analysis: Dict[str, Any] = None
     ) -> Dict[str, Any]:
         """
-        Process client data to determine optimal training split.
+        Process client data to determine the optimal training split.
         
         This method integrates data from multiple analysis modules to determine
-        the most appropriate training split for the client, considering:
+        the most appropriate training split, considering:
         - Primary and secondary goals
-        - Recovery capacity and training experience
-        - Time availability and schedule constraints
-        - Body composition and muscle development priorities
+        - Training experience and history
+        - Body composition and proportions
+        - Recovery capacity and lifestyle factors
+        - Exercise preferences and limitations
         
         Args:
-            profile_analysis: Client demographics and metrics analysis
+            client_profile: Standardized client profile data
             goal_analysis: Client goals and objectives analysis
             body_analysis: Body composition and measurement analysis
             history_analysis: Training history and experience analysis
+            recovery_analysis: Recovery capacity and lifestyle analysis (optional)
             
         Returns:
             A dictionary containing the structured training split recommendation
         """
         try:
-            # Process using the function-calling approach
-      #      function_result = self._determine_training_split_function(
-        #        profile_analysis, goal_analysis, body_analysis, history_analysis
-       #     )
-            
             # Process using the schema-based approach
             schema_result = self._determine_training_split_schema(
-                profile_analysis, goal_analysis, body_analysis, history_analysis
+                client_profile, goal_analysis, body_analysis, history_analysis, recovery_analysis
             )
             
-            # Combine results from both approaches
             return {
-                #"split_recommendation_function": function_result,
-                "split_recommendation_schema": schema_result
+                "training_split_recommendation": schema_result
             }
             
         except Exception as e:
@@ -111,48 +105,56 @@ class TrainingSplitDecisionNode:
         Returns the system message to guide the LLM in training split decision-making.
         
         The system message establishes the context and criteria for determining
-        an optimal training split according to scientific principles.
+        optimal training split according to scientific principles of exercise science.
         
         Returns:
             Formatted system message string
         """
         return (
-            "You are a training program design specialist with expertise in exercise science, "
-            "following the methodologies of Dr. Mike Israetel, Dr. Eric Helms, and Dr. Brad Schoenfeld. "
-            "Your task is to determine the optimal training split for a client based on their goals, "
-            "recovery capacity, training history, and body composition analysis.\n\n"
+            "You are an expert exercise scientist and strength coach with deep expertise in program design. "
+            "Your task is to determine the optimal training split for a client based on their goals, training history, "
+            "body composition, recovery capacity, and individual factors. Follow these evidence-based principles:\n\n"
             
-            "Apply these scientific principles when designing training splits:\n"
-            "1. **Frequency Optimization**: Each muscle group should be trained 2-3 times per week for optimal protein synthesis.\n"
-            "2. **Recovery Management**: Volume must be distributed to allow 48-72 hours between sessions for the same muscle group.\n"
-            "3. **Volume Landmarks**: Consider MEV (Minimum Effective Volume), MAV (Maximum Adaptive Volume), and MRV (Maximum Recoverable Volume).\n"
-            "4. **Individual Variability**: Account for training age, recovery capacity, and muscle fiber type predominance.\n"
-            "5. **Goal Specificity**: Split design should reflect primary goals (hypertrophy, strength, endurance).\n"
-            "6. **Time Efficiency**: Account for the client's available training time and frequency preferences.\n"
-            "7. **Overlap Management**: Consider systemic fatigue from compound movements and overlapping muscle groups.\n\n"
+            "1. **Frequency Optimization**: Consider both total training frequency and per-muscle group frequency based on "
+            "the client's recovery capacity and training age. Research indicates that training muscle groups 2-3x weekly "
+            "typically optimizes hypertrophy while 1-2x weekly may be sufficient for strength.\n\n"
             
-            "For hypertrophy goals, prioritize sufficient volume distribution (10-20 sets per muscle group per week).\n"
-            "For strength goals, prioritize fresh neural drive and sufficient frequency for skill practice.\n"
-            "For general fitness, balance training stimulus across all major movement patterns.\n\n"
+            "2. **Volume Distribution**: Ensure the split allows appropriate volume distribution across muscle groups, "
+            "prioritizing areas based on client goals and body analysis.\n\n"
             
-            "Your recommendation must include scientific justification, frequency guidelines, and a detailed weekly schedule."
+            "3. **Fatigue Management**: Account for systemic and local fatigue by designing splits that separate "
+            "high-fatigue movements and account for overlapping muscle stress.\n\n"
+            
+            "4. **Exercise Selection Compatibility**: Ensure the split allows for progression in key exercises and "
+            "accommodates client preferences and limitations.\n\n"
+            
+            "5. **Recovery Consideration**: Balance training frequency with recovery capacity, accounting for lifestyle "
+            "factors, stress levels, and sleep quality.\n\n"
+            
+            "6. **Individuality Principle**: Adapt general training split principles to the client's individual "
+            "circumstances, goals, and preferences.\n\n"
+            
+            "Provide a detailed, scientific rationale for your recommendation that demonstrates clear "
+            "connections between client data and split design choices."
         )
-    
 
     def _determine_training_split_schema(
-        self, 
-        goal_analysis: Dict[str, Any], 
-        body_analysis: Dict[str, Any], 
-        history_analysis: Dict[str, Any]
+        self,
+        client_profile: Dict[str, Any],
+        goal_analysis: Dict[str, Any],
+        body_analysis: Dict[str, Any],
+        history_analysis: Dict[str, Any],
+        recovery_analysis: Dict[str, Any] = None
     ) -> Dict[str, Any]:
         """
-        Determine training split using Pydantic schema validation.
+        Determine the optimal training split using Pydantic schema validation.
         
         Args:
-            profile_analysis: Client demographics and metrics analysis
+            client_profile: Standardized client profile data
             goal_analysis: Client goals and objectives analysis
             body_analysis: Body composition and measurement analysis
             history_analysis: Training history and experience analysis
+            recovery_analysis: Recovery capacity and lifestyle analysis (optional)
             
         Returns:
             Structured training split recommendation as a Pydantic model
@@ -160,43 +162,63 @@ class TrainingSplitDecisionNode:
         # Extract relevant data for prompt construction
         goals = goal_analysis.get("goal_analysis_schema", {})
         primary_goals = goals.get("primary_goals", [])
-        training_experience = history_analysis.get("experience_level", "Intermediate")
-        training_frequency = history_analysis.get("current_frequency", "Unknown")
-        recovery_capacity = history_analysis.get("recovery_capacity", "Average")
+        secondary_goals = goals.get("secondary_goals", [])
+        
+        training_experience = history_analysis.get("history_analysis_schema", {}).get("experience_level", "Intermediate")
+        exercise_preferences = history_analysis.get("history_analysis_schema", {}).get("exercise_preferences", [])
+        
+        # Recovery factors if available
+        recovery_capacity = "Unknown"
+        stress_level = "Unknown"
+        if recovery_analysis:
+            recovery_capacity = recovery_analysis.get("recovery_analysis_schema", {}).get("overall_recovery_capacity", "Unknown")
+            stress_level = recovery_analysis.get("recovery_analysis_schema", {}).get("stress_management", {}).get("stress_level_assessment", "Unknown")
+        
+        # Extract personal info and training status
+        personal_info = client_profile.get("personal_info", {}).get("data", {})
+        fitness_data = client_profile.get("fitness", {}).get("data", {})
+        training_frequency = fitness_data.get("trainingFrequency", "")
         
         # Construct detailed prompt with comprehensive client data
         prompt = (
-            "Design the optimal science-based training split for this client. Apply Dr. Mike Israetel's "
-            "volume landmarks and frequency principles to create a sustainable and effective program.\n\n"
+            "Design an optimal training split for this client based on their goals, training history, body composition, "
+            "recovery capacity, and individual preferences. Apply scientific principles of exercise frequency, volume "
+            "distribution, fatigue management, and recovery optimization.\n\n"
             
             f"CLIENT PROFILE SUMMARY:\n"
+            f"- Age: {personal_info.get('age', 'Unknown')}\n"
+            f"- Gender: {personal_info.get('gender', 'Unknown')}\n"
             f"- Training experience: {training_experience}\n"
             f"- Current training frequency: {training_frequency}\n"
+            f"- Primary goals: {', '.join(primary_goals)}\n"
+            f"- Secondary goals: {', '.join(secondary_goals)}\n"
             f"- Recovery capacity: {recovery_capacity}\n"
-            f"- Primary goals: {', '.join(primary_goals)}\n\n"
+            f"- Stress level: {stress_level}\n\n"
             
-            f"FULL GOAL ANALYSIS:\n{self._format_dict(goals)}\n\n"
-            f"BODY COMPOSITION ANALYSIS:\n{self._format_dict(body_analysis)}\n\n"
-            f"TRAINING HISTORY ANALYSIS:\n{self._format_dict(history_analysis)}\n\n"
+            f"EXERCISE PREFERENCES:\n"
+            f"{self._format_exercise_preferences(exercise_preferences)}\n\n"
             
-            "Your training split recommendation should prioritize these factors:\n"
-            "1. Optimal frequency for the client's primary muscle groups (2-3x/week for hypertrophy)\n"
-            "2. Appropriate volume distribution based on recovery capacity\n"
-            "3. Strategic exercise selection and ordering within each session\n"
-            "4. Rest periods that support the primary training goal\n"
-            "5. Periodization structure that allows for progressive overload\n\n"
+            f"GOAL ANALYSIS:\n{self._format_dict(goals)}\n\n"
+            f"BODY ANALYSIS:\n{self._format_dict(body_analysis.get('body_analysis_schema', {}))}\n\n"
+            f"HISTORY ANALYSIS:\n{self._format_dict(history_analysis.get('history_analysis_schema', {}))}\n\n"
             
-            "Create a complete weekly training schedule with detailed justification for your choices. "
-            "Explain how this split optimizes the scientific principles of muscular adaptation while "
-            "addressing this client's specific needs and constraints."
+            "Your training split recommendation should include:\n"
+            "1. The specific type of split (e.g., full body, upper/lower, push/pull/legs)\n"
+            "2. Training frequency (days per week) and muscle group frequency\n"
+            "3. Detailed breakdown of each training day (muscles worked, volume allocation, exercise types)\n"
+            "4. Scheduling guidelines (weekly structure, rest days, deload approach)\n"
+            "5. Scientific rationale for this split considering the client's specific factors\n"
+            "6. Individualized considerations based on client limitations or preferences\n\n"
+            
+            "Create a comprehensive training split recommendation that optimizes the client's results while "
+            "respecting their recovery capacity, preferences, and limitations."
         )
         
         system_message = self.get_system_message()
-        result = self.llm_client.call_llm(prompt, system_message, schema=TrainingSplit)
+        result = self.llm_client.call_llm(prompt, system_message, schema=TrainingSplitRecommendation)
         return result
     
     def _format_dict(self, data: Dict[str, Any]) -> str:
-
         """
         Format a dictionary as a readable string for inclusion in prompts.
         
@@ -211,136 +233,31 @@ class TrainingSplitDecisionNode:
         except:
             # Fallback for non-serializable objects
             return str(data)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def _determine_training_split_function(
-        self, 
-        goal_analysis: Dict[str, Any], 
-        body_analysis: Dict[str, Any], 
-        history_analysis: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    
+    def _format_exercise_preferences(self, preferences: List[Dict[str, Any]]) -> str:
         """
-        Determine training split using LLM function calling.
+        Format exercise preferences into a readable string.
         
         Args:
-            profile_analysis: Client demographics and metrics analysis
-            goal_analysis: Client goals and objectives analysis  
-            body_analysis: Body composition and measurement analysis
-            history_analysis: Training history and experience analysis
+            preferences: List of exercise preference dictionaries
             
         Returns:
-            Structured training split recommendation as a dictionary
+            Formatted string of exercise preferences
         """
-        # Extract relevant data for prompt construction
-        goals = goal_analysis.get("goal_analysis_function", {})
-        primary_goals = goals.get("primary_goals", [])
-        training_experience = history_analysis.get("experience_level", "Intermediate")
-        training_frequency = history_analysis.get("current_frequency", "Unknown")
-        recovery_capacity = history_analysis.get("recovery_capacity", "Average")
+        if not preferences:
+            return "No specific exercise preferences provided."
         
-        # Construct prompt with comprehensive client data
-        prompt = (
-            "Determine the optimal training split for this client based on their analysis data. "
-            "Your response should include split type, frequency, and detailed schedule.\n\n"
+        formatted = []
+        for pref in preferences:
+            exercise = pref.get("exercise_type", "Unknown exercise")
+            preference = pref.get("preference_level", "neutral")
+            effectiveness = pref.get("effectiveness_assessment", "Unknown effectiveness")
+            recommendation = pref.get("inclusion_recommendation", "Consider")
+            notes = pref.get("modification_notes", "None")
             
-            f"CLIENT PROFILE SUMMARY:\n"
-            f"- Training experience: {training_experience}\n"
-            f"- Current training frequency: {training_frequency}\n"
-            f"- Recovery capacity: {recovery_capacity}\n"
-            f"- Primary goals: {', '.join(primary_goals)}\n\n"
-            
-            f"FULL GOAL ANALYSIS:\n{self._format_dict(goals)}\n\n"
-            f"BODY COMPOSITION ANALYSIS:\n{self._format_dict(body_analysis)}\n\n"
-            f"TRAINING HISTORY ANALYSIS:\n{self._format_dict(history_analysis)}\n\n"
-            
-            "Based on this data, determine the optimal training split that will maximize results "
-            "while respecting recovery capacity. Consider frequency optimization, volume distribution, "
-            "overlap management, and goal specificity.\n\n"
-            
-            "Provide a complete split recommendation including:\n"
-            "1. Split name and type\n"
-            "2. Training days per week\n"
-            "3. Frequency recommendations for each muscle group\n"
-            "4. Day-by-day schedule\n"
-            "5. Scientific justification for your recommendation\n"
-            "6. Any special considerations for this client"
-        )
+            formatted.append(
+                f"- {exercise}: {preference}, {effectiveness}, Recommendation: {recommendation}"
+                + (f", Notes: {notes}" if notes else "")
+            )
         
-        function_schema = {
-            "name": "determine_training_split",
-            "description": "Determine the optimal training split based on client data and scientific principles",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "split_name": {"type": "string"},
-                    "split_type": {"type": "string"},
-                    "training_days_per_week": {"type": "integer"},
-                    "muscle_group_frequencies": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "muscle_group": {"type": "string"},
-                                "sessions_per_week": {"type": "integer"},
-                                "recovery_requirement": {"type": "string"},
-                                "volume_per_session": {"type": "string"}
-                            },
-                            "required": ["muscle_group", "sessions_per_week", "recovery_requirement", "volume_per_session"]
-                        }
-                    },
-                    "weekly_schedule": {
-                        "type": "object",
-                        "properties": {
-                            "monday": {"type": "string"},
-                            "tuesday": {"type": "string"},
-                            "wednesday": {"type": "string"},
-                            "thursday": {"type": "string"},
-                            "friday": {"type": "string"},
-                            "saturday": {"type": "string"},
-                            "sunday": {"type": "string"}
-                        },
-                        "required": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-                    },
-                    "justification": {
-                        "type": "object",
-                        "properties": {
-                            "scientific_basis": {"type": "string"},
-                            "volume_distribution": {"type": "string"},
-                            "frequency_rationale": {"type": "string"},
-                            "individual_adaptations": {"type": "string"}
-                        },
-                        "required": ["scientific_basis", "volume_distribution", "frequency_rationale", "individual_adaptations"]
-                    },
-                    "special_considerations": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    }
-                },
-                "required": [
-                    "split_name", "split_type", "training_days_per_week", 
-                    "muscle_group_frequencies", "weekly_schedule", 
-                    "justification", "special_considerations"
-                ]
-            }
-        }
-        
-        system_message = self.get_system_message()
-        result = self.llm_client.call_llm(prompt, system_message, function_schema=function_schema)
-        return result
-    
+        return "\n".join(formatted)
