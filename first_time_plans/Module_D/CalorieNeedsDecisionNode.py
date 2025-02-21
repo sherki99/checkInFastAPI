@@ -12,7 +12,20 @@ class BMRComponent(BaseModel):
     """Basal Metabolic Rate calculation results."""
     formula_used: str = Field(..., description="Formula used to calculate BMR (e.g., 'Mifflin-St Jeor')")
     calculated_bmr: int = Field(..., description="Calculated BMR in calories")
-    variables_used: Dict[str, Any] = Field(..., description="Variables used in calculation (weight, height, age, etc)")
+    variables_used: List[str] = Field(
+        ...,
+        description=(
+            "A list representing the variables used in the calculation. "
+            "Each entry follows the format 'variable: value'. Common variables include weight, height, age, gender, and activity level. "
+            "These values influence the accuracy of the BMR estimation.\n"
+            "Example:\n"
+            "  - 'weight: 70kg'\n"
+            "  - 'height: 175cm'\n"
+            "  - 'age: 30'\n"
+            "  - 'gender: male'\n"
+            "  - 'activity level: moderate'"
+        )
+    )
     confidence_level: str = Field(..., description="Confidence in calculation based on data quality")
 
 class TEEComponent(BaseModel):
