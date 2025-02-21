@@ -253,6 +253,7 @@ class BaseModelForRequest(BaseModel):
 
 
 @app.post("/first_time/")
+
 async def create_first_plan(base_model: BaseModelForRequest):
     try:
         # --- STEP 1: Data Ingestion ---
@@ -279,17 +280,12 @@ async def create_first_plan(base_model: BaseModelForRequest):
         history_analysis = training_history_module.process(standardized_profile)
 
 
-        """
-        
-        # 
-        
-        # --- STEP 6: Training History Analysis ---
-        training_history_module = TrainingHistoryModule()
-        history_analysis = training_history_module.process(standardized_profile)
-        
         # --- STEP 7: Recovery and Lifestyle Analysis ---
         recovery_module = RecoveryAndLifestyleModule()
         recovery_analysis = recovery_module.process(standardized_profile)
+
+
+        """
         
         # --- STEP 8: Decision Nodes for Workout Planning ---
         training_split_node = TrainingSplitDecisionNode()
