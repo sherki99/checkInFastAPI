@@ -288,10 +288,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
 
 
         # --- STEP 9: Decision Nodes for Nutrition Planning ---
-        training_split_node = TrainingSplitDecisionNode()
-        split_recommendation = training_split_node.process(
-           profile_analysis, goal_analysis, body_analysis, history_analysis
-        )
+
 
         """
              
