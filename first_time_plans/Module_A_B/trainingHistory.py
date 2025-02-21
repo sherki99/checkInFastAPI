@@ -206,7 +206,7 @@ class TrainingHistoryModule:
         schema = self._pydantic_to_compatible_schema(TrainingHistory)
         
         # Call the LLM using the modified schema
-        result = self.llm_client.call_llm(prompt, system_message, schema=schema)
+        result = self.llm_client.call_llm(prompt, system_message, schema=TrainingHistory)
         
         # Parse the result back into a Pydantic model for validation
         if isinstance(result, dict):
@@ -265,7 +265,7 @@ class TrainingHistoryModule:
 
 
 
-                
+
     
     def _analyze_training_history(self, standardized_profile: Dict[str, Any]) -> Dict[str, Any]:
         """
