@@ -101,5 +101,7 @@ async def checkIn_gpt(checkIn_info: str):
 
 
 
+
+
 # i need to improv eth e prom by addin for trian day and not trianf dya ans laos  afetr I have sort out that I can wotkiun on the thign nanme of the workrotu and descpriton and also I need to have  total coloris fior the mealk 
 # also I need to add tume fo the meal

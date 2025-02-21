@@ -238,6 +238,11 @@ from first_time_plans.Module_D.MealTimingDecion import MealTimingDecisionNode
 
 # Import integration module (if needed)
 from first_time_plans.Module_E.PlanIntegrationNode import PlanIntegrationNode
+from first_time_plans.Module_E.WorkoutDecisionClass import WorkoutDecisionClass
+from first_time_plans.Module_E.NutritionDecisionClass import NutritionDecisionClass
+
+
+
 
 # Import utility for LLM interactions
 from first_time_plans.call_llm_class import BaseLLM
@@ -318,6 +323,27 @@ async def create_first_plan(base_model: BaseModelForRequest):
         # --- STEP 9: Decision Nodes for Nutrition Planning ---
 
 
+        nutrition_decision = NutritionDecisionClass()
+        nutrition_plan = nutrition_decision.process(
+            standardized_profile,
+            caloric_targets,
+            macro_plan,
+            timing_recommendations,
+            goal_analysis,
+            body_analysis,
+            split_recommendation
+        )
+
+        workout_decision = WorkoutDecisionClass()
+        workout_plan = workout_decision.process(
+            standardized_profile, 
+            split_recommendation, 
+            volume_guidelines, 
+            exercise_selection,
+            goal_analysis,
+            history_analysis,
+            body_analysis
+        )
         """
              
 
@@ -363,28 +389,19 @@ async def create_first_plan(base_model: BaseModelForRequest):
             "exercise_selection": exercise_selection,
             "caloric_targets": caloric_targets,
             "macro_plan": macro_plan,
-            "timing_recommendations": timing_recommendations
+            "timing_recommendations": timing_recommendations,
+            "nutrition_plan" : nutrition_plan,
+            "workout_plan " : workout_plan , 
+
+            
+       
+        # "integrated_plan": integrated_plan
 
         }
     
         """
 
-        
-                     # last having with it also function schema
-       
-            "volume_guidelines": volume_guidelines,
-            "exercise_analysis": exercise_analysis,
 
-
-
-
-        "history_analysis": history_analysis,
-        "body_analysis": body_analysis,
-
-       
-
-       
-        # "integrated_plan": integrated_plan  # Uncomment if integration is implemente
         """
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
