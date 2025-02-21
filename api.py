@@ -283,8 +283,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
         #--- STEP 8: Decision Nodes for Workout Planning ---
         training_split_node = TrainingSplitDecisionNode()
         split_recommendation = training_split_node.process(
-           standardized_profile, goal_analysis, body_analysis, history_analysis,recovery_analysis: Dict[str, Any] = None
-
+           standardized_profile, goal_analysis, body_analysis, history_analysis,recovery_analysis
         )
 
 
