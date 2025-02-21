@@ -1,251 +1,263 @@
-import math
-from typing import Dict, Any
+Copyfrom typing import Dict, Any, List, Optional
+from pydantic import BaseModel, Field
+from first_time_plans.call_llm_class import BaseLLM
+import json
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+class CalorieCalculation(BaseModel):
+    """Breakdown of the calorie calculation process."""
+    bmr_formula_used: str = Field(..., description="BMR formula used (e.g., 'Mifflin-St Jeor', 'Harris-Benedict')")
+    bmr_value: float = Field(..., description="Calculated Basal Metabolic Rate in calories")
+    activity_multiplier: float = Field(..., description="Activity factor applied to BMR")
+    tdee_calculation: float = Field(..., description="Total Daily Energy Expenditure (BMR × activity factor)")
+    exercise_adjustment: float = Field(..., description="Additional calories for exercise activity")
+    non_exercise_adjustment: float = Field(..., description="Adjustment for NEAT (Non-Exercise Activity Thermogenesis)")
+    goal_adjustment: float = Field(..., description="Caloric adjustment based on goals (surplus/deficit)")
+    final_caloric_target: float = Field(..., description="Final recommended daily caloric intake")
+
+class CaloriePhasing(BaseModel):
+    """Caloric intake phasing recommendations."""
+    initial_phase_calories: float = Field(..., description="Starting caloric target")
+    initial_phase_duration: str = Field(..., description="Duration of initial phase (e.g., '2 weeks')")
+    subsequent_phases: List[Dict[str, Any]] = Field(..., description="Future caloric adjustments")
+    adaptation_indicators: List[str] = Field(..., description="Signs indicating need for caloric adjustment")
+    plateau_strategy: str = Field(..., description="Strategy for handling plateaus")
+
+class MealStructureGuidelines(BaseModel):
+    """Guidelines for meal structure and timing."""
+    recommended_meal_frequency: int = Field(..., description="Optimal number of meals per day")
+    calorie_distribution: Dict[str, float] = Field(..., description="Percentage of calories per meal")
+    pre_workout_guidelines: str = Field(..., description="Pre-workout nutrition recommendations")
+    post_workout_guidelines: str = Field(..., description="Post-workout nutrition recommendations")
+    meal_timing_rationale: str = Field(..., description="Scientific basis for meal timing recommendations")
+
+class CaloricNeedsRecommendation(BaseModel):
+    """Comprehensive caloric needs recommendation."""
+    client_name: str = Field(..., description="Client's name")
+    primary_goal: str = Field(..., description="Client's primary nutritional goal")
+    calorie_targets: CalorieCalculation = Field(..., description="Detailed calorie calculation")
+    calorie_phasing: CaloriePhasing = Field(..., description="Progressive calorie adjustment plan")
+    meal_structure: MealStructureGuidelines = Field(..., description="Meal timing and structure recommendations")
+    refeed_strategy: Optional[str] = Field(None, description="Refeed/diet break recommendations if applicable")
+    goal_timeline_estimate: str = Field(..., description="Estimated timeline to reach nutritional goals")
+    monitoring_metrics: List[str] = Field(..., description="Metrics to track for adjusting caloric intake")
+    scientific_rationale: str = Field(..., description="Scientific basis for caloric recommendations")
 
 class CaloricNeedsDecisionNode:
-    def __init__(self):
-        """Initialize the CaloricNeedsDecisionNode."""
-        self.caloric_targets = {}
+    """
+    Determines optimal caloric intake based on client profile, body composition,
+    and goal analysis.
     
-    def process(self, client_profile: Dict[str, Any], body_composition: Dict[str, Any], 
-                goal_analysis: Dict[str, Any]) -> Dict[str, Any]:
+    This class uses an LLM-driven decision process to calculate appropriate
+    caloric targets considering metabolic rate, activity level, body composition,
+    and specific goals, while incorporating scientific principles of energy balance.
+    """
+    
+    def __init__(self, llm_client: Optional[Any] = None):
         """
-        Calculate Total Daily Energy Expenditure (TDEE) and adjust based on client goals.
+        Initialize the CaloricNeedsDecisionNode with an optional custom LLM client.
         
         Args:
-            client_profile: Client profile analysis
-            body_composition: Body composition analysis
+            llm_client: Custom LLM client implementation. If None, uses the default BaseLLM.
+        """
+        self.llm_client = llm_client or BaseLLM()
+    
+    def process(
+        self,
+        profile_analysis: Dict[str, Any],
+        body_analysis: Dict[str, Any],
+        goal_analysis: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Process client data to determine optimal caloric needs.
+        
+        This method integrates data from previous analysis modules to calculate
+        appropriate caloric targets considering:
+        - Basal metabolic rate based on body composition
+        - Activity level and exercise expenditure
+        - Specific goals (muscle gain, fat loss, performance)
+        - Adaptive thermogenesis considerations
+        - Progressive caloric adjustment strategy
+        
+        Args:
+            profile_analysis: Client profile analysis
+            body_analysis: Body composition analysis
             goal_analysis: Goal clarification analysis
             
         Returns:
-            Dictionary containing caloric targets
+            A dictionary containing the structured caloric needs recommendation
         """
-        # Extract required data
-        gender = client_profile.get('gender', '').lower()
-        age = client_profile.get('age', 25)
-        weight_kg = body_composition.get('weight_kg', 0)
-        height_cm = body_composition.get('height_cm', 0)
-        activity_level = client_profile.get('activity_level', 'Moderate')
-        primary_goal = goal_analysis.get('primary_goal', '')
-        timeframe_weeks = goal_analysis.get('timeframe_weeks', 12)
-        target_weight_kg = goal_analysis.get('target_metrics', {}).get('weight_kg', weight_kg)
-        body_fat_percentage = body_composition.get('estimated_body_fat_percentage', 15)
+        try:
+            # Process using the schema-based approach
+            schema_result = self._determine_caloric_needs_schema(
+                profile_analysis, body_analysis, goal_analysis
+            )
+            
+            return {
+                "caloric_needs_recommendation": schema_result
+            }
+            
+        except Exception as e:
+            logger.error(f"Error determining caloric needs: {str(e)}")
+            raise e
+    
+    def get_system_message(self) -> str:
+        """
+        Returns the system message to guide the LLM in caloric needs decision-making.
         
-        # Calculate BMR using Mifflin-St Jeor equation
-        bmr = self._calculate_bmr(gender, age, weight_kg, height_cm)
+        The system message establishes the context and criteria for determining
+        optimal caloric intake according to scientific principles of energy balance
+        and nutritional science.
         
-        # Calculate TDEE by applying activity multiplier
-        tdee = self._calculate_tdee(bmr, activity_level)
+        Returns:
+            Formatted system message string
+        """
+        return (
+            "You are a nutrition specialist with expertise in energy metabolism, "
+            "body composition analysis, and sports nutrition. Your task is to determine "
+            "optimal caloric targets for a client based on their profile, body composition, "
+            "and specific goals.\n\n"
+            
+            "Apply these scientific principles when calculating caloric needs:\n"
+            "1. **Energy Balance Equation**: Consider the relationship between energy intake, "
+            "expenditure, and storage to establish appropriate caloric targets.\n"
+            "2. **Metabolic Adaptation**: Account for adaptive thermogenesis and metabolic "
+            "flexibility when planning long-term caloric strategies.\n"
+            "3. **Body Composition Considerations**: Use fat-free mass as a primary driver "
+            "for basal metabolic rate calculations.\n"
+            "4. **Goal-Specific Energy Requirements**: Adjust caloric targets based on whether "
+            "the goal is muscle hypertrophy, fat loss, performance, or maintenance.\n"
+            "5. **Progressive Implementation**: Design caloric phases that gradually adapt to "
+            "changes in metabolism and body composition.\n"
+            "6. **Individual Variability**: Account for genetic, hormonal, and lifestyle factors "
+            "that influence metabolic rate and energy partitioning.\n"
+            "7. **Activity Energy Expenditure**: Differentiate between exercise activity thermogenesis "
+            "and non-exercise activity thermogenesis.\n\n"
+            
+            "Your caloric recommendations should include both immediate targets and a progressive "
+            "adjustment strategy, along with meal timing considerations that align with the client's "
+            "training schedule and metabolic needs."
+        )
+
+    def _determine_caloric_needs_schema(
+        self,
+        profile_analysis: Dict[str, Any],
+        body_analysis: Dict[str, Any],
+        goal_analysis: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Determine caloric needs using Pydantic schema validation.
         
-        # Adjust TDEE based on goals
-        adjusted_tdee = self._adjust_for_goals(tdee, primary_goal, timeframe_weeks, 
-                                              weight_kg, target_weight_kg, body_fat_percentage)
+        Args:
+            profile_analysis: Client profile analysis
+            body_analysis: Body composition analysis
+            goal_analysis: Goal clarification analysis
+            
+        Returns:
+            Structured caloric needs recommendation as a Pydantic model
+        """
+
+        profile_analysis = profile_analysis.get("data")
+        # Extract relevant data from profile analysis
+        client_name = profile_analysis.get("name", "Client")
+        age = profile_analysis.get("age", "Unknown")
+        gender = profile_analysis.get("gender", "Unknown")
+        activity_level = profile_analysis.get("activity_level", "Unknown")
         
-        # Calculate macronutrient distribution (will be refined in MacroDistributionDecisionNode)
-        protein_calories, carb_calories, fat_calories = self._estimate_macro_distribution(
-            adjusted_tdee, primary_goal, body_fat_percentage
+        # Extract body composition data
+        height = profile_analysis.get("height", "Unknown")
+        weight = profile_analysis.get("weight", "Unknown")
+        body_fat_percentage = body_analysis.get("body_fat_percentage", "Unknown")
+        fat_free_mass = body_analysis.get("fat_free_mass", "Unknown")
+        
+        # Extract goal information
+        primary_goal = goal_analysis.get("primary_goal", "Unknown")
+        goal_timeframe = goal_analysis.get("goal_timeframe", "Unknown")
+        goal_intensity = goal_analysis.get("goal_intensity", "Unknown")
+        
+
+"""
+            primary_goals: List[str] = Field(
+        ...,
+        description="The 1-3 most important objectives that should receive the majority of programming "
+        "focus. Should address the client's stated priorities while being physiologically optimal."
+    )
+    secondary_goals: List[str] = Field(
+        ...,
+        description="Supporting objectives that complement the primary goals but receive less direct "
+        "programming focus. Should include maintenance goals and complementary adaptations."
+    )
+    objectives: List[Objective] = Field(
+        default_factory=list,
+        description="Structured breakdown of each goal into specific, measurable objectives with clear "
+        "priority levels. Should operationalize abstract goals into concrete targets."
+    )
+    timeframe_analysis: TimeframeAnalysis = Field(
+        ...,
+        description="Comprehensive analysis of goal timeframes that balances client expectations with "
+        "physiological reality. Should provide both assessment and constructive recommendations."
+    )
+    goals_split: Optional[GoalSplit] = Field(
+        None,
+        description="Periodized breakdown of larger goals into specific weekly, monthly and quarterly "
+        "targets. Should establish a clear progression that builds toward the ultimate objectives."
+    )"""
+        # Construct detailed prompt with comprehensive client data
+        prompt = (
+            "Calculate optimal caloric needs for this client based on their profile, "
+            "body composition, and specific goals. Apply principles of energy balance "
+            "and nutritional science to create a comprehensive caloric recommendation.\n\n"
+            
+            f"CLIENT PROFILE:\n"
+            f"- Name: {client_name}\n"
+            f"- Age: {age}\n"
+            f"- Gender: {gender}\n"
+            f"- Activity Level: {activity_level}\n\n"
+            
+            f"BODY COMPOSITION:\n"
+            f"- Height: {height}\n"
+            f"- Weight: {weight}\n"
+            f"- Body Fat Percentage: {body_fat_percentage}\n"
+            f"- Fat-Free Mass: {fat_free_mass}\n\n"
+            
+            f"GOAL ANALYSIS:\n"
+            f"- Primary Goal: {primary_goal}\n"
+            f"- Goal Timeframe: {goal_timeframe}\n"
+            f"- Goal Intensity/Priority: {goal_intensity}\n\n"
+            
+            f"ADDITIONAL CONTEXT:\n{self._format_dict(goal_analysis)}\n\n"
+            
+            "Your caloric needs recommendation should include:\n"
+            "1. Detailed calorie calculation showing BMR, activity adjustments, and goal-specific modifications\n"
+            "2. A progressive calorie phasing strategy that adapts to changes in metabolism and body composition\n"
+            "3. Meal structure guidelines that optimize nutrient timing around training\n"
+            "4. A monitoring and adjustment protocol based on measurable progress indicators\n"
+            "5. Scientific rationale for all recommendations\n\n"
+            
+            "Consider caloric needs through the lens of both thermodynamics (energy balance) "
+            "and metabolic adaptation (hormonal impacts of different nutritional approaches)."
         )
         
-        # Compile results
-        self.caloric_targets = {
-            'bmr': round(bmr),
-            'tdee': round(tdee),
-            'adjusted_daily_calories': round(adjusted_tdee),
-            'estimated_macro_calories': {
-                'protein': round(protein_calories),
-                'carbohydrates': round(carb_calories),
-                'fats': round(fat_calories)
-            }
-        }
-        
-        return self.caloric_targets
+        system_message = self.get_system_message()
+        result = self.llm_client.call_llm(prompt, system_message, schema=CaloricNeedsRecommendation)
+        return result
     
-    def _calculate_bmr(self, gender: str, age: int, weight_kg: float, height_cm: float) -> float:
+    def _format_dict(self, data: Dict[str, Any]) -> str:
         """
-        Calculate Basal Metabolic Rate using Mifflin-St Jeor equation.
+        Format a dictionary as a readable string for inclusion in prompts.
         
         Args:
-            gender: Client gender
-            age: Client age
-            weight_kg: Weight in kilograms
-            height_cm: Height in centimeters
+            data: Dictionary to format
             
         Returns:
-            BMR in calories
+            Formatted string representation
         """
-        if gender == 'male':
-            return (10 * weight_kg) + (6.25 * height_cm) - (5 * age) + 5
-        else:  # female or other
-            return (10 * weight_kg) + (6.25 * height_cm) - (5 * age) - 161
-    
-    def _calculate_tdee(self, bmr: float, activity_level: str) -> float:
-        """
-        Calculate Total Daily Energy Expenditure by applying activity multiplier to BMR.
-        
-        Args:
-            bmr: Basal Metabolic Rate
-            activity_level: Client's activity level
-            
-        Returns:
-            TDEE in calories
-        """
-        activity_multipliers = {
-            'sedentary': 1.2,          # Little or no exercise
-            'lightly active': 1.375,   # Light exercise/sports 1-3 days/week
-            'moderately active': 1.55, # Moderate exercise/sports 3-5 days/week
-            'very active': 1.725,      # Hard exercise/sports 6-7 days/week
-            'extra active': 1.9        # Very hard exercise & physical job or 2x training
-        }
-        
-        # Normalize activity level for lookup
-        activity_level = activity_level.lower()
-        
-        # Find the closest matching activity level
-        if 'sedentary' in activity_level or 'inactive' in activity_level:
-            multiplier = activity_multipliers['sedentary']
-        elif any(level in activity_level for level in ['light', 'mild']):
-            multiplier = activity_multipliers['lightly active']
-        elif any(level in activity_level for level in ['moderate', 'active']):
-            multiplier = activity_multipliers['moderately active']
-        elif any(level in activity_level for level in ['very active', 'high']):
-            multiplier = activity_multipliers['very active']
-        elif any(level in activity_level for level in ['extra', 'extreme', 'athlete']):
-            multiplier = activity_multipliers['extra active']
-        else:
-            # Default to moderately active if no match
-            multiplier = activity_multipliers['moderately active']
-        
-        return bmr * multiplier
-    
-    def _adjust_for_goals(self, tdee: float, primary_goal: str, timeframe_weeks: int,
-                          current_weight_kg: float, target_weight_kg: float,
-                          body_fat_percentage: float) -> float:
-        """
-        Adjust TDEE based on client's primary goal.
-        
-        Args:
-            tdee: Total Daily Energy Expenditure
-            primary_goal: Client's primary goal (e.g., 'hypertrophy', 'fat_loss')
-            timeframe_weeks: Goal timeframe in weeks
-            current_weight_kg: Current weight in kg
-            target_weight_kg: Target weight in kg
-            body_fat_percentage: Estimated body fat percentage
-            
-        Returns:
-            Adjusted daily caloric target
-        """
-        # Normalize goal for comparison
-        goal = primary_goal.lower()
-        
-        # 1. Bulking/Hypertrophy: caloric surplus
-        if any(g in goal for g in ['hypertrophy', 'muscle', 'bulk', 'gain', 'mass']):
-            # Calculate weight change goal
-            weight_change_goal = target_weight_kg - current_weight_kg
-            
-            if weight_change_goal > 0:
-                # For gains, aim for 0.25-0.5% of bodyweight per week for intermediate lifters
-                # The higher the bf%, the smaller the surplus to minimize fat gain
-                max_weekly_gain_rate = 0.005 if body_fat_percentage < 15 else 0.0025
-                ideal_weekly_gain = min(current_weight_kg * max_weekly_gain_rate, weight_change_goal / timeframe_weeks)
-                
-                # Each kg of weight gain requires roughly 7700 calories
-                daily_surplus = (ideal_weekly_gain * 7700) / 7
-                
-                # Smaller surplus for higher body fat
-                if body_fat_percentage > 20:
-                    daily_surplus *= 0.7  # Reduce surplus by 30%
-                
-                return tdee + daily_surplus
-            else:
-                # If current weight is already at/above target, use a modest surplus
-                return tdee * 1.05  # 5% surplus
-        
-        # 2. Fat Loss: caloric deficit
-        elif any(g in goal for g in ['fat loss', 'cut', 'lean', 'lose', 'decrease']):
-            # Calculate weight change goal
-            weight_change_goal = current_weight_kg - target_weight_kg
-            
-            if weight_change_goal > 0:
-                # For fat loss, aim for 0.5-1% of bodyweight per week
-                # The higher the bf%, the larger the deficit can be
-                max_weekly_loss_rate = 0.01 if body_fat_percentage > 20 else 0.005
-                ideal_weekly_loss = min(current_weight_kg * max_weekly_loss_rate, weight_change_goal / timeframe_weeks)
-                
-                # Each kg of weight loss requires roughly 7700 calorie deficit
-                daily_deficit = (ideal_weekly_loss * 7700) / 7
-                
-                # Limit deficit to prevent muscle loss
-                max_deficit = tdee * 0.25  # Maximum 25% deficit
-                daily_deficit = min(daily_deficit, max_deficit)
-                
-                return tdee - daily_deficit
-            else:
-                # If current weight is already at/below target, use a modest deficit
-                return tdee * 0.9  # 10% deficit
-        
-        # 3. Maintenance/Recomp
-        elif any(g in goal for g in ['maintain', 'recomp', 'recomposition', 'tone', 'performance']):
-            # For recomp, maintain caloric balance or very slight surplus
-            return tdee * 1.02  # 2% surplus
-        
-        # 4. General Fitness
-        elif 'fitness' in goal or 'general' in goal or 'health' in goal:
-            # Default to a slight deficit for overall fitness if above ideal weight
-            if body_fat_percentage > 20:
-                return tdee * 0.95  # 5% deficit
-            else:
-                return tdee  # Maintenance
-        
-        # Default: return TDEE if no specific goal match
-        return tdee
-    
-    def _estimate_macro_distribution(self, calories: float, primary_goal: str, 
-                                    body_fat_percentage: float) -> tuple:
-        """
-        Provide initial macro distribution estimates based on goals and body composition.
-        This will be refined further in the MacroDistributionDecisionNode.
-        
-        Args:
-            calories: Adjusted daily caloric target
-            primary_goal: Client's primary goal
-            body_fat_percentage: Estimated body fat percentage
-            
-        Returns:
-            Tuple of (protein_calories, carb_calories, fat_calories)
-        """
-        goal = primary_goal.lower()
-        
-        # Base protein intake on goal and body composition
-        if 'hypertrophy' in goal or 'muscle' in goal or 'bulk' in goal:
-            # Higher protein for muscle gain
-            protein_percentage = 0.30  # 30% of total calories
-        elif 'fat loss' in goal or 'cut' in goal:
-            # Higher protein for preserving muscle during fat loss
-            protein_percentage = 0.35  # 35% of total calories
-        else:
-            # Moderate protein for maintenance or general fitness
-            protein_percentage = 0.25  # 25% of total calories
-        
-        # Adjust protein based on body fat percentage
-        if body_fat_percentage > 25:
-            # Even higher protein for higher body fat (to preserve muscle mass)
-            protein_percentage += 0.05
-        
-        # Calculate initial macro distribution
-        protein_calories = calories * protein_percentage
-        
-        # Remaining calories distributed between carbs and fats
-        remaining_calories = calories - protein_calories
-        
-        # For hypertrophy/bulking goals: prioritize carbs
-        if 'hypertrophy' in goal or 'muscle' in goal or 'bulk' in goal:
-            carb_percentage_of_remaining = 0.65  # 65% of remaining to carbs
-        # For fat loss: lower carbs
-        elif 'fat loss' in goal or 'cut' in goal:
-            carb_percentage_of_remaining = 0.55  # 55% of remaining to carbs
-        else:
-            carb_percentage_of_remaining = 0.60  # 60% of remaining to carbs
-        
-        carb_calories = remaining_calories * carb_percentage_of_remaining
-        fat_calories = remaining_calories * (1 - carb_percentage_of_remaining)
-        
-        return protein_calories, carb_calories, fat_calories
+        try:
+            return json.dumps(data, indent=2)
+        except:
+            # Fallback for non-serializable objects
+            return str(data)
