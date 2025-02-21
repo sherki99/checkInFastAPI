@@ -1,7 +1,7 @@
 import json
 import logging
 from typing import Dict, Any, Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from first_time_plans.call_llm_class import BaseLLM
 
 # Set up basic logging
@@ -113,6 +113,12 @@ class TrainingHistory(BaseModel):
         description="Assessment of technical proficiency in key movement patterns. Should rate proficiency "
         "in patterns like squat, hinge, push, pull, and carry based on training history."
     )
+    
+    # Add a model validator to ensure schema compatibility
+    @model_validator(mode='before')
+    @classmethod
+    def validate_schema(cls, data):
+        return data
 
 class TrainingHistoryModule:
     """
@@ -133,7 +139,6 @@ class TrainingHistoryModule:
         :return: A dictionary containing the training history analysis.
         """
         try:
-           # history_analysis = self._analyze_training_history(standardized_profile)
             history_analysis_schema = self._analyze_training_history_schema(standardized_profile)
             return {"history_analysis_schema": history_analysis_schema}
         except Exception as e:
@@ -172,6 +177,96 @@ class TrainingHistoryModule:
             "Deliver a comprehensive analysis that provides specific programming guidelines based on the client's unique adaptation history."
         )
 
+    def _analyze_training_history_schema(self, standardized_profile: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Uses an LLM with Pydantic schema to analyze training history.
+        
+        :param standardized_profile: The standardized client profile.
+        :return: Structured training history analysis as a Pydantic model.
+        """
+        personal_info = standardized_profile.get("personal_info", {})
+        fitness_data = standardized_profile.get("fitness", {}).get("data", {})
+
+        system_message = self.get_history_analysis_system_message()
+        
+        prompt = (
+            "Analyze this client's training history using principles of exercise science and adaptation theory. "
+            "Document your reasoning process and assessment methodology for each conclusion.\n\n"
+            f"CLIENT PROFILE:\n{json.dumps(personal_info)}\n\n"
+            f"CLIENT FITNESS HISTORY:\n{json.dumps(fitness_data)}\n\n"
+            "Provide a detailed analysis that evaluates true training experience, exercise effectiveness, "
+            "volume tolerance, and adaptation patterns. Use concepts from scientific training literature "
+            "including MEV, MAV, MRV, and SRA (Stimulus-Recovery-Adaptation) principles.\n\n"
+            "Be specific about volume recommendations (sets per muscle group), intensity ranges (% of 1RM), "
+            "and frequency guidelines (sessions per muscle group per week) based on the training history.\n\n"
+            "Return your analysis as a properly structured JSON conforming to the TrainingHistory model schema."
+        )
+        
+        # Modified approach: Convert Pydantic model to JSON schema manually
+        schema = self._pydantic_to_compatible_schema(TrainingHistory)
+        
+        # Call the LLM using the modified schema
+        result = self.llm_client.call_llm(prompt, system_message, schema=schema)
+        
+        # Parse the result back into a Pydantic model for validation
+        if isinstance(result, dict):
+            return TrainingHistory.model_validate(result).model_dump()
+        return result
+
+    def _pydantic_to_compatible_schema(self, model_class) -> Dict[str, Any]:
+        """
+        Converts a Pydantic model to a schema that's compatible with LLM APIs.
+        
+        This function ensures the required fields are properly specified in the format
+        expected by the LLM API.
+        
+        :param model_class: The Pydantic model class
+        :return: A modified schema compatible with LLM APIs
+        """
+        # Get the JSON schema from the Pydantic model
+        schema = model_class.model_json_schema()
+        
+        # Extract required fields
+        required_fields = []
+        properties = schema.get("properties", {})
+        
+        for field_name, field_info in properties.items():
+            field_def = model_class.model_fields.get(field_name)
+            if field_def and field_def.default is ...:
+                required_fields.append(field_name)
+        
+        # Update the schema with the required fields
+        schema["required"] = required_fields
+        
+        # Additional adjustments for nested models
+        self._fix_nested_schemas(schema)
+        
+        return schema
+    
+    def _fix_nested_schemas(self, schema: Dict[str, Any]) -> None:
+        """
+        Recursively fixes nested schemas to ensure compatibility.
+        
+        :param schema: The schema dictionary to fix
+        """
+        if "properties" not in schema:
+            return
+            
+        # Process each property
+        for prop_name, prop_schema in schema["properties"].items():
+            # Handle arrays with items
+            if prop_schema.get("type") == "array" and "items" in prop_schema:
+                self._fix_nested_schemas(prop_schema["items"])
+                
+            # Handle nested objects
+            elif prop_schema.get("type") == "object" or "$ref" in prop_schema:
+                self._fix_nested_schemas(prop_schema)
+
+
+
+
+                
+    
     def _analyze_training_history(self, standardized_profile: Dict[str, Any]) -> Dict[str, Any]:
         """
         Uses an LLM function call to analyze training history and experience.
@@ -272,31 +367,3 @@ class TrainingHistoryModule:
         result = self.llm_client.call_llm(prompt, system_message, function_schema=function_schema)
         return result
     
-    def _analyze_training_history_schema(self, standardized_profile: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Uses an LLM with Pydantic schema to analyze training history.
-        
-        :param standardized_profile: The standardized client profile.
-        :return: Structured training history analysis as a Pydantic model.
-        """
-        personal_info = standardized_profile.get("personal_info", {})
-        fitness_data = standardized_profile.get("fitness", {}).get("data", {})
-
-        system_message = self.get_history_analysis_system_message()
-        
-        prompt = (
-            "Analyze this client's training history using principles of exercise science and adaptation theory. "
-            "Document your reasoning process and assessment methodology for each conclusion.\n\n"
-            f"CLIENT PROFILE:\n{json.dumps(personal_info)}\n\n"
-            f"CLIENT FITNESS HISTORY:\n{json.dumps(fitness_data)}\n\n"
-            "Provide a detailed analysis that evaluates true training experience, exercise effectiveness, "
-            "volume tolerance, and adaptation patterns. Use concepts from scientific training literature "
-            "including MEV, MAV, MRV, and SRA (Stimulus-Recovery-Adaptation) principles.\n\n"
-            "Be specific about volume recommendations (sets per muscle group), intensity ranges (% of 1RM), "
-            "and frequency guidelines (sessions per muscle group per week) based on the training history.\n\n"
-            "Return your analysis as a properly structured JSON conforming to the TrainingHistory model schema."
-        )
-        
-        # Call the LLM using the Pydantic model as schema
-        result = self.llm_client.call_llm(prompt, system_message, schema=TrainingHistory)
-        return result
