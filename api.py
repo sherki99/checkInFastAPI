@@ -236,13 +236,10 @@ from first_time_plans.Module_D.CalorieNeedsDecisionNode import CaloricNeedsDecis
 from first_time_plans.Module_D.MacrosDistrubutionNodes import MacroDistributionDecisionNode
 from first_time_plans.Module_D.MealTimingDecion import MealTimingDecisionNode
 
-# Import integration module (if needed)
+
 from first_time_plans.Module_E.PlanIntegrationNode import PlanIntegrationNode
 from first_time_plans.Module_E.WorkoutDecisionClass import WorkoutDecisionClass
 from first_time_plans.Module_E.NutritionDecisionClass import NutritionDecisionClass
-
-
-
 
 # Import utility for LLM interactions
 from first_time_plans.call_llm_class import BaseLLM
@@ -345,24 +342,6 @@ async def create_first_plan(base_model: BaseModelForRequest):
             body_analysis
         )
         """
-             
-
-        caloric_node = CaloricNeedsDecisionNode()
-        caloric_targets = caloric_node.process(profile_analysis, body_analysis, goal_analysis)
-
-
-        macro_node = MacroDistributionDecisionNode()
-        macro_plan = macro_node.process(
-            caloric_targets, profile_analysis, body_analysis, goal_analysis, history_analysis
-        )
-        
-  
-        
-        meal_timing_node = MealTimingDecisionNode()
-        timing_recommendations = meal_timing_node.process(
-            macro_plan, split_recommendation, profile_analysis, goal_analysis, recovery_analysis
-        )
-        
         # --- (Optional) STEP 10: Integration & Final Output ---
         # integration_node = PlanIntegrationNode()
         # integrated_plan = integration_node.process(
@@ -380,7 +359,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
         
 
         """
-        # Prepare final response with all analysis components
+
         return {
             "status": "success",
             "standardized_profile": standardized_profile,
@@ -391,12 +370,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
             "macro_plan": macro_plan,
             "timing_recommendations": timing_recommendations,
             "nutrition_plan" : nutrition_plan,
-            "workout_plan " : workout_plan , 
-
-            
-       
-        # "integrated_plan": integrated_plan
-
+            "workout_plan " : workout_plan, 
         }
     
         """

@@ -170,10 +170,10 @@ class NutritionDecisionClass:
             MealPlan object containing the complete meal plan
         """
         # Extract relevant client info
-        client_name = client_data.get("profile", {}).get("personal", {}).get("name", "Client")
+        client_name = client_data.get("personal_info", {}).get("name", "Client")
         primary_goals = goal_analysis.get("goal_analysis_schema", {}).get("primary_goals", [])
-        food_preferences = client_data.get("profile", {}).get("nutrition", {}).get("food_preferences", [])
-        food_restrictions = client_data.get("profile", {}).get("nutrition", {}).get("food_restrictions", [])
+        food_preferences = client_data.get("nutrition", {}).get("dietPreference", {})
+        food_restrictions = client_data.get("nutrition", {}).get("food_restrictions", []) # is empty arrauy always bcs does not exist yeat 
         
         # Get caloric targets
         training_day_calories = caloric_targets.get("training_day_calories", 2500)

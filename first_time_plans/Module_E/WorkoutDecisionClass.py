@@ -154,7 +154,7 @@ class WorkoutDecisionClass:
             CompletePlan object containing the complete workout plan
         """
         # Extract relevant client info
-        client_name = client_data.get("profile", {}).get("personal", {}).get("name", "Client")
+        client_name = client_data.get("personal_info", {}).get("name", "Client")
         primary_goals = goal_analysis.get("goal_analysis_schema", {}).get("primary_goals", [])
         
         # Get training split details
@@ -175,12 +175,16 @@ class WorkoutDecisionClass:
             f"TRAINING SPLIT RECOMMENDATION:\n"
             f"Split Type: {split_type}\n"
             f"Training Frequency: {training_frequency} days per week\n\n"
-            
+                
+            f"SPLIT DAYS:\n"
+            f"{json.dumps(split_days, indent=2)}\n\n"
+
             f"VOLUME AND INTENSITY GUIDELINES:\n"
             f"{json.dumps(volume_guidelines.get('volume_intensity_recommendation', {}), indent=2)}\n\n"
             
             f"EXERCISE SELECTION:\n"
             f"{json.dumps(exercise_selection, indent=2)}\n\n"
+
             
             "Generate a complete workout plan that includes:\n"
             "1. A descriptive name for the program\n"
