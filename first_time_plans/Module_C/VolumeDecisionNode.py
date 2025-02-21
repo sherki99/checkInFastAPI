@@ -1,58 +1,56 @@
+import logging
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from first_time_plans.call_llm_class import BaseLLM
 import json
-import logging
 
 # Configure logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-class MuscleGroupVolumeGuideline(BaseModel):
-    """Volume recommendations for a specific muscle group."""
+class VolumePerMuscleGroup(BaseModel):
+    """Represents volume recommendations for a specific muscle group."""
     muscle_group: str = Field(..., description="Name of the muscle group (e.g., 'Chest', 'Back', 'Legs')")
-    weekly_sets_range: str = Field(..., description="Recommended weekly set range (e.g., '12-20')")
-    session_sets_range: str = Field(..., description="Recommended sets per session (e.g., '4-8')")
-    frequency: str = Field(..., description="Optimal weekly training frequency (e.g., '2-3 times')")
-    mev: int = Field(..., description="Minimum Effective Volume (sets per week)")
-    mav: int = Field(..., description="Maximum Adaptive Volume (sets per week)")
-    mrv: int = Field(..., description="Maximum Recoverable Volume (sets per week)")
+    mev: str = Field(..., description="Minimum Effective Volume (sets per week)")
+    mav: str = Field(..., description="Maximum Adaptive Volume (sets per week)")
+    mrv: str = Field(..., description="Maximum Recoverable Volume (sets per week)")
+    recommended_weekly_sets: str = Field(..., description="Recommended weekly set range based on client's specific situation")
+    frequency_recommendation: str = Field(..., description="Optimal training frequency for this muscle group (sessions per week)")
 
-class IntensityGuideline(BaseModel):
-    """Intensity recommendations for different training goals."""
-    strength_focus: str = Field(..., description="Rep ranges and intensity for strength development")
-    hypertrophy_focus: str = Field(..., description="Rep ranges and intensity for hypertrophy")
-    endurance_focus: str = Field(..., description="Rep ranges and intensity for muscular endurance")
-    primary_intensity_recommendation: str = Field(..., description="The main intensity approach based on client goals")
-    rpe_guideline: str = Field(..., description="Rating of Perceived Exertion guidelines")
-    rest_period_recommendation: str = Field(..., description="Rest period recommendations between sets")
+class IntensityGuidelines(BaseModel):
+    """Guidelines for training intensity based on client goals and experience."""
+    primary_rep_range: str = Field(..., description="Main rep range to focus on for primary goals (e.g., '8-12 reps')")
+    secondary_rep_range: str = Field(..., description="Secondary rep range to include for complementary adaptations")
+    rpe_recommendation: str = Field(..., description="Rate of Perceived Exertion (RPE) recommendation (e.g., 'RPE 7-9')")
+    percentage_1rm_range: str = Field(..., description="Recommended intensity range as percentage of 1RM (e.g., '70-85%')")
+    rest_period_recommendation: str = Field(..., description="Recommended rest periods between sets (e.g., '2-3 minutes')")
 
-class ProgressionGuideline(BaseModel):
-    """Guidelines for progressive overload implementation."""
-    initial_adaptation_phase: str = Field(..., description="Guidelines for the first 2-4 weeks")
-    volume_progression: str = Field(..., description="How to progress training volume over time")
-    intensity_progression: str = Field(..., description="How to progress training intensity over time")
-    deload_frequency: str = Field(..., description="Recommended frequency and structure of deload weeks")
-    progression_indicators: List[str] = Field(..., description="Key metrics to track for progression")
+class ProgressionModel(BaseModel):
+    """Structured progression model for implementing progressive overload."""
+    initial_phase: str = Field(..., description="First phase of progression (usually 1-4 weeks)")
+    intermediate_phase: str = Field(..., description="Second phase of progression (usually 5-8 weeks)")
+    advanced_phase: str = Field(..., description="Final phase of progression (usually 9-12 weeks)")
+    deload_frequency: str = Field(..., description="Recommended frequency of deload weeks")
+    deload_strategy: str = Field(..., description="Method of implementing deloads (volume reduction, intensity reduction, etc.)")
+    progression_variables: List[str] = Field(..., description="Variables to manipulate for progression (weight, reps, sets, etc.)")
 
-class VolumeIntensityRecommendation(BaseModel):
-    """Complete volume and intensity recommendations for the training plan."""
-    primary_goal_focus: str = Field(..., description="The primary training goal that shapes these recommendations")
-    experience_level_adjustment: str = Field(..., description="How these recommendations are adjusted for client's experience")
-    recovery_capacity_assessment: str = Field(..., description="Assessment of client's recovery capabilities")
-    muscle_group_guidelines: List[MuscleGroupVolumeGuideline] = Field(..., description="Volume guidelines for each major muscle group")
-    intensity_guidelines: IntensityGuideline = Field(..., description="Intensity recommendations across different goals")
-    progression_model: ProgressionGuideline = Field(..., description="Progressive overload implementation guidelines")
-    special_considerations: List[str] = Field(..., description="Additional factors that influenced these recommendations")
+class VolumeAndIntensityRecommendation(BaseModel):
+    """Complete volume and intensity recommendation for training program."""
+    overall_volume_assessment: str = Field(..., description="Assessment of client's volume needs and tolerance")
+    overall_intensity_assessment: str = Field(..., description="Assessment of client's optimal intensity zones")
+    muscle_group_recommendations: List[VolumePerMuscleGroup] = Field(..., description="Volume landmarks for each major muscle group")
+    intensity_guidelines: IntensityGuidelines = Field(..., description="Intensity parameters for optimal training")
+    progression_model: ProgressionModel = Field(..., description="Progressive overload implementation strategy")
+    special_considerations: List[str] = Field(..., description="Client-specific factors affecting volume/intensity prescriptions")
     scientific_justification: str = Field(..., description="Scientific principles supporting these recommendations")
 
 class VolumeAndIntensityDecisionNode:
     """
-    Determines optimal training volume and intensity based on client data and analysis.
+    Determines optimal training volume and intensity parameters based on client data.
     
-    This class uses an LLM-driven decision process to generate scientifically-grounded
-    volume and intensity guidelines that align with the client's goals, recovery capacity,
-    training experience, and individual constraints.
+    This class uses an LLM-driven approach to generate scientifically-grounded 
+    volume, intensity, and progression guidelines tailored to the client's recovery capacity,
+    training experience, and specific goals.
     """
     
     def __init__(self, llm_client: Optional[Any] = None):
@@ -65,30 +63,30 @@ class VolumeAndIntensityDecisionNode:
         self.llm_client = llm_client or BaseLLM()
     
     def process(
-        self,
+        self, 
         client_data: Dict[str, Any],
-        history_analysis: Dict[str, Any],
-        body_analysis: Dict[str, Any],
+        history_analysis: Dict[str, Any], 
+        body_analysis: Dict[str, Any], 
         goal_analysis: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
-        Process client data to determine optimal training volume and intensity.
+        Process client data to determine optimal volume and intensity parameters.
         
         This method integrates data from multiple analysis modules to determine
-        the most appropriate volume landmarks and intensity parameters, considering:
+        appropriate training volume, intensity, and progression strategies considering:
+        - Training history and volume tolerance
+        - Recovery capacity and lifestyle factors
         - Primary and secondary goals
-        - Recovery capacity and training experience
-        - Individual muscle group development needs
-        - Current training volume tolerance
+        - Body composition and training adaptations
         
         Args:
-            client_data: Raw client profile data
+            client_data: Raw client data from the standardized profile
             history_analysis: Training history and experience analysis
             body_analysis: Body composition and measurement analysis
             goal_analysis: Client goals and objectives analysis
             
         Returns:
-            A dictionary containing structured volume and intensity guidelines
+            A dictionary containing structured volume and intensity recommendations
         """
         try:
             # Process using the schema-based approach
@@ -101,7 +99,7 @@ class VolumeAndIntensityDecisionNode:
             }
             
         except Exception as e:
-            logger.error(f"Error determining volume and intensity guidelines: {str(e)}")
+            logger.error(f"Error determining volume and intensity parameters: {str(e)}")
             raise e
     
     def get_system_message(self) -> str:
@@ -109,50 +107,45 @@ class VolumeAndIntensityDecisionNode:
         Returns the system message to guide the LLM in volume and intensity decision-making.
         
         The system message establishes the context and criteria for determining
-        optimal training volume and intensity according to scientific principles.
+        optimal training parameters according to scientific principles.
         
         Returns:
             Formatted system message string
         """
         return (
-            "You are an exercise science specialist with expertise in program design, "
+            "You are an expert exercise scientist specialized in training volume and intensity prescription, "
             "following evidence-based methodologies from researchers like Dr. Mike Israetel, Dr. Brad Schoenfeld, "
-            "and Dr. Eric Helms. Your task is to determine optimal training volume and intensity "
-            "parameters based on the client's goals, training history, body composition, and recovery capacity.\n\n"
+            "and Dr. Eric Helms. Your task is to determine optimal training volume, intensity, and progression "
+            "strategies based on a client's individual characteristics and goals.\n\n"
             
-            "Apply these scientific principles when designing volume and intensity guidelines:\n"
-            "1. **Volume Landmarks**: Use MEV (Minimum Effective Volume), MAV (Maximum Adaptive Volume), "
-            "and MRV (Maximum Recoverable Volume) concepts for different muscle groups.\n"
-            "2. **Training Age Consideration**: Adjust volume based on training experience - beginners need "
-            "less volume to progress while advanced trainees require more.\n"
-            "3. **Recovery Capacity**: Individual recovery abilities affect optimal volume - better recovery "
-            "allows higher training volumes.\n"
-            "4. **Intensity Zones**: Apply appropriate intensity zones based on goals:\n"
-            "   - Strength: 1-6 reps, 80-95% 1RM, RPE 8-10\n"
-            "   - Hypertrophy: 6-12 reps, 65-80% 1RM, RPE 7-9\n"
-            "   - Endurance: 12-20+ reps, <65% 1RM, RPE 6-8\n"
-            "5. **Volume Distribution**: Distribute volume based on frequency, splitting weekly volume "
-            "across sessions for optimal stimulus:recovery ratio.\n"
-            "6. **Progressive Overload**: Plan for progressive increases in volume before increasing intensity.\n"
-            "7. **Deload Strategy**: Incorporate planned deloads based on training age and systemic fatigue.\n\n"
+            "Apply these scientific principles when prescribing volume and intensity:\n"
+            "1. **Volume Landmarks**: Prescribe volume using MEV (Minimum Effective Volume), MAV (Maximum Adaptive Volume), "
+            "and MRV (Maximum Recoverable Volume) for each muscle group.\n"
+            "2. **Intensity Specificity**: Match intensity (load/RPE) to primary training goal (strength: 1-6 reps at 80-95% 1RM, "
+            "hypertrophy: 6-12 reps at 65-80% 1RM, endurance: 12-20+ reps at 40-65% 1RM).\n"
+            "3. **Recovery Consideration**: Account for systemic recovery capacity based on age, training experience, "
+            "sleep quality, stress levels, and nutrition.\n"
+            "4. **Progressive Overload**: Design progression models that gradually increase demands "
+            "while respecting recovery capacity.\n"
+            "5. **Individual Response**: Consider previous volume tolerance, training age, injury history, "
+            "and demonstrated adaptations to different intensity ranges.\n\n"
             
-            "Your recommendation should include specific volume landmarks for major muscle groups, "
-            "intensity parameters aligned with client goals, and progression guidelines that respect "
-            "individual recovery capacity and training experience."
+            "Provide specific volume recommendations for each major muscle group, intensity parameters "
+            "tailored to the client's goals, and a progression strategy that includes deload protocols."
         )
-
+    
     def _determine_volume_intensity_schema(
-        self,
+        self, 
         client_data: Dict[str, Any],
-        history_analysis: Dict[str, Any],
-        body_analysis: Dict[str, Any],
+        history_analysis: Dict[str, Any], 
+        body_analysis: Dict[str, Any], 
         goal_analysis: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
-        Determine volume and intensity guidelines using Pydantic schema validation.
+        Determine volume and intensity parameters using Pydantic schema validation.
         
         Args:
-            client_data: Raw client profile data
+            client_data: Raw client data from the standardized profile
             history_analysis: Training history and experience analysis
             body_analysis: Body composition and measurement analysis
             goal_analysis: Client goals and objectives analysis
@@ -164,19 +157,18 @@ class VolumeAndIntensityDecisionNode:
         goals = goal_analysis.get("goal_analysis_schema", {})
         primary_goals = goals.get("primary_goals", [])
         training_experience = history_analysis.get("experience_level", "Intermediate")
-        recovery_capacity = history_analysis.get("recovery_capacity", "Average")
-        
-        # Get body measurements for muscle development priorities
-        measurements = client_data.get("measurements", {}).get("measurements", {})
+        volume_tolerance = history_analysis.get("volume_tolerance", {}).get("weekly_volume_tolerance", "Unknown")
+        recovery_capacity = history_analysis.get("adaptation_history", {}).get("recovery_capacity", "Average")
         
         # Construct detailed prompt with comprehensive client data
         prompt = (
-            "Design optimal volume and intensity guidelines for this client based on scientific principles "
-            "of exercise physiology. Apply Dr. Mike Israetel's volume landmarks (MEV, MAV, MRV) and appropriate "
-            "intensity parameters based on the client's goals and individual factors.\n\n"
+            "Determine the optimal volume, intensity, and progression parameters for this client. "
+            "Apply scientific principles like volume landmarks (MEV, MAV, MRV) and intensity specificity "
+            "to create an evidence-based prescription.\n\n"
             
             f"CLIENT PROFILE SUMMARY:\n"
             f"- Training experience: {training_experience}\n"
+            f"- Volume tolerance: {volume_tolerance}\n"
             f"- Recovery capacity: {recovery_capacity}\n"
             f"- Primary goals: {', '.join(primary_goals)}\n\n"
             
@@ -186,17 +178,17 @@ class VolumeAndIntensityDecisionNode:
             
             "Your volume and intensity recommendation should include:\n"
             "1. Specific volume landmarks (MEV, MAV, MRV) for each major muscle group\n"
-            "2. Appropriate intensity parameters (rep ranges, RPE, rest periods) aligned with goals\n"
-            "3. Clear progression guidelines for both volume and intensity\n"
-            "4. Deload recommendations based on training age and recovery capacity\n"
-            "5. Special considerations based on individual factors\n\n"
+            "2. Optimal rep ranges and RPE/intensity zones based on goals\n"
+            "3. Training frequency recommendations per muscle group\n"
+            "4. Progressive overload strategy across a 12-week timeline\n"
+            "5. Deload protocols and frequency\n\n"
             
-            "Create a complete volume and intensity prescription with scientific justification for your recommendations. "
-            "Explain how these guidelines optimize muscular adaptation while respecting individual recovery capacity."
+            "Provide detailed scientific justification for your recommendations, specifically addressing "
+            "how they align with the client's recovery capacity and training goals."
         )
         
         system_message = self.get_system_message()
-        result = self.llm_client.call_llm(prompt, system_message, schema=VolumeIntensityRecommendation)
+        result = self.llm_client.call_llm(prompt, system_message, schema=VolumeAndIntensityRecommendation)
         return result
     
     def _format_dict(self, data: Dict[str, Any]) -> str:

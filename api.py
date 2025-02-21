@@ -287,30 +287,22 @@ async def create_first_plan(base_model: BaseModelForRequest):
         )
 
 
+        volume_node = VolumeAndIntensityDecisionNode()
+        volume_guidelines = volume_node.process(
+            standardized_profile, history_analysis, body_analysis, goal_analysis
+        )
+        
+        exercise_node = ExerciseSelectionDecisionNode()
+        exercise_selection = exercise_node.process(
+            standardized_profile, history_analysis, split_recommendation, volume_guidelines
+        )
+
+
         # --- STEP 9: Decision Nodes for Nutrition Planning ---
 
 
         """
              
-
-
-        training_split_node = TrainingSplitDecisionNode()
-        split_recommendation = training_split_node.process(
-           goal_analysis, body_analysis, history_analysis
-        )
-
-                     
-        volume_node = VolumeAndIntensityDecisionNode()
-        volume_guidelines = volume_node.process(
-            client_data, history_analysis, body_analysis, goal_analysis
-        )
-
-        
-        exercise_node = ExerciseSelectionDecisionNode()
-        exercise_analysis = exercise_node.process(
-            standardized_profile, history_analysis, split_recommendation, volume_guidelines
-        )
-        # 
 
         caloric_node = CaloricNeedsDecisionNode()
         caloric_targets = caloric_node.process(profile_analysis, body_analysis, goal_analysis)
