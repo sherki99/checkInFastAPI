@@ -347,9 +347,6 @@ async def create_first_plan(base_model: BaseModelForRequest):
             "body_analysis": body_analysis,
             "recovery_analysis": recovery_analysis,
     #        "profile_analysis": profile_analysis,
-
-
-
         }
     
         """
