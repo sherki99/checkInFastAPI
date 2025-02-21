@@ -108,11 +108,7 @@ class TrainingHistory(BaseModel):
         description="Recommended progression strategies based on historical adaptation patterns. "
         "Should include specific progression methods that have proven effective for this client."
     )
-    technical_proficiency: Dict[str, str] = Field(
-        ...,
-        description="Assessment of technical proficiency in key movement patterns. Should rate proficiency "
-        "in patterns like squat, hinge, push, pull, and carry based on training history."
-    )
+
     
     # Add a model validator to ensure schema compatibility
     @model_validator(mode='before')
