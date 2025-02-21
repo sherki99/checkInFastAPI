@@ -108,13 +108,23 @@ class TrainingHistory(BaseModel):
         description="Recommended progression strategies based on historical adaptation patterns. "
         "Should include specific progression methods that have proven effective for this client."
     )
-
-    # list[tuople[str,str]] # beftroe that was dict but it so accep for open ai apu 
-    technical_proficiency: List[str] = Field(  
-        ...,
-        description="Assessment of technical proficiency in key movement patterns. Should rate proficiency "
-        "in patterns like squat, hinge, push, pull, and carry based on training history."
+    
+    technical_proficiency: List[str] = Field(
+            ...,
+            description=(
+                "A list representing the assessment of technical proficiency in key movement patterns. "
+                "Each entry follows the format 'movement: rating'. The movements assessed include: "
+                "'squat', 'hinge', 'push', 'pull', and 'carry'. Ratings should be based on training history "
+                "and can be values such as 'low', 'moderate', or 'high'.\n"
+                "Example:\n"
+                "  - 'squat: high'\n"
+                "  - 'hinge: moderate'\n"
+                "  - 'push: high'\n"
+                "  - 'pull: low'\n"
+                "  - 'carry: moderate'"
+            )
     )
+
 
 class TrainingHistoryModule:
     """
@@ -203,104 +213,3 @@ class TrainingHistoryModule:
         # Call the LLM using the Pydantic model as schema
         result = self.llm_client.call_llm(prompt, system_message, schema=TrainingHistory)
         return result
-    
-        def _analyze_training_history(self, standardized_profile: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Uses an LLM function call to analyze training history and experience.
-        
-        :param standardized_profile: The standardized client profile.
-        :return: Structured training history analysis as a dictionary.
-        """
-        # Extract relevant data from the standardized profile
-        personal_info = standardized_profile.get("personal_info", {})
-        fitness_data = standardized_profile.get("fitness", {}).get("data", {})
-        
-        system_message = self.get_history_analysis_system_message()
-        
-        prompt = (
-            "Conduct a comprehensive analysis of this client's training history using evidence-based principles. "
-            "Follow a scientific approach to strength and hypertrophy training and document your reasoning for each conclusion.\n\n"
-            f"CLIENT PROFILE:\n{json.dumps(personal_info)}\n\n"
-            f"CLIENT FITNESS HISTORY:\n{json.dumps(fitness_data)}\n\n"
-            "Analyze this training history to determine experience level, exercise preferences, adaptation patterns, "
-            "volume tolerance, and technical proficiency. Focus on how these factors should influence program design.\n\n"
-            "Return your analysis as a JSON with the following keys: "
-            "'experience_level' (string describing true training age), "
-            "'exercise_preferences' (array of exercise assessments), "
-            "'adaptation_history' (object with strength, hypertrophy, and recovery assessments), "
-            "'volume_tolerance' (object with volume, frequency, and intensity assessments), "
-            "'progressive_overload_strategy' (array of effective progression methods), and "
-            "'technical_proficiency' (object mapping movement patterns to proficiency levels)."
-        )
-
-        # Define the function schema that the LLM should adhere to:
-        function_schema = {
-            "name": "analyze_training_history",
-            "description": "Analyze training history to provide program design guidelines.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "steps": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "explanation": {"type": "string"},
-                                "output": {"type": "string"}
-                            },
-                            "required": ["explanation", "output"]
-                        }
-                    },
-                    "experience_level": {"type": "string"},
-                    "exercise_preferences": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "exercise_type": {"type": "string"},
-                                "preference_level": {"type": "string"},
-                                "effectiveness_assessment": {"type": "string"},
-                                "inclusion_recommendation": {"type": "string"},
-                                "modification_notes": {"type": "string", "nullable": True}
-                            },
-                            "required": ["exercise_type", "preference_level", "effectiveness_assessment", "inclusion_recommendation"]
-                        }
-                    },
-                    "adaptation_history": {
-                        "type": "object",
-                        "properties": {
-                            "strength_adaptation": {"type": "string"},
-                            "hypertrophy_adaptation": {"type": "string"},
-                            "recovery_capacity": {"type": "string"}
-                        },
-                        "required": ["strength_adaptation", "hypertrophy_adaptation", "recovery_capacity"]
-                    },
-                    "volume_tolerance": {
-                        "type": "object",
-                        "properties": {
-                            "weekly_volume_tolerance": {"type": "string"},
-                            "frequency_tolerance": {"type": "string"},
-                            "intensity_response": {"type": "string"}
-                        },
-                        "required": ["weekly_volume_tolerance", "frequency_tolerance", "intensity_response"]
-                    },
-                    "progressive_overload_strategy": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "technical_proficiency": {
-                        "type": "object",
-                        "additionalProperties": {"type": "string"}
-                    }
-                },
-                "required": [
-                    "steps", "experience_level", "exercise_preferences", "adaptation_history", 
-                    "volume_tolerance", "progressive_overload_strategy", "technical_proficiency"
-                ]
-            }
-        }
-
-        # Call the LLM using the defined function schema
-        result = self.llm_client.call_llm(prompt, system_message, function_schema=function_schema)
-        return result
-    

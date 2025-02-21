@@ -94,8 +94,8 @@ class RecoveryAndLifestyle(BaseModel):
         description="Analysis of meal timing and composition relative to training schedule. "
         "Should provide specific recommendations for optimizing nutritional recovery."
     )
-    # here it was list of tuple [str, str ] # for same erro I have decide to use in this 
-    recovery_modalities: List[str] = Field(  
+    # here it was list of tuple [str, str ] # for same erro I have decide to use in thi
+    recovery_modalities: List[Tuple[str, str]]= = Field(  
         ..., 
         description="Assessment of current recovery practices and recommendations for optimization. "
         "Should evaluate active and passive recovery methods and their appropriateness."
