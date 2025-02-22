@@ -240,6 +240,8 @@ from first_time_plans.Module_D.MealTimingDecion import MealTimingDecisionNode
 from first_time_plans.Module_E.PlanIntegrationNode import PlanIntegrationNode
 from first_time_plans.Module_E.WorkoutDecisionClass import WorkoutDecisionClass
 from first_time_plans.Module_E.NutritionDecisionClass import NutritionDecisionClass
+from first_time_plans.Module_E.ReportDecision  import ReportAnalysisClass
+
 
 # Import utility for LLM interactions
 from first_time_plans.call_llm_class import BaseLLM
@@ -341,6 +343,21 @@ async def create_first_plan(base_model: BaseModelForRequest):
             history_analysis,
             body_analysis
         )
+
+
+        report_analysis = ReportAnalysisClass()
+        final_report = report_analysis.process(
+            standardized_profile,
+            goal_analysis,
+            body_analysis,
+            history_analysis,
+            recovery_analysis,
+            workout_plan,
+            nutrition_plan
+        )
+
+
+
         """
         # --- (Optional) STEP 10: Integration & Final Output ---
         # integration_node = PlanIntegrationNode()
@@ -363,14 +380,9 @@ async def create_first_plan(base_model: BaseModelForRequest):
         return {
             "status": "success",
             "standardized_profile": standardized_profile,
-            "split_recommendation": split_recommendation,
-            "volume_guidelines": volume_guidelines,
-            "exercise_selection": exercise_selection,
-            "caloric_targets": caloric_targets,
-            "macro_plan": macro_plan,
-            "timing_recommendations": timing_recommendations,
             "nutrition_plan" : nutrition_plan,
-            "workout_plan " : workout_plan, 
+            "workout_plan" : workout_plan, 
+            "final_report" :  final_report,  
         }
     
         """
