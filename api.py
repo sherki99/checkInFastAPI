@@ -189,6 +189,11 @@ async def adjudst_plan_check_in(data: CheckInData):
     }
 
 
+
+
+
+
+
 @app.post("/checkIn_optimization_entire/")
 async def receive_check_in(data: CheckInData):
     data_info = data.dict()
