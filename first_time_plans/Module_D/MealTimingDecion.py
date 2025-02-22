@@ -168,7 +168,7 @@ class MealTimingDecisionNode:
             Structured meal timing plan as a Pydantic model
         """
         # Extract relevant data for prompt construction
-        personal_info = client_data.get("personal_info", {})
+        personal_info = client_data.get("personal_info", {}).get("data", {})
         nutrition_info = client_data.get("nutrition", {}).get("data", {})
         lifestyle_info = client_data.get("lifestyle", {}).get("data", {})
         

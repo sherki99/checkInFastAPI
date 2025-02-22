@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
 from pydantic import BaseModel, Field
 from first_time_plans.call_llm_class import BaseLLM
 import json
@@ -128,6 +128,7 @@ class WorkoutDecisionClass:
             "with clear instructions for exercises, sets, reps, rest periods, and progression strategies."
         )
     
+
     def _generate_workout_plan(
         self,
         client_data: Dict[str, Any],
@@ -201,18 +202,38 @@ class WorkoutDecisionClass:
         
         system_message = self.get_system_message()
         result = self.llm_client.call_llm(prompt, system_message, schema=CompletePlan)
+        
+        # Ensure result is a CompletePlan instance
+        if isinstance(result, dict):
+            try:
+                return CompletePlan(**result)
+            except Exception as e:
+                logger.error(f"Failed to convert dict to CompletePlan: {str(e)}")
+                raise e
+        
         return result
-    
-    def _format_workout_plan(self, workout_plan: CompletePlan) -> str:
+
+    def _format_workout_plan(self, workout_plan: Union[CompletePlan, Dict[str, Any]]) -> str:
         """
         Format the workout plan according to the required output format.
         
         Args:
-            workout_plan: CompletePlan object containing the complete workout plan
+            workout_plan: CompletePlan object or dictionary containing the complete workout plan
             
         Returns:
             Formatted workout plan as a string
         """
+        # Handle both CompletePlan instance and dictionary
+        if isinstance(workout_plan, dict):
+            logger.info("Converting dictionary to CompletePlan object")
+            try:
+                workout_plan = CompletePlan(**workout_plan)
+            except Exception as e:
+                logger.error(f"Error converting dict to CompletePlan: {str(e)}")
+                # Create basic fallback output if conversion fails
+                return self._format_workout_plan_dict(workout_plan)
+        
+        # Rest of the formatting logic remains the same
         formatted_output = f"### Workout Plan: {workout_plan.plan_name}  \n"
         formatted_output += f"**Description**: {workout_plan.description}  \n\n"
         
@@ -243,5 +264,50 @@ class WorkoutDecisionClass:
         # Add progression notes if available
         if workout_plan.progression_notes:
             formatted_output += f"### Progression Guidelines:  \n{workout_plan.progression_notes}"
+        
+        return formatted_output
+
+    def _format_workout_plan_dict(self, workout_plan_dict: Dict[str, Any]) -> str:
+        """
+        Fallback formatter for when the workout plan is a dictionary that can't be converted to a CompletePlan.
+        
+        Args:
+            workout_plan_dict: Dictionary containing workout plan data
+            
+        Returns:
+            Formatted workout plan as a string
+        """
+        formatted_output = f"### Workout Plan: {workout_plan_dict.get('plan_name', 'Custom Workout Plan')}  \n"
+        formatted_output += f"**Description**: {workout_plan_dict.get('description', 'A balanced training program')}  \n\n"
+        
+        # Format workout days
+        days = workout_plan_dict.get('days', [])
+        for day in days:
+            formatted_output += f"#### **{day.get('day_name', 'Training Day')}**  \n"
+            
+            for exercise in day.get('exercises', []):
+                formatted_output += f"- **{exercise.get('name', 'Exercise')}**  \n"
+                formatted_output += f"  - Sets: {exercise.get('sets', 'N/A')}  \n"
+                formatted_output += f"  - Reps: {exercise.get('reps', 'N/A')}  \n"
+                formatted_output += f"  - Rest: {exercise.get('rest', 'N/A')}  \n"
+                formatted_output += f"  - Intensity: {exercise.get('intensity', 'N/A')}  \n"
+                
+                if exercise.get('notes'):
+                    formatted_output += f"  - Notes: {exercise.get('notes')}  \n"
+                
+                formatted_output += "\n"
+            
+            if day.get('notes'):
+                formatted_output += f"*{day.get('notes')}*  \n\n"
+        
+        # Format rest days
+        rest_days = workout_plan_dict.get('rest_days', [])
+        for rest_day in rest_days:
+            formatted_output += f"#### **{rest_day}**  \n"
+            formatted_output += "*(No exercises. Full recovery day.)*  \n\n"
+        
+        # Add progression notes if available
+        if workout_plan_dict.get('progression_notes'):
+            formatted_output += f"### Progression Guidelines:  \n{workout_plan_dict.get('progression_notes')}"
         
         return formatted_output

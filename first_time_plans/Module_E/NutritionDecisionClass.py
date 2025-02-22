@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
 from pydantic import BaseModel, Field
 from first_time_plans.call_llm_class import BaseLLM
 import json
@@ -223,18 +223,39 @@ class NutritionDecisionClass:
         
         system_message = self.get_system_message()
         result = self.llm_client.call_llm(prompt, system_message, schema=MealPlan)
+
+        # Ensure result is a MealPlan instance
+        if isinstance(result, dict):
+            try:
+                return MealPlan(**result)
+            except Exception as e:
+                logger.error(f"Failed to convert dict to MealPlan: {str(e)}")
+                raise e
+    
+
         return result
     
-    def _format_meal_plan(self, meal_plan: MealPlan) -> str:
+    def _format_meal_plan(self, meal_plan: Union[MealPlan, Dict[str, Any]]) -> str:
         """
         Format the meal plan according to the required output format.
         
         Args:
-            meal_plan: MealPlan object containing the complete meal plan
+            meal_plan: MealPlan object or dictionary containing the complete meal plan
             
         Returns:
             Formatted meal plan as a string
         """
+        # Handle both MealPlan instance and dictionary
+        if isinstance(meal_plan, dict):
+            logger.info("Converting dictionary to MealPlan object")
+            try:
+                meal_plan = MealPlan(**meal_plan)
+            except Exception as e:
+                logger.error(f"Error converting dict to MealPlan: {str(e)}")
+                # Create basic fallback output if conversion fails
+                return self._format_meal_plan_dict(meal_plan)
+        
+        # Rest of the formatting logic remains the same
         formatted_output = f"Name of The Meal: {meal_plan.name}  \n"
         formatted_output += f"Description: {meal_plan.description}  \n\n"
         
@@ -285,3 +306,77 @@ class NutritionDecisionClass:
         formatted_output += f"Total-Calories-NT: {meal_plan.non_training_day_plan.daily_nutrition.total_calories} kcal  \n"
         
         return formatted_output
+
+    def _format_meal_plan_dict(self, meal_plan_dict: Dict[str, Any]) -> str:
+        """
+        Fallback formatter for when the meal plan is a dictionary that can't be converted to a MealPlan.
+        
+        Args:
+            meal_plan_dict: Dictionary containing meal plan data
+            
+        Returns:
+            Formatted meal plan as a string
+        """
+        formatted_output = f"Name of The Meal: {meal_plan_dict.get('name', 'Custom Meal Plan')}  \n"
+        formatted_output += f"Description: {meal_plan_dict.get('description', 'A balanced nutrition plan')}  \n\n"
+        
+        # Handle training day plan
+        training_day = meal_plan_dict.get('training_day_plan', {})
+        formatted_output += "Training Day Meals:  \n\n"
+        
+        if isinstance(training_day, dict):
+            # Extract meals array
+            meals = training_day.get('meals', [])
+            for i, meal in enumerate(meals, 1):
+                formatted_output += f"MEAL {i}: {meal.get('name', f'Meal {i}')} (T) {meal.get('timing', 'N/A')}  \n"
+                
+                for food in meal.get('food_items', []):
+                    formatted_output += f"- Name: {food.get('name', 'Food item')}  \n"
+                    formatted_output += f"- Quantity: {food.get('quantity', 'N/A')}  \n\n"
+                
+                nutritional_info = meal.get('nutritional_info', {})
+                formatted_output += "Nutritional Info:  \n"
+                formatted_output += f"- Protein: {nutritional_info.get('protein', 'N/A')}g  \n"
+                formatted_output += f"- Carbohydrates: {nutritional_info.get('carbohydrates', 'N/A')}g  \n"
+                formatted_output += f"- Fat: {nutritional_info.get('fat', 'N/A')}g  \n"
+                formatted_output += f"- Calories: {nutritional_info.get('calories', 'N/A')} kcal  \n\n"
+            
+            # Format total nutrition
+            daily_nutrition = training_day.get('daily_nutrition', {})
+            formatted_output += "Total Daily Nutritional Intake (T):  \n"
+            formatted_output += f"Total-Protein-T: {daily_nutrition.get('total_protein', 'N/A')}g  \n"
+            formatted_output += f"Total-Carbohydrates-T: {daily_nutrition.get('total_carbohydrates', 'N/A')}g  \n"
+            formatted_output += f"Total-Fat-T: {daily_nutrition.get('total_fat', 'N/A')}g  \n"
+            formatted_output += f"Total-Calories-T: {daily_nutrition.get('total_calories', 'N/A')} kcal  \n\n"
+        
+        # Handle non-training day plan (similar logic as above)
+        non_training_day = meal_plan_dict.get('non_training_day_plan', {})
+        formatted_output += "Non-Training Day Meals:  \n\n"
+        
+        if isinstance(non_training_day, dict):
+            # Extract meals array
+            meals = non_training_day.get('meals', [])
+            for i, meal in enumerate(meals, 1):
+                formatted_output += f"MEAL {i}: {meal.get('name', f'Meal {i}')} (NT) {meal.get('timing', 'N/A')}  \n"
+                
+                for food in meal.get('food_items', []):
+                    formatted_output += f"- Name: {food.get('name', 'Food item')}  \n"
+                    formatted_output += f"- Quantity: {food.get('quantity', 'N/A')}  \n\n"
+                
+                nutritional_info = meal.get('nutritional_info', {})
+                formatted_output += "Nutritional Info:  \n"
+                formatted_output += f"- Protein: {nutritional_info.get('protein', 'N/A')}g  \n"
+                formatted_output += f"- Carbohydrates: {nutritional_info.get('carbohydrates', 'N/A')}g  \n"
+                formatted_output += f"- Fat: {nutritional_info.get('fat', 'N/A')}g  \n"
+                formatted_output += f"- Calories: {nutritional_info.get('calories', 'N/A')} kcal  \n\n"
+            
+            # Format total nutrition
+            daily_nutrition = non_training_day.get('daily_nutrition', {})
+            formatted_output += "Total Daily Nutritional Intake (NT):  \n"
+            formatted_output += f"Total-Protein-NT: {daily_nutrition.get('total_protein', 'N/A')}g  \n"
+            formatted_output += f"Total-Carbohydrates-NT: {daily_nutrition.get('total_carbohydrates', 'N/A')}g  \n"
+            formatted_output += f"Total-Fat-NT: {daily_nutrition.get('total_fat', 'N/A')}g  \n"
+            formatted_output += f"Total-Calories-NT: {daily_nutrition.get('total_calories', 'N/A')} kcal  \n"
+        
+        return formatted_output
+        

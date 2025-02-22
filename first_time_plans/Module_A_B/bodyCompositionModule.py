@@ -170,7 +170,7 @@ class BodyCompositionModule:
         """
         # Extract relevant data from the standardized profile
         personal_info = standardized_profile.get("personal_info", {})
-        measurements_data = standardized_profile.get("measurements", {})
+        measurements_data = standardized_profile.get("body_composition", {})
         
         system_message = self.get_body_analysis_system_message()
         
