@@ -25,7 +25,7 @@ class WorkoutDay(BaseModel):
     notes: Optional[str] = Field(None, description="Special notes for this workout day")
 
 class CompletePlan(BaseModel):
-    """Complete structured workout plan."""
+    """Complete structured workout plan."""   
     plan_name: str = Field(..., description="Name/title of the workout plan")
     description: str = Field(..., description="Brief description of the workout program and its goals")
     days: List[WorkoutDay] = Field(..., description="Detailed breakdown of each workout day")
