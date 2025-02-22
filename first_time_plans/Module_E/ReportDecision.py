@@ -43,6 +43,7 @@ class ReportAnalysis:
     def __init__(self, llm_client: Optional[Any] = None):
         """Initialize with optional LLM client."""
         self.llm_client = llm_client or BaseLLM()
+        self.system_message = " Generates a comprehensive analysis report synthesizing all program decisions and recommendations following Dr. Mike Israetel's scientific approach."
     
     def generate_report(
         self,
@@ -255,7 +256,7 @@ Macro Distribution:
             f"capacity and practical constraints."
         )
         
-        return self.llm_client.call_llm(prompt)
+        return self.llm_client.call_llm(prompt,self.system_message)
 
     def _explain_volume_selection(
         self,
@@ -287,7 +288,7 @@ Macro Distribution:
             f"managing fatigue and injury risk."
         )
         
-        return self.llm_client.call_llm(prompt)
+        return self.llm_client.call_llm(prompt, self.system_message)
 
     def _explain_nutrition_plan(
         self,
@@ -303,7 +304,7 @@ Macro Distribution:
             f"of nutrient timing and energy balance."
         )
         
-        return self.llm_client.call_llm(prompt)
+        return self.llm_client.call_llm(prompt, self.system_message)
 
     def _explain_progression_strategy(
         self,
@@ -319,4 +320,4 @@ Macro Distribution:
             f"needs."
         )
         
-        return self.llm_client.call_llm(prompt)
+        return self.llm_client.call_llm(prompt, self.system_message)
