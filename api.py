@@ -362,6 +362,7 @@ async def process_check_in(data: CheckInData):
         # Always return both plans in the response
         return {
             "status": "success",
+            "standardized_data" :  standardized_data
         }
 
 
