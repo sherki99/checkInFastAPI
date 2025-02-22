@@ -350,10 +350,9 @@ async def create_first_plan(base_model: BaseModelForRequest):
             standardized_profile,
             goal_analysis,
             body_analysis,
-            history_analysis,
-            recovery_analysis,
             workout_plan,
-            nutrition_plan
+            nutrition_plan,
+            history_analysis,
         )
 
 
