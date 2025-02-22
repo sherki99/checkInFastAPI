@@ -124,7 +124,11 @@ class ReportDecision:
             "Document and explain the reasoning behind all program decisions that were made. "
             "Focus on connecting scientific principles with individual client factors to explain "
             "why specific choices were selected.\n\n"
-            
+
+            f"CLIENT DATA\n"
+            f"client data:\n{self._format_dict(client_data.get("data",  {}))}"
+
+
             f"TRAINING DECISIONS TO EXPLAIN:\n"
             f"Split Design:\n{self._format_dict(workout_plan.get('training_split', {}))}\n"
             f"Volume Guidelines:\n{self._format_dict(workout_plan.get('volume_guidelines', {}))}\n"

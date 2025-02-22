@@ -192,17 +192,11 @@ async def adjudst_plan_check_in(data: CheckInData):
 @app.post("/checkIn_optimization_entire/")
 async def receive_check_in(data: CheckInData):
     data_info = data.dict()
-    
-    # Generate check-in report
-    checkIn_response = await checkIn_gpt(data_info)
-    
-    # Use check-in report for plan adjustment
-    plan_adjustment_response = await adjust_plan_gpt(data_info, checkIn_response)
-    
+
     return {
         "message": "Check-in and plan adjustment completed successfully!",
-        "checkInReport": checkIn_response,
-        "planAdjustment": plan_adjustment_response
+        "data_info": data_info,
+    
     }
 
 
@@ -239,13 +233,11 @@ from first_time_plans.Module_D.MealTimingDecion import MealTimingDecisionNode
 
 from first_time_plans.Module_E.WorkoutDecisionClass import WorkoutDecisionClass
 from first_time_plans.Module_E.NutritionDecisionClass import NutritionDecisionClass
-from first_time_plans.Module_E.ReportDecisionCoolIdea  import ReportAnalysis
+from first_time_plans.Module_E.ReportDecision  import ReportDecision
 
 
 # Import utility for LLM interactions
 from first_time_plans.call_llm_class import BaseLLM
-
-
 
 # Request model for incoming client data
 class BaseModelForRequest(BaseModel):
@@ -343,9 +335,9 @@ async def create_first_plan(base_model: BaseModelForRequest):
             body_analysis
         )
 
-
-        report_analysis = ReportAnalysis()
-        final_report = report_analysis.generate_report(
+        # comunque cio la scelta dell metro questo e un altro modo provato si vedra 
+        report_analysis = ReportDecision()
+        final_report = report_analysis.process(
             standardized_profile,
             goal_analysis,
             body_analysis,
@@ -354,7 +346,20 @@ async def create_first_plan(base_model: BaseModelForRequest):
             history_analysis,
         )
 
+        return {
+            "status": "success",
+            "nutrition_plan" : nutrition_plan,
+            "workout_plan" : workout_plan, 
+            "final_report" :  final_report,  
+        }
+  
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
+        
+
+
+        
 
         """
         # --- (Optional) STEP 10: Integration & Final Output ---
@@ -374,20 +379,3 @@ async def create_first_plan(base_model: BaseModelForRequest):
         
 
         """
-
-        return {
-            "status": "success",
-            "standardized_profile": standardized_profile,
-            "nutrition_plan" : nutrition_plan,
-            "workout_plan" : workout_plan, 
-            "final_report" :  final_report,  
-        }
-    
-        """
-
-
-        """
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-        
