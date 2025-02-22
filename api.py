@@ -212,6 +212,180 @@ async def receive_check_in(data: CheckInData):
 
 
 
+# Import required modules and dependencies
+from typing import Dict, Any
+from pydantic import BaseModel
+from fastapi import HTTPException
+
+# Module imports remain the same as before...
+from check_time_plans.data_ingestion.check_in_ingestion import CheckInDataIngestionModule
+
+"""
+from check_time_plans.data_ingestion.meal_adherence import MealAdherenceExtractor
+from check_time_plans.data_ingestion.training_logs import TrainingLogsExtractor
+from check_time_plans.data_ingestion.body_metrics import BodyMetricsExtractor
+from check_time_plans.data_ingestion.recovery_markers import RecoveryMarkersExtractor
+
+# Analysis module imports remain the same...
+from check_time_plans.analysis.nutrition_adherence import NutritionAdherenceModule
+from check_time_plans.analysis.training_performance import TrainingPerformanceModule
+from check_time_plans.analysis.body_metrics import BodyMetricsModule
+from check_time_plans.analysis.recovery_assessment import RecoveryAssessmentModule
+
+# Decision node imports remain the same...
+from check_time_plans.decisions.goal_alignment import GoalAlignmentNode
+from check_time_plans.decisions.nutrition_adjustment import NutritionAdjustmentNode
+from check_time_plans.decisions.training_adjustment import TrainingAdjustmentNode
+from check_time_plans.decisions.load_adjustment import LoadAdjustmentNode
+
+# Integration and output imports remain the same...
+from check_time_plans.integration.plan_adjustment import PlanAdjustmentIntegrator
+from check_time_plans.integration.progress_evaluation import ProgressEvaluationModule
+from check_time_plans.integration.report_generator import CheckInReportGenerator
+
+# Plan generation modules
+from check_time_plans.plans.workout_plan_generator import WorkoutPlanGenerator
+from check_time_plans.plans.meal_plan_generator import MealPlanGenerator
+"""
+
+
+class CheckInData(BaseModel):
+    userId: str
+    mealPlanLastWeek: str
+    analysisReportStart: str
+    bodyMeasurementsLastWeek: str
+    dailyReportsLastWeek: str
+    exercisesLogLastWeek: str
+    userWorkoutDetailsLastWeek: str
+
+@app.post("/check_in_optimization/")
+async def process_check_in(data: CheckInData):
+    try:
+        # Convert input data to dictionary
+        check_in_data = data.dict()
+
+        # Store original plans
+        original_workout_plan = check_in_data['userWorkoutDetailsLastWeek']
+        original_meal_plan = check_in_data['mealPlanLastWeek']
+
+        # 1. Data Ingestion Phase (same as before)
+        ingestion_module = CheckInDataIngestionModule()
+        standardized_data = ingestion_module.process_check_in_data(check_in_data)
+
+
+        """
+        
+        meal_data = MealAdherenceExtractor().extract_meal_adherence(standardized_data.mealPlanLastWeek)
+        training_data = TrainingLogsExtractor().extract_training_logs(standardized_data.exercisesLogLastWeek)
+        body_data = BodyMetricsExtractor().extract_body_measurements(standardized_data.bodyMeasurementsLastWeek)
+        recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(standardized_data.dailyReportsLastWeek)
+
+        # 2. Analysis Phase (same as before)
+        nutrition_analysis = NutritionAdherenceModule().analyze_meal_compliance(meal_data)
+        training_analysis = TrainingPerformanceModule().analyze_workout_execution(training_data)
+        metrics_analysis = BodyMetricsModule().analyze_body_changes(body_data)
+        recovery_analysis = RecoveryAssessmentModule().analyze_recovery_markers(recovery_data)
+
+        # 3. Decision Phase
+        goal_alignment = GoalAlignmentNode().evaluate_goal_progress(
+            metrics_analysis,
+            training_analysis
+        )
+
+        nutrition_adjustments = NutritionAdjustmentNode().determine_nutrition_changes(
+            nutrition_analysis,
+            goal_alignment
+        )
+
+        training_adjustments = TrainingAdjustmentNode().determine_training_changes(
+            training_analysis,
+            recovery_analysis
+        )
+
+        load_adjustments = LoadAdjustmentNode().optimize_training_load(
+            recovery_analysis,
+            training_analysis
+        )
+
+        # 4. Integration Phase
+        plan_integrator = PlanAdjustmentIntegrator()
+        integrated_plan = plan_integrator.integrate_adjustments(
+            nutrition_adjustments,
+            training_adjustments,
+            load_adjustments
+        )
+
+        # 5. Generate new plans or use existing ones
+        workout_generator = WorkoutPlanGenerator()
+        meal_generator = MealPlanGenerator()
+
+        if integrated_plan.requires_workout_changes:
+            workout_plan = workout_generator.generate_new_plan(
+                original_workout_plan,
+                training_adjustments,
+                load_adjustments
+            )
+        else:
+            workout_plan = workout_generator.format_existing_plan(original_workout_plan)
+
+        if integrated_plan.requires_nutrition_changes:
+            meal_plan = meal_generator.generate_new_plan(
+                original_meal_plan,
+                nutrition_adjustments
+            )
+        else:
+            meal_plan = meal_generator.format_existing_plan(original_meal_plan)
+
+        # 6. Progress Evaluation
+        progress_evaluator = ProgressEvaluationModule()
+        progress_assessment = progress_evaluator.evaluate_overall_progress({
+            'nutrition': nutrition_analysis,
+            'training': training_analysis,
+            'metrics': metrics_analysis,
+            'recovery': recovery_analysis
+        })
+
+        # 7. Report Generation
+        report_generator = CheckInReportGenerator()
+        final_report = report_generator.generate_report(
+            progress_assessment,
+            integrated_plan
+        )
+
+        # Store results
+        report_generator.save_to_database(final_report, check_in_data['userId'])
+        api_response = report_generator.format_api_response(final_report)
+
+        """
+
+
+        # Always return both plans in the response
+        return {
+            "status": "success",
+        }
+
+
+        """
+            "workout_plan": workout_plan,
+
+            "meal_plan": meal_plan,
+            "check_in_report": api_response,
+            "progress_evaluation": progress_assessment,
+            "modifications_made": {
+                "workout_modified": integrated_plan.requires_workout_changes,
+                "nutrition_modified": integrated_plan.requires_nutrition_changes
+            
+            }
+
+        """
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+
+
+
 
 
 
