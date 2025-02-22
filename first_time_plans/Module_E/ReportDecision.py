@@ -70,7 +70,7 @@ class ReportAnalysis:
         try:
             # Extract client profile information
             client_profile = self._extract_client_profile(
-                client_data, goal_analysis, body_analysis
+                client_data, goal_analysis, body_analysis, history_analysis
             )
             
             # Generate program summary
