@@ -145,6 +145,7 @@ class ReportDecision:
             f"Training History:\n{self._format_dict(history_analysis)}\n\n"
             
             "For each major decision:\n"
+            "The main point here is just to put all the information made previously together and give scientific and profession explanation you do need to decide anythign new just to re write all this is nice professionl way "
             "1. Explain the scientific principles that guided the decision\n"
             "2. Show how client-specific factors influenced the choice\n"
             "3. Connect the decision to expected outcomes\n"
