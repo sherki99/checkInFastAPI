@@ -346,7 +346,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
 
 
         report_analysis = ReportAnalysis()
-        final_report = report_analysis.process(
+        final_report = report_analysis.generate_report(
             standardized_profile,
             goal_analysis,
             body_analysis,
