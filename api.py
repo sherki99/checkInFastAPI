@@ -269,8 +269,8 @@ async def process_check_in(data: CheckInData):
         original_meal_plan = check_in_data['mealPlanLastWeek']
 
         # 1. Data Ingestion Phase (same as before)
-        ingestion_module = CheckInDataIngestionModule()
-        standardized_data = ingestion_module.process_check_in_data(check_in_data)
+      #  ingestion_module = CheckInDataIngestionModule()
+      #  standardized_data = ingestion_module.process_check_in_data(check_in_data)
 
 
         """
@@ -362,7 +362,7 @@ async def process_check_in(data: CheckInData):
         # Always return both plans in the response
         return {
             "status": "success",
-            "standardized_data" :  standardized_data
+            "standardized_data" :  check_in_data
         }
 
 
