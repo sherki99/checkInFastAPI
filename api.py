@@ -240,7 +240,7 @@ from first_time_plans.Module_D.MealTimingDecion import MealTimingDecisionNode
 from first_time_plans.Module_E.PlanIntegrationNode import PlanIntegrationNode
 from first_time_plans.Module_E.WorkoutDecisionClass import WorkoutDecisionClass
 from first_time_plans.Module_E.NutritionDecisionClass import NutritionDecisionClass
-from first_time_plans.Module_E.ReportDecision  import ReportAnalysisClass
+from first_time_plans.Module_E.ReportDecision  import ReportAnalysis
 
 
 # Import utility for LLM interactions
@@ -345,7 +345,7 @@ async def create_first_plan(base_model: BaseModelForRequest):
         )
 
 
-        report_analysis = ReportAnalysisClass()
+        report_analysis = ReportAnalysis()
         final_report = report_analysis.process(
             standardized_profile,
             goal_analysis,
