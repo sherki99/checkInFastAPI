@@ -237,10 +237,9 @@ from first_time_plans.Module_D.MacrosDistrubutionNodes import MacroDistributionD
 from first_time_plans.Module_D.MealTimingDecion import MealTimingDecisionNode
 
 
-from first_time_plans.Module_E.PlanIntegrationNode import PlanIntegrationNode
 from first_time_plans.Module_E.WorkoutDecisionClass import WorkoutDecisionClass
 from first_time_plans.Module_E.NutritionDecisionClass import NutritionDecisionClass
-from first_time_plans.Module_E.ReportDecision  import ReportAnalysis
+from first_time_plans.Module_E.ReportDecisionCoolIdea  import ReportAnalysis
 
 
 # Import utility for LLM interactions
