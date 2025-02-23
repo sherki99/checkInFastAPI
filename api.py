@@ -218,7 +218,7 @@ from pydantic import BaseModel
 from fastapi import HTTPException
 
 # Module imports remain the same as before...
-from check_time_plans.data_ingestion.check_in_ingestion import ClientCheckInModule
+from check_time_plans.data_ingestion.check_in_ingestion import CheckInDataIngestionModule
 
 """
 from check_time_plans.data_ingestion.meal_adherence import MealAdherenceExtractor
