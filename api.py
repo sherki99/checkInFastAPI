@@ -516,8 +516,8 @@ async def create_first_plan(base_model: BaseModelForRequest):
         )
 
         # comunque cio la scelta dell metro questo e un altro modo provato si vedra 
-        report_analysis = ReportDecision()
-        final_report = report_analysis.process(
+        report_analysis = ReportAnalysis()
+        final_report = report_analysis.analyze_program_data(
             standardized_profile,
             goal_analysis,
             body_analysis,

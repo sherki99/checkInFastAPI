@@ -1,6 +1,6 @@
 from typing import Dict, Any
 
-class ClientCheckInModule:
+class CheckInDataIngestionModule:
     """
     ClientCheckInModule processes raw client check-in data into a standardized profile.
     
