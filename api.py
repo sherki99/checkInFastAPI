@@ -413,7 +413,7 @@ from first_time_plans.Module_D.MealTimingDecion import MealTimingDecisionNode
 
 from first_time_plans.Module_E.WorkoutDecisionClass import WorkoutDecisionClass
 from first_time_plans.Module_E.NutritionDecisionClass import NutritionDecisionClass
-from first_time_plans.Module_E.ReportDecision  import DecisionReportGenerator
+from first_time_plans.Module_E.ReportDecision  import ReportDecision
 
 
 # Import utility for LLM interactions
@@ -516,15 +516,19 @@ async def create_first_plan(base_model: BaseModelForRequest):
         )
 
         # comunque cio la scelta dell metro questo e un altro modo provato si vedra 
-        report_analysis = DecisionReportGenerator()
-        final_report = report_analysis.generate_report(
+        report_analysis = ReportDecision()
+        final_report = report_analysis.process(
             standardized_profile,
             goal_analysis,
             body_analysis,
-            workout_plan,
-            nutrition_plan,
             history_analysis,
+            caloric_targets,
+            macro_plan,
+            workout_plan,
+            nutrition_plan
         )
+
+        
 
         return {
             "status": "success",

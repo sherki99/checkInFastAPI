@@ -2,223 +2,166 @@ from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from first_time_plans.call_llm_class import BaseLLM
 import logging
-from datetime import datetime
 
-# Enhanced logging configuration
+# Configure logging
 logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO)
 
 class DecisionExplanation(BaseModel):
-    """Detailed explanation of a specific program decision with scientific backing."""
+    """Detailed explanation of a specific program decision."""
     decision_area: str = Field(..., description="Area of program this decision affects")
     decision_made: str = Field(..., description="What was specifically decided")
     scientific_basis: str = Field(..., description="Scientific principles supporting this decision")
     individual_factors: List[str] = Field(..., description="Client-specific factors that influenced this decision")
     expected_outcomes: str = Field(..., description="Expected results from this decision")
-    adjustment_triggers: List[str] = Field(default_factory=list, description="Conditions that would trigger adjustments")
 
 class ProgramDecisions(BaseModel):
-    """Comprehensive collection of program decisions with their rationale."""
-    split_decisions: List[DecisionExplanation]
-    volume_decisions: List[DecisionExplanation]
-    exercise_decisions: List[DecisionExplanation]
-    nutrition_decisions: List[DecisionExplanation]
-    progression_decisions: List[DecisionExplanation]
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "split_decisions": [{
-                    "decision_area": "Training Split",
-                    "decision_made": "4-day upper/lower split",
-                    "scientific_basis": "Optimal frequency for natural recovery cycles",
-                    "individual_factors": ["Work schedule", "Recovery capacity"],
-                    "expected_outcomes": "Balanced progression with adequate recovery",
-                    "adjustment_triggers": ["Consistent recovery issues", "Schedule changes"]
-                }]
-            }
-        }
+    """Collection of key program decisions and their rationale."""
+    split_decisions: List[DecisionExplanation] = Field(..., description="Training split design decisions")
+    volume_decisions: List[DecisionExplanation] = Field(..., description="Volume and frequency decisions")
+    exercise_decisions: List[DecisionExplanation] = Field(..., description="Exercise selection decisions")
+    nutrition_decisions: List[DecisionExplanation] = Field(..., description="Nutrition and diet decisions")
+    progression_decisions: List[DecisionExplanation] = Field(..., description="Progression scheme decisions")
 
 class ReportStructure(BaseModel):
     """Complete structure for the program decision documentation."""
-    client_name: str
-    creation_date: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
-    executive_summary: str
-    key_program_decisions: ProgramDecisions
-    implementation_notes: List[str]
-    adjustment_criteria: List[str]
+    client_name: str = Field(..., description="Name of the client")
+    creation_date: str = Field(..., description="Date the report was generated")
+    executive_summary: str = Field(..., description="Brief overview of key decisions")
+    key_program_decisions: ProgramDecisions = Field(..., description="All major program decisions")
+    implementation_notes: List[str] = Field(..., description="Notes on implementing these decisions")
+    adjustment_criteria: List[str] = Field(..., description="When and why decisions might need adjustment")
 
-class DecisionReportGenerator:
+class ReportDecision:
     """
-    Enhanced documentation generator for program decisions with scientific rationale.
+    Documents and explains the reasoning behind program decisions.
     
-    This class focuses on explaining the reasoning behind program choices by connecting
-    scientific principles with individual client factors. It provides structured,
-    detailed explanations without making new decisions.
+    Focuses on explaining why specific choices were made in the program design,
+    considering scientific principles and individual client factors.
     """
     
     def __init__(self, llm_client: Optional[Any] = None):
         self.llm_client = llm_client or BaseLLM()
-        
-    def generate_report(
+    
+    def process(
         self,
         client_data: Dict[str, Any],
-        program_data: Dict[str, Any]
+        goal_analysis: Dict[str, Any],
+        body_analysis: Dict[str, Any],
+        history_analysis: Dict[str, Any],
+        caloric_targets: Dict[str, Any],
+        macro_plan: Dict[str, Any],
+        workout_plan: Dict[str, Any],
+        nutrition_plan: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
-        Generate a comprehensive decision report from client and program data.
+        Process and explain all program decisions.
         
-        Args:
-            client_data: Dictionary containing client information and assessments
-            program_data: Dictionary containing all program decisions and plans
-            
-        Returns:
-            Dict containing the structured decision report
-            
-        Raises:
-            ValueError: If required data is missing
-            Exception: For other processing errors
+        Instead of creating new program elements, this method documents and explains
+        the reasoning behind decisions that were made in previous steps.
         """
         try:
-            self._validate_input_data(client_data, program_data)
-            
-            # Extract relevant data sections
-            training_data = self._extract_training_data(program_data)
-            nutrition_data = self._extract_nutrition_data(program_data)
-            context_data = self._extract_context_data(client_data)
-            
-            # Generate the report
-            report = self._generate_decision_report(
-                client_data=client_data,
-                training_data=training_data,
-                nutrition_data=nutrition_data,
-                context_data=context_data
+            report = self._generate_report(
+                client_data,
+                goal_analysis,
+                body_analysis,
+                history_analysis,
+                caloric_targets,
+                macro_plan,
+                workout_plan,
+                nutrition_plan
             )
             
-            return {"report": report}
+            return {
+                "report": report
+            }
             
-        except ValueError as e:
-            logger.error(f"Invalid input data: {str(e)}")
-            raise
         except Exception as e:
             logger.error(f"Error generating decision report: {str(e)}")
-            raise
-
-    def _validate_input_data(self, client_data: Dict[str, Any], program_data: Dict[str, Any]) -> None:
-        """Validate that all required data fields are present."""
-        required_client_fields = ["data", "goals", "body_analysis", "training_history"]
-        required_program_fields = ["workout_plan", "nutrition_plan", "caloric_targets", "macro_plan"]
-        
-        missing_client = [f for f in required_client_fields if f not in client_data]
-        missing_program = [f for f in required_program_fields if f not in program_data]
-        
-        if missing_client or missing_program:
-            raise ValueError(
-                f"Missing required data fields: "
-                f"Client: {missing_client}, Program: {missing_program}"
-            )
-
-    def _extract_training_data(self, program_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Extract and structure training-related decisions."""
-        workout_plan = program_data.get("workout_plan", {})
-        return {
-            "split": workout_plan.get("training_split", {}),
-            "volume": workout_plan.get("volume_guidelines", {}),
-            "exercises": workout_plan.get("exercise_selection", {}),
-            "progression": workout_plan.get("progression_scheme", {})
-        }
-
-    def _extract_nutrition_data(self, program_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Extract and structure nutrition-related decisions."""
-        return {
-            "calories": program_data.get("caloric_targets", {}),
-            "macros": program_data.get("macro_plan", {}),
-            "timing": program_data.get("nutrition_plan", {}).get("meal_timing", {})
-        }
-
-    def _extract_context_data(self, client_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Extract and structure contextual client data."""
-        return {
-            "goals": client_data.get("goals", {}),
-            "body_analysis": client_data.get("body_analysis", {}),
-            "training_history": client_data.get("training_history", {})
-        }
-
-    def _format_prompt_section(self, title: str, data: Dict[str, Any]) -> str:
-        """Format a section of the prompt with consistent styling."""
-        formatted_data = "\n".join(f"- {k}: {v}" for k, v in data.items())
-        return f"{title}:\n{formatted_data}\n"
-
-    def _generate_decision_report(
+            raise e
+    
+    def get_system_message(self) -> str:
+        """Returns the system message to guide the LLM in explaining program decisions."""
+        return (
+            "You are documenting and explaining the reasoning behind training and nutrition "
+            "program decisions. Your task is to clearly explain why specific choices were "
+            "made, connecting scientific principles with individual client factors.\n\n"
+            
+            "Follow these principles when explaining decisions:\n"
+            "1. **Connect Science to Application**:\n"
+            "   - Explain how scientific principles informed each decision\n"
+            "   - Show how individual client factors modified general principles\n"
+            "   - Clarify the expected outcomes of each decision\n"
+            "2. **Explain Training Choices**:\n"
+            "   - Justify split selection based on recovery and volume needs\n"
+            "   - Connect volume landmarks to training history and goals\n"
+            "   - Explain exercise selection based on biomechanics and preferences\n"
+            "3. **Clarify Nutrition Decisions**:\n"
+            "   - Explain caloric targets based on goals and metabolism\n"
+            "   - Justify macro distributions using activity and body composition\n"
+            "   - Connect meal timing to training schedule and lifestyle\n"
+            "4. **Document Adjustment Criteria**:\n"
+            "   - Specify when and why decisions might need modification\n"
+            "   - Explain how progress will inform adjustments\n"
+            "   - Connect adjustment triggers to expected outcomes\n\n"
+            
+            "Focus on explaining why decisions were made rather than creating new program elements."
+        )
+    
+    def _generate_report(
         self,
         client_data: Dict[str, Any],
-        training_data: Dict[str, Any],
-        nutrition_data: Dict[str, Any],
-        context_data: Dict[str, Any]
+        goal_analysis: Dict[str, Any],
+        body_analysis: Dict[str, Any],
+        history_analysis: Dict[str, Any],
+        caloric_targets: Dict[str, Any],
+        macro_plan: Dict[str, Any],
+        workout_plan: Dict[str, Any],
+        nutrition_plan: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Generate the detailed decision report using the LLM."""
+        """Generate a report explaining all program decisions."""
         prompt = (
-            "Create a comprehensive explanation of program decisions, connecting scientific "
-            "principles with individual client factors.\n\n"
+            "Document and explain the reasoning behind all program decisions that were made. "
+            "Focus on connecting scientific principles with individual client factors to explain "
+            "why specific choices were selected.\n\n"
+
+            f"CLIENT DATA\n"
+            f"client data:\n{self._format_dict(client_data.get("data",  {}))}"
+
+
+            f"TRAINING DECISIONS TO EXPLAIN:\n"
+            f"Split Design:\n{self._format_dict(workout_plan.get('training_split', {}))}\n"
+            f"Volume Guidelines:\n{self._format_dict(workout_plan.get('volume_guidelines', {}))}\n"
+            f"Exercise Selection:\n{self._format_dict(workout_plan.get('exercise_selection', {}))}\n\n"
             
-            f"{self._format_prompt_section('CLIENT INFORMATION', client_data.get('data', {}))}"
+            f"NUTRITION DECISIONS TO EXPLAIN:\n"
+            f"Caloric Targets:\n{self._format_dict(caloric_targets)}\n"
+            f"Macro Distribution:\n{self._format_dict(macro_plan)}\n"
+            f"Meal Timing:\n{self._format_dict(nutrition_plan.get('meal_timing', {}))}\n\n"
             
-            "TRAINING DECISIONS:\n"
-            f"{self._format_prompt_section('Split Design', training_data['split'])}"
-            f"{self._format_prompt_section('Volume Guidelines', training_data['volume'])}"
-            f"{self._format_prompt_section('Exercise Selection', training_data['exercises'])}\n"
+            f"RELEVANT CONTEXT:\n"
+            f"Client Goals:\n{self._format_dict(goal_analysis)}\n"
+            f"Body Analysis:\n{self._format_dict(body_analysis)}\n"
+            f"Training History:\n{self._format_dict(history_analysis)}\n\n"
             
-            "NUTRITION DECISIONS:\n"
-            f"{self._format_prompt_section('Caloric Targets', nutrition_data['calories'])}"
-            f"{self._format_prompt_section('Macro Distribution', nutrition_data['macros'])}"
-            f"{self._format_prompt_section('Meal Timing', nutrition_data['timing'])}\n"
+            "For each major decision:\n"
+            "The main point here is just to put all the information made previously together and give scientific and profession explanation you do need to decide anythign new just to re write all this is nice professionl way "
+            "1. Explain the scientific principles that guided the decision\n"
+            "2. Show how client-specific factors influenced the choice\n"
+            "3. Connect the decision to expected outcomes\n"
+            "4. Specify when and why the decision might need adjustment\n\n"
             
-            "CONTEXT:\n"
-            f"{self._format_prompt_section('Client Goals', context_data['goals'])}"
-            f"{self._format_prompt_section('Body Analysis', context_data['body_analysis'])}"
-            f"{self._format_prompt_section('Training History', context_data['training_history'])}\n"
-            
-            "For each decision, explain:\n"
-            "1. Scientific principles guiding the choice\n"
-            "2. How client factors influenced the decision\n"
-            "3. Expected outcomes and benefits\n"
-            "4. Conditions that would trigger adjustments"
+            "Focus on explaining why these specific choices were made rather than "
+            "creating new program elements."
         )
         
-        return self.llm_client.call_llm(
-            prompt=prompt,
-            system_message=self.get_system_message(),
-            schema=ReportStructure
-        )
-
-    @staticmethod
-    def get_system_message() -> str:
-        """Return the system message for LLM guidance."""
-        return """You are documenting training and nutrition program decisions. Explain why specific 
-        choices were made by connecting scientific principles with individual client factors.
-
-        Key principles:
-        1. Connect Science to Application:
-           - Link scientific principles to each decision
-           - Show how client factors modified general principles
-           - Clarify expected outcomes
-        
-        2. Explain Training Choices:
-           - Justify split selection based on recovery needs
-           - Connect volume to training history and goals
-           - Explain exercise selection using biomechanics
-        
-        3. Clarify Nutrition Decisions:
-           - Explain caloric targets using goals and metabolism
-           - Justify macro distributions with activity level
-           - Connect meal timing to training schedule
-        
-        4. Document Adjustment Criteria:
-           - Specify adjustment triggers
-           - Explain how progress influences changes
-           - Link adjustments to outcomes
-
-        Focus on explaining existing decisions rather than creating new ones."""
+        system_message = self.get_system_message()
+        result = self.llm_client.call_llm(prompt, system_message, schema=ReportStructure)
+        return result
+    
+    def _format_dict(self, data: Dict[str, Any]) -> str:
+        """Format dictionary data for inclusion in prompts."""
+        try:
+            return "\n".join(f"- {k}: {v}" for k, v in data.items())
+        except:
+            return str(data)
