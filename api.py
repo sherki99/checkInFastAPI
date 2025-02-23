@@ -413,7 +413,7 @@ from first_time_plans.Module_D.MealTimingDecion import MealTimingDecisionNode
 
 from first_time_plans.Module_E.WorkoutDecisionClass import WorkoutDecisionClass
 from first_time_plans.Module_E.NutritionDecisionClass import NutritionDecisionClass
-from first_time_plans.Module_E.ReportDecision  import ReportDecision
+from first_time_plans.Module_E.ReportDecision  import ReportAnalysis
 
 
 # Import utility for LLM interactions

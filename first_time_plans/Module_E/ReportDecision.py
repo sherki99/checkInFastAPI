@@ -227,7 +227,7 @@ class ReportAnalysis:
             "Track weights and reps for progressive overload",
             "Monitor recovery and adjust intensity as needed",
             "Follow meal timing recommendations around workouts",
-            "Track body measurements and progress photos monthly",
+            "Track body measurements and progress photos weekly",
             "Maintain a training log for all workouts"
         ]
 
