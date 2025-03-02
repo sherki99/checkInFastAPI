@@ -251,19 +251,9 @@ from check_time_plans.plans.meal_plan_generator import MealPlanGenerator
 """
 
 
-class CheckInData(BaseModel):
-    userId: str
-    analysisReport: str
-    bodyMeasurements: str
-    dailyReports: str
-    exercisesLog: str
-    mealPlan: str
-    userWorkoutDetails: str
-    weekReport: str
-
 
 @app.post("/check_in_optimization/")
-async def process_check_in(data: CheckInData):
+async def process_check_in(data: BaseModel):
     try:
         # Convert input data to dictionary
         check_in_data = data.dict()
@@ -275,13 +265,13 @@ async def process_check_in(data: CheckInData):
 
         #1. Data Ingestion Phase (same as before)
         ingestion_module = CheckInDataIngestionModule()
-        standardized_data = ingestion_module.process_check_in_data(check_in_data)
-        print(standardized_data[:100])
+       # standardized_data = ingestion_module.process_check_in_data(check_in_data)
+        #print(standardized_data[:100])
 
-        meal_data = MealAdherenceExtractor().extract_meal_adherence(standardized_data.mealPlan)
-        training_data = TrainingLogsExtractor().extract_training_logs(standardized_data.exerciseLogs)
-        body_data = BodyMetricsExtractor().extract_body_measurements(standardized_data.bodyMeasurements)
-        recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(standardized_data.dailyReports)
+#        meal_data = MealAdherenceExtractor().extract_meal_adherence(standardized_data.mealPlan)
+ #       training_data = TrainingLogsExtractor().extract_training_logs(standardized_data.exerciseLogs)
+  #      body_data = BodyMetricsExtractor().extract_body_measurements(standardized_data.bodyMeasurements)
+#    recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(standardized_data.dailyReports)
 
 
 
@@ -369,7 +359,7 @@ async def process_check_in(data: CheckInData):
         # Always return both plans in the response
         return {
             "status": "success",
-            "rec" : recovery_data, 
+            "rec" : check_in_data
         }
 
 
