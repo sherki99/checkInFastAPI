@@ -365,7 +365,7 @@ async def process_check_in(data: CheckInData):
         # Always return both plans in the response
         return {
             "status": "success",
-            "standardized_data" :  check_in_data,
+          #  "standardized_data" :  check_in_data,
             "meal_data" :  meal_data,
             "workout_data" : training_data, 
             "body_data" : body_data, 
