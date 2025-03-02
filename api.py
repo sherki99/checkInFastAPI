@@ -366,9 +366,9 @@ async def process_check_in(data: CheckInData):
         return {
             "status": "success",
           #  "standardized_data" :  check_in_data,
-            "meal_data" :  meal_data,
+        #    "meal_data" :  meal_data,
             "workout_data" : training_data, 
-            "body_data" : body_data, 
+           # "body_data" : body_data, 
         }
 
 
