@@ -220,13 +220,14 @@ from fastapi import HTTPException
 # Module imports remain the same as before...
 from check_time_plans.data_ingestion.check_in_ingestion import CheckInDataIngestionModule
 
-"""
+
 from check_time_plans.data_ingestion.meal_adherence import MealAdherenceExtractor
 from check_time_plans.data_ingestion.training_logs import TrainingLogsExtractor
 from check_time_plans.data_ingestion.body_metrics import BodyMetricsExtractor
+
+
+"""
 from check_time_plans.data_ingestion.recovery_markers import RecoveryMarkersExtractor
-
-
 from check_time_plans.analysis.nutrition_adherence import NutritionAdherenceModule
 from check_time_plans.analysis.training_performance import TrainingPerformanceModule
 from check_time_plans.analysis.body_metrics import BodyMetricsModule
@@ -265,19 +266,21 @@ async def process_check_in(data: CheckInData):
         check_in_data = data.dict()
 
         # Store original plans
-        original_workout_plan = check_in_data['userWorkoutDetailsLastWeek']
-        original_meal_plan = check_in_data['mealPlanLastWeek']
+        #original_workout_plan = check_in_data['userWorkoutDetailsLastWeek']
+        #original_meal_plan = check_in_data['mealPlanLastWeek']
 
-        # 1. Data Ingestion Phase (same as before)
-      #  ingestion_module = CheckInDataIngestionModule()
-      #  standardized_data = ingestion_module.process_check_in_data(check_in_data)
+        #1. Data Ingestion Phase (same as before)
+        ingestion_module = CheckInDataIngestionModule()
+        standardized_data = ingestion_module.process_check_in_data(check_in_data)
+
+        meal_data = MealAdherenceExtractor().extract_meal_adherence(standardized_data.mealPlanLastWeek)
+        training_data = TrainingLogsExtractor().extract_training_logs(standardized_data.exercisesLogLastWeek)
+        body_data = BodyMetricsExtractor().extract_body_measurements(standardized_data.bodyMeasurementsLastWeek)
 
 
         """
         
-        meal_data = MealAdherenceExtractor().extract_meal_adherence(standardized_data.mealPlanLastWeek)
-        training_data = TrainingLogsExtractor().extract_training_logs(standardized_data.exercisesLogLastWeek)
-        body_data = BodyMetricsExtractor().extract_body_measurements(standardized_data.bodyMeasurementsLastWeek)
+   
         recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(standardized_data.dailyReportsLastWeek)
 
         # 2. Analysis Phase (same as before)
@@ -362,7 +365,10 @@ async def process_check_in(data: CheckInData):
         # Always return both plans in the response
         return {
             "status": "success",
-            "standardized_data" :  check_in_data
+            "standardized_data" :  check_in_data,
+            "meal_data" :  meal_data,
+            "workout_data" : training_data, 
+            "body_data" : body_data, 
         }
 
 
@@ -413,7 +419,7 @@ from first_time_plans.Module_D.MealTimingDecion import MealTimingDecisionNode
 
 from first_time_plans.Module_E.WorkoutDecisionClass import WorkoutDecisionClass
 from first_time_plans.Module_E.NutritionDecisionClass import NutritionDecisionClass
-from first_time_plans.Module_E.ReportDecision  import ReportAnalysis
+from first_time_plans.Module_E.ReportDecision  import ReportDecision
 
 
 # Import utility for LLM interactions
@@ -516,8 +522,8 @@ async def create_first_plan(base_model: BaseModelForRequest):
         )
 
         # comunque cio la scelta dell metro questo e un altro modo provato si vedra 
-        report_analysis = ReportAnalysis()
-        final_report = report_analysis.analyze_program_data(
+        report_analysis = ReportDecision()
+        final_report = report_analysis.process(
             standardized_profile,
             goal_analysis,
             body_analysis,
