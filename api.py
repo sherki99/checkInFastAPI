@@ -253,7 +253,7 @@ from check_time_plans.plans.meal_plan_generator import MealPlanGenerator
 
 class CheckInData(BaseModel):
     userId: str
-    analysisReport: Dict[str]
+    analysisReport: str
     analysisReportStart: str
     bodyMeasurementsLastWeek: str
     dailyReportsLastWeek: str
