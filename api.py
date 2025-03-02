@@ -251,14 +251,6 @@ from check_time_plans.plans.meal_plan_generator import MealPlanGenerator
 """
 
 
-class CheckInData(BaseModel):
-    userId: str
-    analysisReport: str
-    analysisReportStart: str
-    bodyMeasurementsLastWeek: str
-    dailyReportsLastWeek: str
-    exercisesLogLastWeek: str
-    userWorkoutDetailsLastWeek: str
 
 @app.post("/check_in_optimization/")
 async def process_check_in(data: BaseModel):
