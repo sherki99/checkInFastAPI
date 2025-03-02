@@ -224,10 +224,11 @@ from check_time_plans.data_ingestion.check_in_ingestion import CheckInDataIngest
 from check_time_plans.data_ingestion.meal_adherence import MealAdherenceExtractor
 from check_time_plans.data_ingestion.training_logs import TrainingLogsExtractor
 from check_time_plans.data_ingestion.body_metrics import BodyMetricsExtractor
+from check_time_plans.data_ingestion.recover_markers import RecoveryMarkersExtractor
 
 
 """
-from check_time_plans.data_ingestion.recovery_markers import RecoveryMarkersExtractor
+
 from check_time_plans.analysis.nutrition_adherence import NutritionAdherenceModule
 from check_time_plans.analysis.training_performance import TrainingPerformanceModule
 from check_time_plans.analysis.body_metrics import BodyMetricsModule
@@ -273,16 +274,15 @@ async def process_check_in(data: CheckInData):
         ingestion_module = CheckInDataIngestionModule()
         standardized_data = ingestion_module.process_check_in_data(check_in_data)
 
-        meal_data = MealAdherenceExtractor().extract_meal_adherence(standardized_data.mealPlanLastWeek)
-        training_data = TrainingLogsExtractor().extract_training_logs(standardized_data.exercisesLogLastWeek)
-        body_data = BodyMetricsExtractor().extract_body_measurements(standardized_data.bodyMeasurementsLastWeek)
+        meal_data = MealAdherenceExtractor().extract_meal_adherence(standardized_data.mealPlan)
+        training_data = TrainingLogsExtractor().extract_training_logs(standardized_data.exerciseLogs)
+        body_data = BodyMetricsExtractor().extract_body_measurements(standardized_data.bodyMeasurements)
+        recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(standardized_data.dailyReports)
+
 
 
         """
         
-   
-        recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(standardized_data.dailyReportsLastWeek)
-
         # 2. Analysis Phase (same as before)
         nutrition_analysis = NutritionAdherenceModule().analyze_meal_compliance(meal_data)
         training_analysis = TrainingPerformanceModule().analyze_workout_execution(training_data)
@@ -365,10 +365,7 @@ async def process_check_in(data: CheckInData):
         # Always return both plans in the response
         return {
             "status": "success",
-          #  "standardized_data" :  check_in_data,
-        #    "meal_data" :  meal_data,
-            "workout_data" : training_data, 
-           # "body_data" : body_data, 
+            "rec" : recovery_data, 
         }
 
 
