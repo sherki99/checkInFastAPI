@@ -263,15 +263,9 @@ async def process_check_in(data: BaseModel):
         #original_workout_plan = check_in_data['userWorkoutDetailsLastWeek']
         #original_meal_plan = check_in_data['mealPlanLastWeek']
 
-        #1. Data Ingestion Phase (same as before)
         ingestion_module = CheckInDataIngestionModule()
-       # standardized_data = ingestion_module.process_check_in_data(check_in_data)
-        #print(standardized_data[:100])
+        standardized_data = ingestion_module.process_check_in_data(check_in_data)
 
-#        meal_data = MealAdherenceExtractor().extract_meal_adherence(standardized_data.mealPlan)
- #       training_data = TrainingLogsExtractor().extract_training_logs(standardized_data.exerciseLogs)
-  #      body_data = BodyMetricsExtractor().extract_body_measurements(standardized_data.bodyMeasurements)
-#    recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(standardized_data.dailyReports)
 
 
 
