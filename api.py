@@ -251,9 +251,19 @@ from check_time_plans.plans.meal_plan_generator import MealPlanGenerator
 """
 
 
+class CheckInData(BaseModel):
+    userId: str
+    analysisReport: str
+    bodyMeasurements: str
+    dailyReports: str
+    exercisesLog: str
+    mealPlan: str
+    userWorkoutDetails: str
+    weekReport: str
+
 
 @app.post("/check_in_optimization/")
-async def process_check_in(data: BaseModel):
+async def process_check_in(data: CheckInData):
     try:
         # Convert input data to dictionary
         check_in_data = data.dict()
