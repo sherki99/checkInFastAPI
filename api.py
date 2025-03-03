@@ -289,10 +289,8 @@ async def process_check_in(data: Dict[str, Any]):
                 "quarterly": standardized_data.goals.quarterlyGoal
             },
             "extractedData": {
-                "meal": meal_data, 
-                "training": training_data.dict() if hasattr(training_data, "dict") else str(training_data),
-                "body": body_data.dict() if hasattr(body_data, "dict") else str(body_data),
-                "recovery": recovery_data.dict() if hasattr(recovery_data, "dict") else str(recovery_data)
+                "meal": meal_data,
+                "recovery_data" :  recovery_data
             }
         }
     except Exception as e:
