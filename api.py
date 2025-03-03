@@ -269,7 +269,7 @@ async def process_check_in(data: Dict[str, Any]):
         
         # The rest of your analysis, decision, and integration pipeline would go here
         # For now, let's return some meaningful data to show the processing worked
-        
+          
         return {
             "status": "success",
             "userId": standardized_data.userId,
