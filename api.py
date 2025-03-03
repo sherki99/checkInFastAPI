@@ -266,16 +266,28 @@ class CheckInData(BaseModel):
 @app.post("/check_in_optimization/")
 async def process_check_in(data: Dict[str, Any]):
     try:
+
         # 1. Data Ingestion Phase
         ingestion_module = CheckInDataIngestionModule()
         standardized_data = ingestion_module.process_check_in_data(data)
         
+
         # 2. Extract specialized data from standardized data
-        meal_data = MealAdherenceExtractor().extract_meal_adherence(standardized_data.mealPlan)
-        training_data = TrainingLogsExtractor().extract_training_logs(standardized_data.exerciseLogs)
-        body_data = BodyMetricsExtractor().extract_body_measurements(standardized_data.bodyMeasurements)
-        recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(standardized_data.dailyReports)
-        
+        meal_data = MealAdherenceExtractor().extract_meal_adherence(
+            standardized_data.mealPlan.dict(),  
+            [report.dict() for report in standardized_data.dailyReports]  
+        )
+        training_data = TrainingLogsExtractor().extract_training_logs(
+            [log.dict() for log in standardized_data.exerciseLogs]  
+        )
+        body_data = BodyMetricsExtractor().extract_body_measurements(
+            standardized_data.bodyMeasurements.dict()  
+        )
+        recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(
+            [report.dict() for report in standardized_data.dailyReports]  
+        )
+
+
         # The rest of your analysis, decision, and integration pipeline would go here
         # For now, let's return some meaningful data to show the processing worked
         
