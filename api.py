@@ -221,6 +221,10 @@ from fastapi import HTTPException
 from check_time_plans.data_ingestion.check_in_ingestion import CheckInDataIngestionModule
 
 
+from check_time_plans.data_ingestion.meal_adherence import MealAdherenceExtractor
+from check_time_plans.data_ingestion.training_logs import TrainingLogsExtractor
+from check_time_plans.data_ingestion.body_metrics import BodyMetricsExtractor
+from check_time_plans.data_ingestion.recover_markers import RecoveryMarkersExtractor
 
 
 """
@@ -266,10 +270,15 @@ async def process_check_in(data: Dict[str, Any]):
         ingestion_module = CheckInDataIngestionModule()
         standardized_data = ingestion_module.process_check_in_data(data)
         
+        # 2. Extract specialized data from standardized data
+        meal_data = MealAdherenceExtractor().extract_meal_adherence(standardized_data.mealPlan)
+        training_data = TrainingLogsExtractor().extract_training_logs(standardized_data.exerciseLogs)
+        body_data = BodyMetricsExtractor().extract_body_measurements(standardized_data.bodyMeasurements)
+        recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(standardized_data.dailyReports)
         
         # The rest of your analysis, decision, and integration pipeline would go here
         # For now, let's return some meaningful data to show the processing worked
-          
+        
         return {
             "status": "success",
             "userId": standardized_data.userId,
@@ -279,7 +288,12 @@ async def process_check_in(data: Dict[str, Any]):
                 "monthly": standardized_data.goals.monthlyGoal,
                 "quarterly": standardized_data.goals.quarterlyGoal
             },
-
+            "extractedData": {
+                "meal": meal_data, 
+                "training": training_data.dict() if hasattr(training_data, "dict") else str(training_data),
+                "body": body_data.dict() if hasattr(body_data, "dict") else str(body_data),
+                "recovery": recovery_data.dict() if hasattr(recovery_data, "dict") else str(recovery_data)
+            }
         }
     except Exception as e:
         # Proper error handling
