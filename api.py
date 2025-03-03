@@ -274,19 +274,8 @@ async def process_check_in(data: Dict[str, Any]):
 
         # 2. Extract specialized data from standardized data
         meal_data = MealAdherenceExtractor().extract_meal_adherence(
-            standardized_data.mealPlan.dict(),  
-            [report.dict() for report in standardized_data.dailyReports]  
+            standardized_data.mealPlan.dict()
         )
-        training_data = TrainingLogsExtractor().extract_training_logs(
-            [log.dict() for log in standardized_data.exerciseLogs]  
-        )
-        body_data = BodyMetricsExtractor().extract_body_measurements(
-            standardized_data.bodyMeasurements.dict()  
-        )
-        recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(
-            [report.dict() for report in standardized_data.dailyReports]  
-        )
-
 
         # The rest of your analysis, decision, and integration pipeline would go here
         # For now, let's return some meaningful data to show the processing worked
@@ -302,7 +291,7 @@ async def process_check_in(data: Dict[str, Any]):
             },
             "extractedData": {
                 "meal": meal_data,
-                "recovery_data" :  recovery_data
+    
             }
         }
     except Exception as e:
