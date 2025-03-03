@@ -213,7 +213,7 @@ async def receive_check_in(data: CheckInData):
 
 
 # Import required modules and dependencies
-from typing import Dict, Any
+from typing import Dict, Any, List
 from pydantic import BaseModel
 from fastapi import HTTPException
 
@@ -221,10 +221,6 @@ from fastapi import HTTPException
 from check_time_plans.data_ingestion.check_in_ingestion import CheckInDataIngestionModule
 
 
-from check_time_plans.data_ingestion.meal_adherence import MealAdherenceExtractor
-from check_time_plans.data_ingestion.training_logs import TrainingLogsExtractor
-from check_time_plans.data_ingestion.body_metrics import BodyMetricsExtractor
-from check_time_plans.data_ingestion.recover_markers import RecoveryMarkersExtractor
 
 
 """
@@ -251,37 +247,45 @@ from check_time_plans.plans.meal_plan_generator import MealPlanGenerator
 """
 
 
-class CheckInData(BaseModel):       
-    userId: str
-    analysisReport: str
-    bodyMeasurements: str
-    dailyReports: str
-    exercisesLog: str
-    mealPlan: str
-    userWorkoutDetails: str
-    weekReport: str
 
+
+# Define our input model that matches the structure we're receiving
+class CheckInData(BaseModel):
+    analysisReport: Optional[Dict[str, Any]] = None
+    bodyMeasurements: Optional[Dict[str, Any]] = None
+    dailyReports: Optional[List[Dict[str, Any]]] = None
+    exercisesLog: Optional[List[Dict[str, Any]]] = None
+    mealPlan: Optional[Dict[str, Any]] = None
+    userWorkoutDetails: Optional[Dict[str, Any]] = None
+    weekReport: Optional[Dict[str, Any]] = None
 
 @app.post("/check_in_optimization/")
-async def process_check_in(data: CheckInData):
+async def process_check_in(data: Dict[str, Any]):
     try:
-        # Convert input data to dictionary
-        check_in_data = data.dict()
+        # 1. Data Ingestion Phase
+        ingestion_module = CheckInDataIngestionModule()
+        standardized_data = ingestion_module.process_check_in_data(data)
         
+        
+        # The rest of your analysis, decision, and integration pipeline would go here
+        # For now, let's return some meaningful data to show the processing worked
+        
+        return {
+            "status": "success",
+            "userId": standardized_data.userId,
+            "dataIngestionComplete": True,
+            "goals": {
+                "weekly": standardized_data.goals.weeklyGoal,
+                "monthly": standardized_data.goals.monthlyGoal,
+                "quarterly": standardized_data.goals.quarterlyGoal
+            },
 
-        # Store original plans
-        #original_workout_plan = check_in_data['userWorkoutDetailsLastWeek']
-        #original_meal_plan = check_in_data['mealPlanLastWeek']
+        }
+    except Exception as e:
+        # Proper error handling
+        raise HTTPException(status_code=500, detail=f"Error processing check-in data: {str(e)}")
+    
 
-        #1. Data Ingestion Phase (same as before)
-       # ingestion_module = CheckInDataIngestionModule()
-       # standardized_data = ingestion_module.process_check_in_data(check_in_data)
-        #print(standardized_data[:100])
-
-#        meal_data = MealAdherenceExtractor().extract_meal_adherence(standardized_data.mealPlan)
- #       training_data = TrainingLogsExtractor().extract_training_logs(standardized_data.exerciseLogs)
-  #      body_data = BodyMetricsExtractor().extract_body_measurements(standardized_data.bodyMeasurements)
-#    recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(standardized_data.dailyReports)
 
 
 

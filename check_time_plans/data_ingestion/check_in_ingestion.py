@@ -1,9 +1,12 @@
-# check_time_plans/data_ingestion/check_in_ingestion.py
-
 import json
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
 from datetime import datetime
+
+class Goals(BaseModel):
+    weeklyGoal: str
+    monthlyGoal: str
+    quarterlyGoal: str
 
 class StandardizedMeasurement(BaseModel):
     current: float
@@ -113,11 +116,6 @@ class WeekReport(BaseModel):
     trainingWeek: Optional[str] = None
     userId: str
 
-class Goals(BaseModel):
-    weeklyGoal: str
-    monthlyGoal: str
-    quarterlyGoal: str
-
 class StandardizedCheckInData(BaseModel):
     userId: str
     goals: Goals
@@ -142,14 +140,14 @@ class CheckInDataIngestionModule:
             StandardizedCheckInData: Processed and standardized data
         """
         try:
-            # Parse JSON strings if they are passed as strings
-            body_measurements = self._parse_json(raw_data.get('bodyMeasurementsLastWeek', '{}'))
-            daily_reports = self._parse_json(raw_data.get('dailyReportsLastWeek', '[]'))
-            exercise_logs = self._parse_json(raw_data.get('exercisesLogLastWeek', '[]'))
-            meal_plan = self._parse_json(raw_data.get('mealPlanLastWeek', '{}'))
-            workout_details = self._parse_json(raw_data.get('userWorkoutDetailsLastWeek', '{}'))
-            week_report = self._parse_json(raw_data.get('weekReportLastWeek', '{}'))
-            analysis_report = self._parse_json(raw_data.get('analysisReportStart', '{}'))
+            # Extract data from raw_data directly based on the structure we see
+            analysis_report = raw_data.get('analysisReport', {})
+            body_measurements = raw_data.get('bodyMeasurements', {})
+            daily_reports = raw_data.get('dailyReports', [])
+            exercise_logs = raw_data.get('exercisesLog', [])
+            meal_plan = raw_data.get('mealPlan', {})
+            workout_details = raw_data.get('userWorkoutDetails', {})
+            week_report = raw_data.get('weekReport', {})
             
             # Process and standardize each section
             standardized_goals = self._process_goals(analysis_report)
@@ -162,7 +160,7 @@ class CheckInDataIngestionModule:
             
             # Create the standardized data object
             return StandardizedCheckInData(
-                userId=raw_data.get('userId', ''),
+                userId=week_report.get('userId', ''),
                 goals=standardized_goals,
                 bodyMeasurements=standardized_body,
                 dailyReports=standardized_daily,
@@ -177,27 +175,12 @@ class CheckInDataIngestionModule:
             print(f"Error processing check-in data: {str(e)}")
             raise
     
-    def _parse_json(self, data: Any) -> Dict[str, Any]:
-        """Parse JSON data if it's a string, otherwise return as is."""
-        if isinstance(data, str):
-            try:
-                return json.loads(data)
-            except json.JSONDecodeError:
-                # If not valid JSON, return the original data
-                return data
-        return data
-    
     def _process_goals(self, analysis_report: Dict[str, Any]) -> Goals:
         """Process and standardize goals data."""
         # Extract goals from analysis report
-        weekly_goal = "Not specified"
-        monthly_goal = "Not specified"
-        quarterly_goal = "Not specified"
-        
-        if isinstance(analysis_report, dict):
-            weekly_goal = analysis_report.get('weeklyGoal', weekly_goal)
-            monthly_goal = analysis_report.get('monthlyGoal', monthly_goal)
-            quarterly_goal = analysis_report.get('quarterlyGoal', quarterly_goal)
+        weekly_goal = analysis_report.get('weeklyGoal', "Not specified")
+        monthly_goal = analysis_report.get('monthlyGoal', "Not specified")
+        quarterly_goal = analysis_report.get('quarterlyGoal', "Not specified")
         
         return Goals(
             weeklyGoal=weekly_goal,
@@ -207,109 +190,92 @@ class CheckInDataIngestionModule:
     
     def _process_body_measurements(self, body_data: Dict[str, Any]) -> StandardizedBodyMeasurements:
         """Process and standardize body measurements data."""
-        dates = {"current": "", "previous": ""}
+        dates = body_data.get("dates", {"current": "", "previous": ""})
         measurements = {}
         
-        if "dates" in body_data:
-            dates = body_data["dates"]
-        
-        if "measurements" in body_data:
-            raw_measurements = body_data["measurements"]
-            for key, value in raw_measurements.items():
-                if isinstance(value, dict):
-                    measurements[key] = StandardizedMeasurement(
-                        current=value.get("current", 0.0),
-                        previous=value.get("previous", 0.0),
-                        unit=value.get("unit", "cm"),
-                        change=value.get("change", 0.0)
-                    )
+        raw_measurements = body_data.get("measurements", {})
+        for key, value in raw_measurements.items():
+            if isinstance(value, dict):
+                measurements[key] = StandardizedMeasurement(
+                    current=value.get("current", 0.0),
+                    previous=value.get("previous", 0.0),
+                    unit=value.get("unit", "cm"),
+                    change=value.get("change", 0.0)
+                )
         
         return StandardizedBodyMeasurements(
             dates=dates,
             measurements=measurements
         )
     
-    def _process_daily_reports(self, daily_data: Any) -> List[DailyReport]:
+    def _process_daily_reports(self, daily_data: List[Dict[str, Any]]) -> List[DailyReport]:
         """Process and standardize daily reports data."""
         daily_reports = []
         
-        if isinstance(daily_data, list):
-            for report in daily_data:
-                try:
-                    # Extract and standardize sleep metrics
-                    sleep_metrics = None
-                    if "sleep" in report and isinstance(report["sleep"], dict):
-                        sleep_metrics = SleepMetrics(
-                            length=report["sleep"].get("length", 0.0),
-                            efficiency=report["sleep"].get("efficiency")
-                        )
-                    elif "sleepLength" in report:
-                        sleep_metrics = SleepMetrics(
-                            length=float(report.get("sleepLength", 0.0)),
-                            efficiency=report.get("sleepEfficiency")
-                        )
-                    
-                    # Extract and standardize macros
-                    macros = MacroNutrients(
-                        carbs=int(report.get("carbs", 0)),
-                        fats=int(report.get("fats", 0)),
-                        proteins=int(report.get("proteins", 0))
+        for report in daily_data:
+            try:
+                # Extract and standardize sleep metrics
+                sleep_metrics = None
+                if "sleep" in report and isinstance(report["sleep"], dict):
+                    sleep_metrics = SleepMetrics(
+                        length=report["sleep"].get("length", 0.0),
+                        efficiency=report["sleep"].get("efficiency")
                     )
-                    if "macros" in report and isinstance(report["macros"], dict):
-                        macros = MacroNutrients(
-                            carbs=int(report["macros"].get("carbs", 0)),
-                            fats=int(report["macros"].get("fats", 0)),
-                            proteins=int(report["macros"].get("proteins", 0))
-                        )
-                    
-                    # Create standardized daily report
-                    daily_reports.append(
-                        DailyReport(
-                            day=report.get("day", 0),
-                            date=report.get("date", ""),
-                            timeOfWeighIn=report.get("timeOfWeighIn"),
-                            weight=float(report.get("weight", 0.0)),
-                            macros=macros,
-                            performance=report.get("performance"),
-                            steps=report.get("steps"),
-                            cardio=report.get("cardio"),
-                            sleep=sleep_metrics,
-                            rhr=report.get("rhr"),
-                            appetite=report.get("appetite"),
-                            stressors=report.get("stressors"),
-                            additionalNotes=report.get("additionalNotes")
-                        )
+                
+                # Extract and standardize macros
+                macros = MacroNutrients(
+                    carbs=report.get("macros", {}).get("carbs", 0),
+                    fats=report.get("macros", {}).get("fats", 0),
+                    proteins=report.get("macros", {}).get("proteins", 0)
+                )
+                
+                # Create standardized daily report
+                daily_reports.append(
+                    DailyReport(
+                        day=report.get("day", 0),
+                        date=report.get("date", ""),
+                        timeOfWeighIn=report.get("timeOfWeighIn"),
+                        weight=float(report.get("weight", 0.0)),
+                        macros=macros,
+                        performance=report.get("performance"),
+                        steps=report.get("steps"),
+                        cardio=report.get("cardio"),
+                        sleep=sleep_metrics,
+                        rhr=report.get("rhr"),
+                        appetite=report.get("appetite"),
+                        stressors=report.get("stressors"),
+                        additionalNotes=report.get("additionalNotes")
                     )
-                except Exception as e:
-                    print(f"Error processing daily report: {str(e)}")
-                    # Continue processing other reports
-                    continue
+                )
+            except Exception as e:
+                print(f"Error processing daily report: {str(e)}")
+                # Continue processing other reports
+                continue
         
         return daily_reports
     
-    def _process_exercise_logs(self, exercise_data: Any) -> List[ExerciseLog]:
+    def _process_exercise_logs(self, exercise_data: List[Dict[str, Any]]) -> List[ExerciseLog]:
         """Process and standardize exercise logs data."""
         exercise_logs = []
         
-        if isinstance(exercise_data, list):
-            for exercise in exercise_data:
-                entries = []
-                
-                if "entries" in exercise and isinstance(exercise["entries"], list):
-                    for entry in exercise["entries"]:
-                        entries.append(
-                            ExerciseEntry(
-                                date=entry.get("date", ""),
-                                weight=float(entry.get("weight", 0.0))
-                            )
+        for exercise in exercise_data:
+            entries = []
+            
+            if "entries" in exercise and isinstance(exercise["entries"], list):
+                for entry in exercise["entries"]:
+                    entries.append(
+                        ExerciseEntry(
+                            date=entry.get("date", ""),
+                            weight=float(entry.get("weight", 0.0))
                         )
-                
-                exercise_logs.append(
-                    ExerciseLog(
-                        name=exercise.get("name", "Undefined"),
-                        entries=entries
                     )
+            
+            exercise_logs.append(
+                ExerciseLog(
+                    name=exercise.get("name", "Undefined"),
+                    entries=entries
                 )
+            )
         
         return exercise_logs
     
@@ -376,7 +342,7 @@ class CheckInDataIngestionModule:
                     )
                 )
         
-        # Process total daily nutrition
+        # Default total nutrition values if not provided
         total_nutrition = TotalNutrition(
             protein=meal_data.get("totalDailyNutrition", {}).get("protein", 0),
             carbohydrates=meal_data.get("totalDailyNutrition", {}).get("carbohydrates", 0),
@@ -398,36 +364,33 @@ class CheckInDataIngestionModule:
         
         if "schedule" in workout_data and isinstance(workout_data["schedule"], list):
             for day_data in workout_data["schedule"]:
-                exercises = []
-                
-                # Process day's exercises if available
-                if "exercises" in day_data and isinstance(day_data["exercises"], list):
-                    for ex in day_data["exercises"]:
-                        exercises.append(
-                            Exercise(
-                                name=ex.get("name", "Undefined"),
-                                sets=ex.get("sets"),
-                                reps=ex.get("reps"),
-                                rest=ex.get("rest"),
-                                duration=ex.get("duration"),
-                                intensity=ex.get("intensity"),
-                                notes=ex.get("notes")
-                            )
-                        )
-                
-                # Handle rest days or days with exercises
-                if day_data.get("type") == "Rest Day" or not exercises:
+                # Check if this is a rest day
+                if day_data.get("type") == "Rest Day":
                     schedule.append(
                         WorkoutDay(
                             day=day_data.get("day", 0),
-                            type=day_data.get("type", "Rest Day") if not exercises else "Training Day"
+                            type="Rest Day"
                         )
                     )
                 else:
+                    exercises = []
+                    if "exercises" in day_data and isinstance(day_data["exercises"], list):
+                        for exercise_data in day_data["exercises"]:
+                            exercises.append(
+                                Exercise(
+                                    name=exercise_data.get("name", ""),
+                                    sets=exercise_data.get("sets"),
+                                    reps=exercise_data.get("reps"),
+                                    rest=exercise_data.get("rest"),
+                                    duration=exercise_data.get("duration"),
+                                    intensity=exercise_data.get("intensity"),
+                                    notes=exercise_data.get("notes")
+                                )
+                            )
+                    
                     schedule.append(
                         WorkoutDay(
                             day=day_data.get("day", 0),
-                            type="Training Day",
                             exercises=exercises
                         )
                     )
