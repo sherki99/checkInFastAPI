@@ -273,7 +273,7 @@ async def process_check_in(data: Dict[str, Any]):
         
 
 
-        print( standardized_data.mealPlan)
+        print(standardized_data.mealPlan)
         # 2. Extract specialized data from standardized data
         meal_data = MealAdherenceExtractor().extract_meal_adherence(
             standardized_data.mealPlan.dict()
@@ -299,8 +299,6 @@ async def process_check_in(data: Dict[str, Any]):
     except Exception as e:
         # Proper error handling
         raise HTTPException(status_code=500, detail=f"Error processing check-in data: {str(e)}")
-    
-
 
 
 
@@ -382,7 +380,7 @@ async def process_check_in(data: Dict[str, Any]):
         report_generator.save_to_database(final_report, check_in_data['userId'])
         api_response = report_generator.format_api_response(final_report)
 
-        """
+   
 
 
         # Always return both plans in the response
@@ -392,7 +390,7 @@ async def process_check_in(data: Dict[str, Any]):
         }
 
 
-        """
+       
             "workout_plan": workout_plan,
 
             "meal_plan": meal_plan,
@@ -405,8 +403,6 @@ async def process_check_in(data: Dict[str, Any]):
             }
 
         """
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 
