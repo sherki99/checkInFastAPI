@@ -272,6 +272,8 @@ async def process_check_in(data: Dict[str, Any]):
         standardized_data = ingestion_module.process_check_in_data(data)
         
 
+
+        print( standardized_data.mealPlan)
         # 2. Extract specialized data from standardized data
         meal_data = MealAdherenceExtractor().extract_meal_adherence(
             standardized_data.mealPlan.dict()

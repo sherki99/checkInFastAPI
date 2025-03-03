@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 import openai
 from openai import OpenAI
+import time
 
 # Load environment variables and set up the API client
 load_dotenv()
@@ -54,15 +55,26 @@ class BaseLLM:
                 "type": "function",
                 "function": function_schema
             }]
-            completion = self.llm_client.chat.completions.create(
-                model=self.model, 
-                messages=messages,
-                tools=tools
-            )
-            # Expect at least one function call in the response
-            tool_call = completion.choices[0].message.tool_calls[0]
-            return json.loads(tool_call.function.arguments)
-        
+            max_retries = 5
+            wait_time = 1  # initial wait time in seconds
+
+            for attempt in range(max_retries):
+                try:
+                    completion = self.llm_client.chat.completions.create(
+                        model=self.model,
+                        messages=messages,
+                        tools=tools
+                    )
+                    # Expect at least one function call in the response
+                    tool_call = completion.choices[0].message.tool_calls[0]
+                    return json.loads(tool_call.function.arguments)
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        print(f"Attempt {attempt+1} failed, waiting {wait_time} seconds before retrying...")
+                        time.sleep(wait_time)
+                        wait_time *= 2  # Increase wait time exponentially
+                    else:
+                        raise e
         # Case 2: Use structured JSON outputs if a Pydantic schema is provided
         elif schema:
             completion = self.llm_client.beta.chat.completions.parse(
