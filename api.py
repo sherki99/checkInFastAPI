@@ -272,12 +272,21 @@ async def process_check_in(data: Dict[str, Any]):
         standardized_data = ingestion_module.process_check_in_data(data)
         
 
-
-        print(standardized_data.mealPlan)
         # 2. Extract specialized data from standardized data
         meal_data = MealAdherenceExtractor().extract_meal_adherence(
-            standardized_data.mealPlan.dict()
+            standardized_data.mealPlan.dict(),  
+            [report.dict() for report in standardized_data.dailyReports]  
         )
+        training_data = TrainingLogsExtractor().extract_training_logs(
+            [log.dict() for log in standardized_data.exerciseLogs]  
+        )
+        body_data = BodyMetricsExtractor().extract_body_measurements(
+            standardized_data.bodyMeasurements.dict()  
+        )
+        recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(
+            [report.dict() for report in standardized_data.dailyReports]  
+        )
+
 
         # The rest of your analysis, decision, and integration pipeline would go here
         # For now, let's return some meaningful data to show the processing worked
@@ -293,12 +302,14 @@ async def process_check_in(data: Dict[str, Any]):
             },
             "extractedData": {
                 "meal": meal_data,
-    
+                "recovery_data" :  recovery_data
             }
         }
     except Exception as e:
         # Proper error handling
         raise HTTPException(status_code=500, detail=f"Error processing check-in data: {str(e)}")
+    
+
 
 
 
@@ -380,7 +391,7 @@ async def process_check_in(data: Dict[str, Any]):
         report_generator.save_to_database(final_report, check_in_data['userId'])
         api_response = report_generator.format_api_response(final_report)
 
-   
+        """
 
 
         # Always return both plans in the response
@@ -390,7 +401,7 @@ async def process_check_in(data: Dict[str, Any]):
         }
 
 
-       
+        """
             "workout_plan": workout_plan,
 
             "meal_plan": meal_plan,
@@ -403,6 +414,8 @@ async def process_check_in(data: Dict[str, Any]):
             }
 
         """
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 
