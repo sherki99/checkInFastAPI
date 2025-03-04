@@ -73,7 +73,8 @@ class RecoveryMarkersExtractor:
             llm_client: Custom LLM client implementation. If None, uses the default BaseLLM.
         """
         self.llm_client = llm_client or BaseLLM()
-    
+
+
     def extract_recovery_markers(self, daily_reports: List[Any], week_report: Any = None) -> Dict[str, Any]:
         """
         Extracts recovery markers from daily reports and week report data using LLM analysis.
@@ -91,6 +92,11 @@ class RecoveryMarkersExtractor:
                 daily_reports, week_report
             )
             
+            # Check if the result is a dict with 'comprehensive_analysis'
+            if isinstance(schema_result, dict) and 'comprehensive_analysis' in schema_result:
+                return schema_result
+            
+            # If not a dictionary or missing 'comprehensive_analysis', return the result directly
             return {
                 "recovery_analysis": schema_result
             }
@@ -98,7 +104,8 @@ class RecoveryMarkersExtractor:
         except Exception as e:
             logger.error(f"Error analyzing recovery markers: {str(e)}")
             raise e
-    
+        
+        
     def get_system_message(self) -> str:
         """
         Returns the system message to guide the LLM in recovery analysis.
