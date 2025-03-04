@@ -252,6 +252,17 @@ from check_time_plans.plans.meal_plan_generator import MealPlanGenerator
 
 
 
+"""
+        load_adjustments = LoadAdjustmentNode().optimize_training_load(
+         #   recovery_analysis,
+            training_analysis
+        )
+
+"""
+
+
+
+
 # Define our input model that matches the structure we're receiving
 class CheckInData(BaseModel):
     analysisReport: Optional[Dict[str, Any]] = None
@@ -308,13 +319,6 @@ async def process_check_in(data: Dict[str, Any]):
           #  recovery_analysis
         )
 
-        load_adjustments = LoadAdjustmentNode().optimize_training_load(
-         #   recovery_analysis,
-            training_analysis
-        )
-
-
-
         return {
             "status": "success",
             "userId": standardized_data.userId,
@@ -336,6 +340,8 @@ async def process_check_in(data: Dict[str, Any]):
                 "training_analysis" : training_analysis, 
                 "metrics_analysis" : metrics_analysis,
             }, 
+
+            "training_adjustments":  training_adjustments
 
         }
     except Exception as e:
