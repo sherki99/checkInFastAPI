@@ -224,7 +224,13 @@ from check_time_plans.data_ingestion.check_in_ingestion import CheckInDataIngest
 from check_time_plans.data_ingestion.meal_adherence import MealAdherenceExtractor
 from check_time_plans.data_ingestion.training_logs import TrainingLogsExtractor
 from check_time_plans.data_ingestion.body_metrics import BodyMetricsExtractor
-from check_time_plans.data_ingestion.recover_markers import RecoveryMarkersExtractor
+
+
+from check_time_plans.analysis.nutrition_adherence import NutritionAdherenceModule
+from check_time_plans.analysis.training_performance import TrainingPerformanceModule
+from check_time_plans.analysis.body_metrics import BodyMetricsModule
+
+
 
 
 """
@@ -288,6 +294,10 @@ async def process_check_in(data: Dict[str, Any]):
         [report.dict() for report in standardized_data.dailyReports]  )"""
 
 
+        nutrition_analysis = NutritionAdherenceModule().analyze_meal_compliance(meal_data)
+        training_analysis = TrainingPerformanceModule().analyze_workout_execution(training_data)
+        metrics_analysis = BodyMetricsModule().analyze_body_changes(body_data)
+
 
         # The rest of your analysis, decision, and integration pipeline would go here
         # For now, let's return some meaningful data to show the processing worked
@@ -303,8 +313,11 @@ async def process_check_in(data: Dict[str, Any]):
             },
             "extractedData": {
                 "meal": meal_data,
-                 "body_data" : body_data
-          
+                "body_data" : body_data,
+            }, 
+            "analysisData": {
+                "meal_analysis": nutrition_analysis,
+                "metrics_analysis" : metrics_analysis,
             }
         }
     except Exception as e:
