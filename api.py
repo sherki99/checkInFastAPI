@@ -293,7 +293,7 @@ async def process_check_in(data: Dict[str, Any]):
         """ recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(
         [report.dict() for report in standardized_data.dailyReports]  )"""
 
-
+        # 2. Analysis Phase (same as before)
         nutrition_analysis = NutritionAdherenceModule().analyze_meal_compliance(meal_data)
         training_analysis = TrainingPerformanceModule().analyze_workout_execution(training_data)
         metrics_analysis = BodyMetricsModule().analyze_body_changes(body_data)
@@ -319,7 +319,7 @@ async def process_check_in(data: Dict[str, Any]):
                 "meal_analysis": nutrition_analysis,
                 "metrics_analysis" : metrics_analysis,
             }, 
-            
+
         }
     except Exception as e:
         # Proper error handling

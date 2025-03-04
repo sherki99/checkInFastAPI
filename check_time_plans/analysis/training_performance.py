@@ -18,7 +18,7 @@ class ExerciseInsight(BaseModel):
 
 class StrengthAssessment(BaseModel):
     """Assessment of strength qualities and development."""
-    strength_profile: Dict[str, str] = Field(..., description="Profile of different strength qualities (e.g., maximal, explosive, endurance)")
+    strength_profile: List[str] = Field(..., description="Profile of different strength qualities (e.g., maximal, explosive, endurance)")
     relative_strengths: List[str] = Field(..., description="Areas of relative strength")
     relative_weaknesses: List[str] = Field(..., description="Areas needing strength development")
     strength_imbalances: List[str] = Field(..., description="Identified strength imbalances")
