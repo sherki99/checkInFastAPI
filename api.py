@@ -311,12 +311,16 @@ async def process_check_in(data: Dict[str, Any]):
                 "monthly": standardized_data.goals.monthlyGoal,
                 "quarterly": standardized_data.goals.quarterlyGoal
             },
+
+
             "extractedData": {
-                "meal": meal_data,
+                "meal_data": meal_data,
                 "body_data" : body_data,
+                "training_data" : training_data
             }, 
             "analysisData": {
-                "meal_analysis": nutrition_analysis,
+                "nutrition_analysis": nutrition_analysis,
+                "training_analysis" : training_analysis, 
                 "metrics_analysis" : metrics_analysis,
             }, 
 
