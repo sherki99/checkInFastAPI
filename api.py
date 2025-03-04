@@ -233,7 +233,7 @@ from check_time_plans.analysis.body_metrics import BodyMetricsModule
 from check_time_plans.decisions.goal_alignment import GoalAlignmentNode
 from check_time_plans.decisions.nutrition_adjustment import NutritionAdjustmentNode
 from check_time_plans.decisions.training_adjustment import TrainingAdjustmentNode
-from check_time_plans.decisions.load_adjustment import LoadAdjustmentNode
+
 
 """
 
