@@ -274,12 +274,10 @@ async def process_check_in(data: Dict[str, Any]):
 
         # 2. Extract specialized data from standardized data
         meal_data = MealAdherenceExtractor().extract_meal_adherence(
-            standardized_data.mealPlan.dict(),  
-            #[report.dict() for report in standardized_data.dailyReports]  
+            standardized_data.mealPlan.dict()
         )
 
-
-
+        
         # The rest of your analysis, decision, and integration pipeline would go here
         # For now, let's return some meaningful data to show the processing worked
         
