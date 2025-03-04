@@ -23,7 +23,7 @@ class BodyProportionAssessment(BaseModel):
     upper_lower_balance: str = Field(..., description="Assessment of upper vs. lower body development")
     left_right_symmetry: str = Field(..., description="Assessment of left-right symmetry")
     anterior_posterior_balance: str = Field(..., description="Assessment of front vs. back muscle development")
-    measurement_ratios: Dict[str, float] = Field(..., description="Key measurement ratios (e.g., waist-to-hip, shoulder-to-waist)")
+    measurement_ratios: List[str] = Field(...,  description="Key measurement ratios (e.g., waist-to-hip, shoulder-to-waist), where the values are represented as key strings and their corresponding float values.")
     proportion_observations: str = Field(..., description="Notable observations about body proportions")
 
 class BodyMetricsAnalysis(BaseModel):
