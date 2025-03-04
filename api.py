@@ -283,9 +283,10 @@ async def process_check_in(data: Dict[str, Any]):
         body_data = BodyMetricsExtractor().extract_body_measurements(
             standardized_data.bodyMeasurements.dict()  
         )
-        recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(
-            [report.dict() for report in standardized_data.dailyReports]  
-        )
+
+        """ recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(
+        [report.dict() for report in standardized_data.dailyReports]  )"""
+
 
 
         # The rest of your analysis, decision, and integration pipeline would go here
@@ -302,7 +303,8 @@ async def process_check_in(data: Dict[str, Any]):
             },
             "extractedData": {
                 "meal": meal_data,
-                "recovery_data" :  recovery_data
+                 "body_data" : body_data
+          
             }
         }
     except Exception as e:
