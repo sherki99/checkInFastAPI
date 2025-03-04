@@ -25,7 +25,7 @@ class CompliancePattern(BaseModel):
 class NutritionAdherenceAnalysis(BaseModel):
     """Comprehensive nutrition adherence analysis with insights and patterns."""
     overall_adherence_score: float = Field(..., description="Overall adherence score (0-100)")
-    macro_adherence: Dict[str, float] = Field(..., description="Adherence score for each macronutrient")
+    macro_adherence: List[str] = Field(..., description="Adherence score for each macronutrient")
     calorie_adherence: float = Field(..., description="Adherence to calorie targets (%)")
     primary_nutrition_issues: List[str] = Field(..., description="Primary issues affecting nutrition adherence")
     compliance_patterns: List[CompliancePattern] = Field(..., description="Detected patterns in meal compliance")
