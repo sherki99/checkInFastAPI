@@ -41,19 +41,17 @@ class MeasurementChange(BaseModel):
 class BodyMetricsAnalysis(BaseModel):
     """Comprehensive analysis of body measurement and composition data."""
     composition_metrics: BodyCompositionMetrics
-    proportion_assessment: Optional[BodyProportionAssessment] = None
-    specific_measurement_changes: List[MeasurementChange] = []
-    trending_measurements: List[str] = []
-    primary_change_areas: List[str] = []
-    stable_measurements: List[str] = []
-    change_rate_assessment: str = ""
-    visual_impact_assessment: str = ""
-    body_recomposition_indicators: str = ""
-    health_marker_implications: str = ""
+    proportion_assessment: Optional[BodyProportionAssessment] 
+    specific_measurement_changes: List[MeasurementChange] 
+    trending_measurements: List[str]
+    primary_change_areas: List[str] 
+    stable_measurements: List[str] 
+    change_rate_assessment: str 
+    visual_impact_assessment: str 
+    body_recomposition_indicators: str 
+    health_marker_implications: str 
 
-    class Config:
-        extra = 'ignore'
-        allow_population_by_field_name = True
+
 
 class BodyMetricsExtractor:
     """
