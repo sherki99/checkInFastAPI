@@ -116,54 +116,73 @@ class BodyMetricsModule:
             
         Returns:
             Structured body metrics analysis as a Pydantic model
+
+
+
         """
-        # Extract relevant data from body metrics data
-        body_metrics_analysis = body_metrics_data.get("body_metrics_analysis", {})
-        
-        # Extract metrics components
-        composition_metrics = body_metrics_analysis.get("composition_metrics", {})
-        proportion_assessment = body_metrics_analysis.get("proportion_assessment", {})
-        specific_measurement_changes = body_metrics_analysis.get("specific_measurement_changes", {})
-        trending_measurements = body_metrics_analysis.get("trending_measurements", [])
-        primary_change_areas = body_metrics_analysis.get("primary_change_areas", [])
-        stable_measurements = body_metrics_analysis.get("stable_measurements", [])
-        change_rate_assessment = body_metrics_analysis.get("change_rate_assessment", "")
-        visual_impact = body_metrics_analysis.get("visual_impact_assessment", "")
-        recomposition_indicators = body_metrics_analysis.get("body_recomposition_indicators", "")
-        health_implications = body_metrics_analysis.get("health_marker_implications", "")
-        
-        # Construct detailed prompt with comprehensive body metrics data
-        prompt = (
-            "Analyze this client's body measurement data to assess physiological changes, adaptations, "
-            "and body composition shifts. Apply physiological principles to provide insights that can "
-            "guide body composition optimization strategies.\n\n"
+        try:
+            # Ensure body_metrics_data is a dictionary
+            if not isinstance(body_metrics_data, dict):
+                raise ValueError("Input must be a dictionary")
+
+            # Extract body metrics analysis, defaulting to an empty dictionary
+            body_metrics_analysis = body_metrics_data.get("body_metrics_analysis", {})
             
-            f"COMPOSITION METRICS:\n{self._format_dict(composition_metrics)}\n\n"
-            f"PROPORTION ASSESSMENT:\n{self._format_dict(proportion_assessment)}\n\n"
-            f"SPECIFIC MEASUREMENT CHANGES:\n{self._format_dict(specific_measurement_changes)}\n\n"
-            f"TRENDING MEASUREMENTS:\n{self._format_list(trending_measurements)}\n\n"
-            f"PRIMARY CHANGE AREAS:\n{self._format_list(primary_change_areas)}\n\n"
-            f"STABLE MEASUREMENTS:\n{self._format_list(stable_measurements)}\n\n"
-            f"CHANGE RATE ASSESSMENT:\n{change_rate_assessment}\n\n"
-            f"VISUAL IMPACT ASSESSMENT:\n{visual_impact}\n\n"
-            f"RECOMPOSITION INDICATORS:\n{recomposition_indicators}\n\n"
-            f"HEALTH IMPLICATIONS:\n{health_implications}\n\n"
+            # Ensure body_metrics_analysis is a dictionary
+            if not isinstance(body_metrics_analysis, dict):
+                logger.warning("body_metrics_analysis is not a dictionary. Defaulting to empty dict.")
+                body_metrics_analysis = {}
+
+            # Extract metrics components with safe defaults
+            composition_metrics = body_metrics_analysis.get("composition_metrics", {})
+            proportion_assessment = body_metrics_analysis.get("proportion_assessment", {})
+            specific_measurement_changes = body_metrics_analysis.get("specific_measurement_changes", {})
+            trending_measurements = body_metrics_analysis.get("trending_measurements", [])
+            primary_change_areas = body_metrics_analysis.get("primary_change_areas", [])
+            stable_measurements = body_metrics_analysis.get("stable_measurements", [])
+            change_rate_assessment = body_metrics_analysis.get("change_rate_assessment", "No assessment available")
+            visual_impact = body_metrics_analysis.get("visual_impact_assessment", "No visual impact analysis")
+            recomposition_indicators = body_metrics_analysis.get("body_recomposition_indicators", "No recomposition indicators")
+            health_implications = body_metrics_analysis.get("health_marker_implications", "No health implications noted")
+
+            # Construct detailed prompt with comprehensive body metrics data
+            prompt = (
+                "Analyze this client's body measurement data to assess physiological changes, adaptations, "
+                "and body composition shifts. Apply physiological principles to provide insights that can "
+                "guide body composition optimization strategies.\n\n"
+                
+                f"COMPOSITION METRICS:\n{self._format_dict(composition_metrics)}\n\n"
+                f"PROPORTION ASSESSMENT:\n{self._format_dict(proportion_assessment)}\n\n"
+                f"SPECIFIC MEASUREMENT CHANGES:\n{self._format_dict(specific_measurement_changes)}\n\n"
+                f"TRENDING MEASUREMENTS:\n{self._format_list(trending_measurements)}\n\n"
+                f"PRIMARY CHANGE AREAS:\n{self._format_list(primary_change_areas)}\n\n"
+                f"STABLE MEASUREMENTS:\n{self._format_list(stable_measurements)}\n\n"
+                f"CHANGE RATE ASSESSMENT:\n{change_rate_assessment}\n\n"
+                f"VISUAL IMPACT ASSESSMENT:\n{visual_impact}\n\n"
+                f"RECOMPOSITION INDICATORS:\n{recomposition_indicators}\n\n"
+                f"HEALTH IMPLICATIONS:\n{health_implications}\n\n"
+                
+                "Your body metrics analysis should include:\n"
+                "1. Assessment of measurement quality and consistency\n"
+                "2. Evaluation of change rate relative to physiological norms\n"
+                "3. Detailed insights about body composition changes with physiological explanations\n"
+                "4. Assessment of physique development and structural balance\n"
+                "5. Analysis of fat distribution changes and water retention\n"
+                "6. Identification of primary adaptation patterns\n"
+                "7. Recommendations for measurement protocols and body composition targets\n\n"
+                
+                "Create a comprehensive body metrics analysis with physiologically-grounded insights."
+            )
             
-            "Your body metrics analysis should include:\n"
-            "1. Assessment of measurement quality and consistency\n"
-            "2. Evaluation of change rate relative to physiological norms\n"
-            "3. Detailed insights about body composition changes with physiological explanations\n"
-            "4. Assessment of physique development and structural balance\n"
-            "5. Analysis of fat distribution changes and water retention\n"
-            "6. Identification of primary adaptation patterns\n"
-            "7. Recommendations for measurement protocols and body composition targets\n\n"
-            
-            "Create a comprehensive body metrics analysis with physiologically-grounded insights."
-        )
-        
-        system_message = self.get_system_message()
-        result = self.llm_client.call_llm(prompt, system_message, schema=BodyMetricsDeepAnalysis)
-        return result
+            system_message = self.get_system_message()
+            result = self.llm_client.call_llm(prompt, system_message, schema=BodyMetricsDeepAnalysis)
+            return result
+    
+        except Exception as e:
+            logger.error(f"Comprehensive error in analyzing body metrics: {str(e)}")
+            raise
+    
+
     
     def _format_dict(self, data: Dict[str, Any]) -> str:
         """Format dictionary into readable string."""
