@@ -18,14 +18,14 @@ class BodyProportionAssessment(BaseModel):
     upper_lower_balance: str = Field(..., description="Balance between upper and lower body development")
     left_right_symmetry: str = Field(..., description="Symmetry between left and right body sides")
     anterior_posterior_balance: str = Field(..., description="Balance between front and back body measurements")
-    measurement_ratios: List[Dict[str, float]] = Field(..., description="Key body measurement ratios")
+    measurement_ratios: List[List[str]] = Field(..., description="Key body measurement ratios")
     proportion_observations: str = Field(..., description="Qualitative observations about body proportions")
 
 class BodyMetricsAnalysis(BaseModel):
     """Comprehensive analysis of body metrics and changes."""
     composition_metrics: BodyCompositionMetrics
     proportion_assessment: BodyProportionAssessment
-    specific_measurement_changes: List[Dict[str, Any]]
+    specific_measurement_changes: List[List[str]]
     trending_measurements: List[str]
     primary_change_areas: List[str]
     stable_measurements: List[str]
