@@ -318,7 +318,8 @@ async def process_check_in(data: Dict[str, Any]):
             "analysisData": {
                 "meal_analysis": nutrition_analysis,
                 "metrics_analysis" : metrics_analysis,
-            }
+            }, 
+            
         }
     except Exception as e:
         # Proper error handling
