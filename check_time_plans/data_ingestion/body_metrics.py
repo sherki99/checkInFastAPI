@@ -30,7 +30,7 @@ class BodyMetricsAnalysis(BaseModel):
     """Comprehensive analysis of body measurement and composition data."""
     composition_metrics: BodyCompositionMetrics = Field(..., description="Body composition change metrics")
     proportion_assessment: Optional[BodyProportionAssessment] = Field(None, description="Body proportion assessment")
-    specific_measurement_changes: Dict[str, float] = Field(..., description="Changes in specific body measurements")
+    specific_measurement_changes: List[str] = Field( ..., description="List of specific body measurement changes, where each entry is a string describing the change and its corresponding float value.")
     trending_measurements: List[str] = Field(..., description="Measurements showing most significant changes")
     primary_change_areas: List[str] = Field(..., description="Body areas showing most significant changes")
     stable_measurements: List[str] = Field(..., description="Measurements showing minimal change")
