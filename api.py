@@ -230,21 +230,14 @@ from check_time_plans.analysis.nutrition_adherence import NutritionAdherenceModu
 from check_time_plans.analysis.training_performance import TrainingPerformanceModule
 from check_time_plans.analysis.body_metrics import BodyMetricsModule
 
-
-
-
-"""
-
-from check_time_plans.analysis.nutrition_adherence import NutritionAdherenceModule
-from check_time_plans.analysis.training_performance import TrainingPerformanceModule
-from check_time_plans.analysis.body_metrics import BodyMetricsModule
-from check_time_plans.analysis.recovery_assessment import RecoveryAssessmentModule
-
-
 from check_time_plans.decisions.goal_alignment import GoalAlignmentNode
 from check_time_plans.decisions.nutrition_adjustment import NutritionAdjustmentNode
 from check_time_plans.decisions.training_adjustment import TrainingAdjustmentNode
 from check_time_plans.decisions.load_adjustment import LoadAdjustmentNode
+
+"""
+
+
 
 
 from check_time_plans.integration.plan_adjustment import PlanAdjustmentIntegrator
@@ -278,7 +271,7 @@ async def process_check_in(data: Dict[str, Any]):
         standardized_data = ingestion_module.process_check_in_data(data)
         
 
-        # 2. Extract specialized data from standardized data
+        # 2. Extract 
         meal_data = MealAdherenceExtractor().extract_meal_adherence(
             standardized_data.mealPlan.dict(),  
             [report.dict() for report in standardized_data.dailyReports]  
@@ -290,18 +283,38 @@ async def process_check_in(data: Dict[str, Any]):
             standardized_data.bodyMeasurements.dict()  
         )
 
-        """ recovery_data = RecoveryMarkersExtractor().extract_recovery_markers(
-        [report.dict() for report in standardized_data.dailyReports]  )"""
 
-        # 2. Analysis Phase (same as before)
+
+        # 3. Analysis Phase 
         nutrition_analysis = NutritionAdherenceModule().analyze_meal_compliance(meal_data)
         training_analysis = TrainingPerformanceModule().analyze_workout_execution(training_data)
         metrics_analysis = BodyMetricsModule().analyze_body_changes(body_data)
 
 
-        # The rest of your analysis, decision, and integration pipeline would go here
-        # For now, let's return some meaningful data to show the processing worked
-        
+                
+        # 4. Decision Phase
+        goal_alignment = GoalAlignmentNode().evaluate_goal_progress(
+            metrics_analysis,
+            training_analysis
+        )
+
+        nutrition_adjustments = NutritionAdjustmentNode().determine_nutrition_changes(
+            nutrition_analysis,
+            goal_alignment
+        )
+
+        training_adjustments = TrainingAdjustmentNode().determine_training_changes(
+            training_analysis,
+          #  recovery_analysis
+        )
+
+        load_adjustments = LoadAdjustmentNode().optimize_training_load(
+         #   recovery_analysis,
+            training_analysis
+        )
+
+
+
         return {
             "status": "success",
             "userId": standardized_data.userId,
@@ -334,33 +347,7 @@ async def process_check_in(data: Dict[str, Any]):
 
 
         """
-        
-        # 2. Analysis Phase (same as before)
-        nutrition_analysis = NutritionAdherenceModule().analyze_meal_compliance(meal_data)
-        training_analysis = TrainingPerformanceModule().analyze_workout_execution(training_data)
-        metrics_analysis = BodyMetricsModule().analyze_body_changes(body_data)
-        recovery_analysis = RecoveryAssessmentModule().analyze_recovery_markers(recovery_data)
 
-        # 3. Decision Phase
-        goal_alignment = GoalAlignmentNode().evaluate_goal_progress(
-            metrics_analysis,
-            training_analysis
-        )
-
-        nutrition_adjustments = NutritionAdjustmentNode().determine_nutrition_changes(
-            nutrition_analysis,
-            goal_alignment
-        )
-
-        training_adjustments = TrainingAdjustmentNode().determine_training_changes(
-            training_analysis,
-            recovery_analysis
-        )
-
-        load_adjustments = LoadAdjustmentNode().optimize_training_load(
-            recovery_analysis,
-            training_analysis
-        )
 
         # 4. Integration Phase
         plan_integrator = PlanAdjustmentIntegrator()
