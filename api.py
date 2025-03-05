@@ -333,6 +333,13 @@ async def process_check_in(data: Dict[str, Any]):
            current_meal_plan = standardized_data.mealPlan.dict()
         )
 
+        # these part is regarding traing adjustment sama as meal need to be donem if there is any slight change then must do it if not then none.
+        training_adjustments = TrainingAdjustmentNode().determine_training_changes(
+            training_analysis,
+            goal_alignment,
+            standardized_data.workoutPlan.dict(),
+        )
+
 
         return {
             "status": "success",
@@ -357,7 +364,7 @@ async def process_check_in(data: Dict[str, Any]):
             }, 
             "decisionPhase": { 
                 "nutrition_adjustments" :  nutrition_adjustments, 
-   
+                "training_adjustments" : training_adjustments
             }, 
             "summary_report" :  {
                 "report" : "summary_report"
