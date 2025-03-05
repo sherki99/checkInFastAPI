@@ -224,7 +224,7 @@ from check_time_plans.data_ingestion.check_in_ingestion import CheckInDataIngest
 from check_time_plans.data_ingestion.meal_adherence import MealAdherenceExtractor
 from check_time_plans.data_ingestion.training_logs import TrainingLogsExtractor
 from check_time_plans.data_ingestion.body_metrics import BodyMetricsExtractor
-from check_time_plans.data_ingestion.recover_markers import RecoveryMarkersExtractor
+from check_time_plans.data_ingestion.report_metrics import ReportMetricExtractor
 
 
 from check_time_plans.analysis.nutrition_adherence import NutritionAdherenceModule
@@ -259,6 +259,17 @@ from check_time_plans.plans.meal_plan_generator import MealPlanGenerator
             training_analysis
         )
 
+        
+        nutrition_adjustments = NutritionAdjustmentNode().determine_nutrition_changes(
+            nutrition_analysis,
+            goal_alignment
+        )
+
+        training_adjustments = TrainingAdjustmentNode().determine_training_changes(
+            training_analysis,
+          #  recovery_analysis
+        )
+
 """
 
 
@@ -289,12 +300,17 @@ async def process_check_in(data: Dict[str, Any]):
             [report.dict() for report in standardized_data.dailyReports]  
         )
         training_data = TrainingLogsExtractor().extract_training_logs(
-            [log.dict() for log in standardized_data.exerciseLogs]  
+            [log.dict() for log in standardized_data.exerciseLogs],
+            standardized_data.workoutPlan.dict()
         )
         body_data = BodyMetricsExtractor().extract_body_measurements(
             standardized_data.bodyMeasurements.dict()  
         )
 
+        report_daily_week = ReportMetricExtractor().extract_report_metrics(
+            standardized_data.weekReport.dict(), 
+            [daily.dict() for daily in standardized_data.dailyReports]
+        )
 
 
         # 3. Analysis Phase 
@@ -310,15 +326,6 @@ async def process_check_in(data: Dict[str, Any]):
             training_analysis
         )
 
-        nutrition_adjustments = NutritionAdjustmentNode().determine_nutrition_changes(
-            nutrition_analysis,
-            goal_alignment
-        )
-
-        training_adjustments = TrainingAdjustmentNode().determine_training_changes(
-            training_analysis,
-          #  recovery_analysis
-        )
 
         return {
             "status": "success",
@@ -340,11 +347,7 @@ async def process_check_in(data: Dict[str, Any]):
                 "nutrition_analysis": nutrition_analysis,
                 "training_analysis" : training_analysis, 
                 "metrics_analysis" : metrics_analysis,
-            }, 
-            "decisionPhase": { 
-                "goal_alignment" : goal_alignment,
-                "nutrition_adjustments" :  nutrition_adjustments, 
-                "training_adjustments" : training_adjustments
+                "report_daily_week" :  report_daily_week
             }, 
 
         }
