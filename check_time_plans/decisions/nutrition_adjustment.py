@@ -3,15 +3,22 @@ from pydantic import BaseModel, Field
 from first_time_plans.call_llm_class import BaseLLM
 import logging
 
-class NutritionAdjustment(BaseModel):
-    """Structured nutrition modification recommendation."""
-    adjustment_type: str = Field(..., description="Type of nutrition adjustment")
-    macro_modifications: Dict[str, float] = Field(..., description="Recommended changes in macronutrient intake")
-    calorie_adjustment: float = Field(..., description="Recommended calorie intake change")
-    meal_timing_recommendations: List[str] = Field(..., description="Suggestions for meal timing and frequency")
-    rationale: str = Field(..., description="Explanation for the nutrition adjustments")
-    priority_level: int = Field(default=3, ge=1, le=5, description="Priority of nutrition adjustment")
+            # Define a flexible output schema
+class NutritionAdjustmentSchema(BaseModel):
+        """Schema for capturing nutrition adjustment recommendations"""
+        recommended_changes: List[str, Any] = Field(
+            description="Comprehensive nutrition adjustment recommendations"
+        )
+        meal_plan_modifications: List[str, Any] = Field(
+            description="Specific modifications to current meal plan"
+        )
+        rationale: str = Field(
+            description="Explanation of recommended nutrition changes"
+        )
 
+
+
+        
 class NutritionAdjustmentNode:
     """
     Nutrition adjustment decision node using LLM to generate personalized recommendations.
@@ -55,18 +62,7 @@ class NutritionAdjustmentNode:
                 "that support the client's fitness goals."
             )
             
-            # Define a flexible output schema
-            class NutritionAdjustmentSchema(BaseModel):
-                """Schema for capturing nutrition adjustment recommendations"""
-                recommended_changes: Dict[str, Any] = Field(
-                    description="Comprehensive nutrition adjustment recommendations"
-                )
-                meal_plan_modifications: Dict[str, Any] = Field(
-                    description="Specific modifications to current meal plan"
-                )
-                rationale: str = Field(
-                    description="Explanation of recommended nutrition changes"
-                )
+
             
             # Call LLM with structured prompt and schema
             nutrition_adjustments = self.llm_client.call_llm(
@@ -162,20 +158,3 @@ class NutritionAdjustmentNode:
             )
         except Exception as e:
             self.logger.error(f"Logging error: {e}")
-
-
-
-"""# Example usage in the main processing pipeline
-def process_nutrition_adjustments(analysis_data: Dict[str, Any]) -> Dict[str, Any]:
-   
-    nutrition_adjustment_node = NutritionAdjustmentNode()
-    
-    nutrition_adjustments = nutrition_adjustment_node.determine_nutrition_changes(
-        nutrition_analysis=analysis_data.get('analysisData', {}).get('nutrition_analysis', {}),
-        goal_alignment=analysis_data.get('analysisData', {}).get('goal_alignment', {}),
-        current_meal_plan=analysis_data.get('extractedData', {}).get('meal_data', {})
-    )
-    
-    return {
-        "nutrition_adjustments": nutrition_adjustments
-    }"""
