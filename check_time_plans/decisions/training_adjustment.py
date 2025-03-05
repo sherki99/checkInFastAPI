@@ -6,11 +6,11 @@ import logging
 
 class TrainingAdjustmentRecommendation(BaseModel):
     """Structured recommendation for training adjustments."""
-    exercise_modifications: Dict[str, Dict[str, Any]] = Field(
+    exercise_modifications: List[str, List[str, Any]] = Field(
         default_factory=dict, 
         description="Recommended changes to specific exercises"
     )
-    volume_adjustments: Optional[Dict[str, float]] = Field(
+    volume_adjustments: Optional[List[str, float]] = Field(
         None, 
         description="Changes in training volume for different muscle groups"
     )
@@ -34,7 +34,7 @@ class TrainingAdjustmentRecommendation(BaseModel):
         ..., 
         description="Explanation for the recommended training changes"
     )
-    new_workout_plan: Optional[Dict[str, Any]] = Field(
+    new_workout_plan: Optional[List[str, Any]] = Field(
         None, 
         description="Updated workout plan if significant changes are needed"
     )

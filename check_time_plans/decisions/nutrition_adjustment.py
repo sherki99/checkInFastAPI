@@ -25,9 +25,9 @@ class NutritionAdjustmentRecommendation(BaseModel):
         ..., 
         description="Explanation for the recommended nutrition changes"
     )
-    new_meal_plan: Optional[Dict[str, Any]] = Field(
+    new_meal_plan: Optional[List[str, Any]] = Field(
         None, 
-        description="Updated meal plan if significant changes are needed"
+        description="Updated meal plan if significant changes are needed, alyway return the entire meal plan even if not change needed"
     )
 
 class NutritionAdjustmentNode:
