@@ -1,92 +1,133 @@
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from first_time_plans.call_llm_class import BaseLLM
 import logging
 
-class TrainingAdjustment(BaseModel):
-    """Comprehensive training program modification recommendation."""
-    adjustment_type: str = Field(..., description="Primary type of training adjustment")
-    exercise_modifications: Dict[str, Any] = Field(..., description="Specific changes to exercise selection, sets, reps, or intensity")
-    progression_strategy: List[str] = Field(..., description="Strategies for continuous progression")
-    recovery_recommendations: List[str] = Field(..., description="Suggestions for optimizing recovery")
-    technique_focus_areas: List[str] = Field(..., description="Specific technique improvements to prioritize")
-    rationale: str = Field(..., description="Explanation for recommended training adjustments")
-    priority_level: int = Field(default=3, ge=1, le=5, description="Priority of training adjustment")
+
+class TrainingAdjustmentRecommendation(BaseModel):
+    """Structured recommendation for training adjustments."""
+    exercise_modifications: Dict[str, Dict[str, Any]] = Field(
+        default_factory=dict, 
+        description="Recommended changes to specific exercises"
+    )
+    volume_adjustments: Optional[Dict[str, float]] = Field(
+        None, 
+        description="Changes in training volume for different muscle groups"
+    )
+    intensity_changes: Optional[str] = Field(
+        None, 
+        description="Recommended changes in training intensity"
+    )
+    recovery_recommendations: Optional[List[str]] = Field(
+        None, 
+        description="Suggestions for improved recovery strategies"
+    )
+    exercise_additions: Optional[List[str]] = Field(
+        None, 
+        description="New exercises to incorporate into the workout plan"
+    )
+    exercise_deletions: Optional[List[str]] = Field(
+        None, 
+        description="Exercises to remove from the current plan"
+    )
+    rationale: str = Field(
+        ..., 
+        description="Explanation for the recommended training changes"
+    )
+    new_workout_plan: Optional[Dict[str, Any]] = Field(
+        None, 
+        description="Updated workout plan if significant changes are needed"
+    )
+
 
 class TrainingAdjustmentNode:
     """
-    Decision node for generating targeted training program adjustments.
+    Module for determining training changes based on analysis and goal alignment.
     """
-    
-    def __init__(self, llm_client=None):
+
+    def __init__(self, llm_client: Optional[Any] = None):
+        """
+        Initialize the TrainingAdjustmentNode.
+        
+        Args:
+            llm_client: Custom LLM client implementation. If None, uses the default BaseLLM.
+        """
         self.llm_client = llm_client or BaseLLM()
         self.logger = logging.getLogger(__name__)
-    
+        logging.basicConfig(level=logging.INFO)
+
+    def get_system_message(self) -> str:
+        """
+        Returns the system message to guide the LLM in training adjustment decisions.
+        
+        Returns:
+            Formatted system message string
+        """
+        return (
+            "You are a high-performance training optimization expert specializing in creating "
+            "personalized workout adjustments. Your task is to provide precise, scientifically-backed "
+            "training modifications that align with the client's fitness goals and current performance.\n\n"
+            
+            "Key Considerations:\n"
+            "1. Analyze current training performance and progression\n"
+            "2. Align recommendations with specific fitness goals\n"
+            "3. Provide actionable exercise, volume, and intensity modifications\n"
+            "4. Consider individual strength, recovery, and technique metrics\n"
+            "5. Ensure recommendations promote continuous improvement and injury prevention"
+        )
+
     def determine_training_changes(
         self, 
-        training_analysis: Dict[str, Any]
-    ) -> TrainingAdjustment:
+        training_analysis: Dict[str, Any], 
+        goal_alignment: Dict[str, Any],
+        current_workout_plan: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
-        Generate training adjustments based on comprehensive training performance analysis.
+        Determine training changes based on comprehensive analysis.
         
         Args:
             training_analysis: Detailed training performance analysis
-        
+            goal_alignment: Current goal progress and alignment status
+            current_workout_plan: Existing workout plan details
+            
         Returns:
-            Structured training adjustment recommendations
+            Training adjustment recommendations
         """
         try:
-            prompt = self._construct_training_adjustment_prompt(training_analysis)
-            system_message = self._get_training_adjustment_system_message()
-            
-            training_adjustment = self.llm_client.call_llm(
-                prompt, 
-                system_message, 
-                schema=TrainingAdjustment
+            # Prepare comprehensive prompt for LLM analysis
+            prompt = (
+                "Perform a detailed training adjustment analysis based on the following data:\n\n"
+                f"TRAINING ANALYSIS:\n{self._format_dict(training_analysis)}\n\n"
+                f"GOAL ALIGNMENT:\n{self._format_dict(goal_alignment)}\n\n"
+                f"CURRENT WORKOUT PLAN:\n{self._format_dict(current_workout_plan)}\n\n"
+                
+                "Provide comprehensive training adjustment recommendations covering:\n"
+                "1. Exercise modifications and progressions\n"
+                "2. Volume and intensity adjustments\n"
+                "3. Recovery and technique improvement strategies\n"
+                "4. Rationale for proposed changes\n"
+                "5. Potential updates to the workout plan"
             )
             
-            return training_adjustment
+            system_message = self.get_system_message()
+            result = self.llm_client.call_llm(
+                prompt, 
+                system_message, 
+                schema=TrainingAdjustmentRecommendation
+            )
+            
+            return result
         
         except Exception as e:
-            self.logger.error(f"Error determining training changes: {e}")
-            raise
-    
-    def _construct_training_adjustment_prompt(
-        self, 
-        training_analysis: Dict[str, Any]
-    ) -> str:
-        """
-        Construct a comprehensive prompt for training adjustment recommendations.
-        """
-        performance_analysis = training_analysis.get('training_performance_analysis', {})
-        exercise_insights = performance_analysis.get('exercise_insights', [])
-        strength_assessment = performance_analysis.get('strength_assessment', {})
+            self.logger.error(f"Error determining training changes: {str(e)}")
+            raise e
+
+    def _format_dict(self, data: Dict[str, Any]) -> str:
+        """Format dictionary into readable string."""
+        if not data:
+            return "No data available"
         
-        return (
-            "Generate precise training adjustments based on the following performance analysis:\n\n"
-            
-            "TRAINING PERFORMANCE:\n"
-            f"Training Effectiveness Score: {performance_analysis.get('training_effectiveness_score', 'N/A')}\n"
-            f"Program Adherence Score: {performance_analysis.get('program_adherence_score', 'N/A')}\n"
-            f"Progression Assessment: {performance_analysis.get('progression_assessment', 'N/A')}\n\n"
-            
-            "EXERCISE PERFORMANCE INSIGHTS:\n" +
-            "\n".join([
-                f"- {insight.get('exercise_name', 'Unknown')}: "
-                f"Progression Rate: {insight.get('progression_rate', 'N/A')}, "
-                f"Performance Quality: {insight.get('performance_quality', 'N/A')}"
-                for insight in exercise_insights
-            ]) + "\n\n"
-            
-            "STRENGTH ASSESSMENT:\n"
-            f"Relative Strengths: {', '.join(strength_assessment.get('relative_strengths', ['N/A']))}\n"
-            f"Relative Weaknesses: {', '.join(strength_assessment.get('relative_weaknesses', ['N/A']))}\n"
-        )
-    
-    def _get_training_adjustment_system_message(self) -> str:
-        """Define system instructions for nutrition adjustment."""
-        return (
-            "You are a sports dr mike isratetek specializing in performance-driven hyperfort  strategies. "
-            "Your recommendations must be scientifically grounded, personalized, and aligned with "
-            "specific fitness goals. Focus on creating actionable, practical hypertofy goals and plans."
-        )
+        formatted = ""
+        for key, value in data.items():
+            formatted += f"  {key}: {value}\n"
+        return formatted

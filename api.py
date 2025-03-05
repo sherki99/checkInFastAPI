@@ -232,15 +232,12 @@ from check_time_plans.analysis.training_performance import TrainingPerformanceMo
 from check_time_plans.analysis.body_metrics import BodyMetricsModule
 
 from check_time_plans.decisions.goal_alignment import GoalAlignmentNode
+
 from check_time_plans.decisions.nutrition_adjustment import NutritionAdjustmentNode
 from check_time_plans.decisions.training_adjustment import TrainingAdjustmentNode
 
 
 """
-
-
-
-
 from check_time_plans.integration.plan_adjustment import PlanAdjustmentIntegrator
 from check_time_plans.integration.progress_evaluation import ProgressEvaluationModule
 from check_time_plans.integration.report_generator import CheckInReportGenerator
@@ -248,28 +245,6 @@ from check_time_plans.integration.report_generator import CheckInReportGenerator
 # Plan generation modules
 from check_time_plans.plans.workout_plan_generator import WorkoutPlanGenerator
 from check_time_plans.plans.meal_plan_generator import MealPlanGenerator
-"""
-
-
-
-
-"""
-        load_adjustments = LoadAdjustmentNode().optimize_training_load(
-         #   recovery_analysis,
-            training_analysis
-        )
-
-        
-        nutrition_adjustments = NutritionAdjustmentNode().determine_nutrition_changes(
-            nutrition_analysis,
-            goal_alignment
-        )
-
-        training_adjustments = TrainingAdjustmentNode().determine_training_changes(
-            training_analysis,
-          #  recovery_analysis
-        )
-
 """
 
 
@@ -333,6 +308,13 @@ async def process_check_in(data: Dict[str, Any]):
            current_meal_plan = standardized_data.mealPlan.dict()
         )
 
+        # these part is regarding traing adjustment sama as meal need to be donem if there is any slight change then must do it if not then none.
+        training_adjustments = TrainingAdjustmentNode().determine_training_changes(
+            training_analysis=training_analysis,
+            goal_alignment=goal_alignment,
+            current_workout_plan=standardized_data.workoutPlan.dict()
+        )
+
 
         return {
             "status": "success",
@@ -357,7 +339,7 @@ async def process_check_in(data: Dict[str, Any]):
             }, 
             "decisionPhase": { 
                 "nutrition_adjustments" :  nutrition_adjustments, 
-
+                "training_adjustments" : training_adjustments
             }, 
             "summary_report" :  {
                 "report" : "summary_report"

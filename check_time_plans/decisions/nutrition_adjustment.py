@@ -1,34 +1,71 @@
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from first_time_plans.call_llm_class import BaseLLM
 import logging
 
-            # Define a flexible output schema
-class NutritionAdjustmentSchema(BaseModel):
-        """Schema for capturing nutrition adjustment recommendations"""
-        recommended_changes: List[str, Any] = Field(
-            description="Comprehensive nutrition adjustment recommendations"
-        )
-        meal_plan_modifications: List[str, Any] = Field(
-            description="Specific modifications to current meal plan"
-        )
-        rationale: str = Field(
-            description="Explanation of recommended nutrition changes"
-        )
+class NutritionAdjustmentRecommendation(BaseModel):
+    """Structured recommendation for nutrition adjustments."""
+    macro_adjustments: Dict[str, float] = Field(
+        default_factory=dict, 
+        description="Recommended changes to macronutrient intake"
+    )
+    calorie_adjustments: float = Field(
+        default=0, 
+        description="Recommended change in total daily calorie intake"
+    )
+    meal_timing_changes: Optional[List[str]] = Field(
+        None, 
+        description="Suggested changes to meal timing or distribution"
+    )
+    specific_food_recommendations: Optional[List[str]] = Field(
+        None, 
+        description="Specific food or supplement recommendations"
+    )
+    rationale: str = Field(
+        ..., 
+        description="Explanation for the recommended nutrition changes"
+    )
+    new_meal_plan: Optional[Dict[str, Any]] = Field(
+        None, 
+        description="Updated meal plan if significant changes are needed"
+    )
 
-
-
-        
 class NutritionAdjustmentNode:
     """
-    Nutrition adjustment decision node using LLM to generate personalized recommendations.
-    Integrates nutrition analysis, goal alignment, and existing meal plan.
+    Module for determining nutrition changes based on analysis and goal alignment.
     """
-    
-    def __init__(self, llm_client=None):
+
+    def __init__(self, llm_client: Optional[Any] = None):
+        """
+        Initialize the NutritionAdjustmentNode.
+        
+        Args:
+            llm_client: Custom LLM client implementation. If None, uses the default BaseLLM.
+        """
         self.llm_client = llm_client or BaseLLM()
         self.logger = logging.getLogger(__name__)
-    
+        logging.basicConfig(level=logging.INFO)
+
+    def get_system_message(self) -> str:
+        """
+        Returns the system message to guide the LLM in nutrition adjustment decisions.
+        
+        Returns:
+            Formatted system message string
+        """
+        return (
+            "You are a nutrition and fitness optimization expert specializing in creating personalized "
+            "nutrition adjustment recommendations. Your task is to provide precise, scientifically-backed "
+            "nutrition modifications that align with the client's fitness goals and current performance.\n\n"
+            
+            "Key Considerations:\n"
+            "1. Analyze current nutrition adherence and performance\n"
+            "2. Align recommendations with specific fitness goals\n"
+            "3. Provide actionable and precise macro/calorie adjustments\n"
+            "4. Consider individual metabolic and performance metrics\n"
+            "5. Ensure recommendations are practical and sustainable"
+        )
+
     def determine_nutrition_changes(
         self, 
         nutrition_analysis: Dict[str, Any], 
@@ -36,125 +73,143 @@ class NutritionAdjustmentNode:
         current_meal_plan: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
-        Generate nutrition adjustments using LLM with comprehensive context.
+        Determine nutrition changes based on comprehensive analysis.
         
         Args:
             nutrition_analysis: Detailed nutrition performance analysis
-            goal_alignment: Current goal progress assessment
+            goal_alignment: Current goal progress and alignment status
             current_meal_plan: Existing meal plan details
-        
+            
         Returns:
             Nutrition adjustment recommendations
         """
         try:
-            # Construct comprehensive prompt
-            prompt = self._construct_nutrition_adjustment_prompt(
-                nutrition_analysis, 
-                goal_alignment, 
-                current_meal_plan
+            # Prepare comprehensive prompt for LLM analysis
+            prompt = (
+                "Perform a detailed nutrition adjustment analysis based on the following data:\n\n"
+                f"NUTRITION ANALYSIS:\n{self._format_dict(nutrition_analysis)}\n\n"
+                f"GOAL ALIGNMENT:\n{self._format_dict(goal_alignment)}\n\n"
+                f"CURRENT MEAL PLAN:\n{self._format_dict(current_meal_plan)}\n\n"
+                
+                "Provide comprehensive nutrition adjustment recommendations covering:\n"
+                "1. Macro and calorie adjustments\n"
+                "2. Meal timing and distribution changes\n"
+                "3. Specific food or supplement recommendations\n"
+                "4. Rationale for proposed changes\n"
+                "5. Potential updates to the meal plan"
             )
             
-            # Define system message for context
-            system_message = (
-                "You are an expert sports nutritionist tasked with creating "
-                "precise, personalized nutrition recommendations. Analyze the "
-                "provided data holistically and generate actionable adjustments "
-                "that support the client's fitness goals."
-            )
-            
-
-            
-            # Call LLM with structured prompt and schema
-            nutrition_adjustments = self.llm_client.call_llm(
+            system_message = self.get_system_message()
+            result = self.llm_client.call_llm(
                 prompt, 
                 system_message, 
-                schema=NutritionAdjustmentSchema
+                schema=NutritionAdjustmentRecommendation
             )
             
-            # Log the generated adjustments
-            self._log_nutrition_adjustments(nutrition_adjustments)
-            
-            return nutrition_adjustments.dict()
+            return result
         
         except Exception as e:
-            self.logger.error(f"Error in nutrition adjustment generation: {e}")
-            raise
-    
-    def _construct_nutrition_adjustment_prompt(
-        self, 
-        nutrition_analysis: Dict[str, Any], 
-        goal_alignment: Dict[str, Any],
-        current_meal_plan: Dict[str, Any]
-    ) -> str:
+            self.logger.error(f"Error determining nutrition changes: {str(e)}")
+            raise e
+
+    def _format_dict(self, data: Dict[str, Any]) -> str:
+        """Format dictionary into readable string."""
+        if not data:
+            return "No data available"
+        
+        formatted = ""
+        for key, value in data.items():
+            formatted += f"  {key}: {value}\n"
+        return formatted
+
+
+    """
+    Module for determining training changes based on analysis and goal alignment.
+    """
+
+    def __init__(self, llm_client: Optional[Any] = None):
         """
-        Create a comprehensive, context-rich prompt for nutrition adjustment.
+        Initialize the TrainingAdjustmentNode.
         
         Args:
-            nutrition_analysis: Detailed nutrition performance data
-            goal_alignment: Goal progress assessment
-            current_meal_plan: Existing meal plan details
+            llm_client: Custom LLM client implementation. If None, uses the default BaseLLM.
+        """
+        self.llm_client = llm_client or BaseLLM()
+        self.logger = logging.getLogger(__name__)
+        logging.basicConfig(level=logging.INFO)
+
+    def get_system_message(self) -> str:
+        """
+        Returns the system message to guide the LLM in training adjustment decisions.
         
         Returns:
-            Detailed prompt for LLM to generate nutrition recommendations
+            Formatted system message string
         """
-        # Extract key nutrition analysis details
-        adherence_analysis = nutrition_analysis.get('nutrition_adherence_analysis', {})
-        
-        # Construct prompt with multiple contextual layers
-        prompt = (
-            "COMPREHENSIVE NUTRITION ADJUSTMENT ANALYSIS\n\n"
+        return (
+            "You are a high-performance training optimization expert specializing in creating "
+            "personalized workout adjustments. Your task is to provide precise, scientifically-backed "
+            "training modifications that align with the client's fitness goals and current performance.\n\n"
             
-            "CURRENT NUTRITION PERFORMANCE:\n"
-            f"Overall Adherence Score: {adherence_analysis.get('overall_adherence_score', 'N/A')}%\n"
-            f"Macro Adherence: {', '.join(adherence_analysis.get('macro_adherence', ['N/A']))}\n"
-            f"Calorie Adherence: {adherence_analysis.get('calorie_adherence', 'N/A')}%\n\n"
-            
-            "PRIMARY NUTRITION CHALLENGES:\n" +
-            "\n".join([
-                f"- {issue}" for issue in adherence_analysis.get('primary_nutrition_issues', [])
-            ]) + "\n\n"
-            
-            "CURRENT MEAL PLAN STRUCTURE:\n"
-            f"Total Daily Nutrition: {current_meal_plan.get('totalDailyNutrition', 'Not Available')}\n"
-            "Training Day Meals:\n" +
-            "\n".join([
-                f"- {meal.get('name', 'Unnamed Meal')}: {meal.get('nutrition', 'No Details')}"
-                for meal in current_meal_plan.get('trainingDayMeals', [])
-            ]) + "\n\n"
-            
-            "FITNESS GOAL CONTEXT:\n"
-            f"Goal Progress: {goal_alignment.get('overall_goal_progress', 'N/A')}%\n"
-            f"Goal Alignment Status: {goal_alignment.get('goal_alignment_status', 'N/A')}\n"
-            "Specific Goals:\n"
-            "- Increase bench press by 5kg\n"
-            "- Maintain current body weight\n"
-            "- Improve overall muscle conditioning\n\n"
-            
-            "REQUIRED RECOMMENDATIONS:\n"
-            "1. Modify current meal plan to address nutritional deficiencies\n"
-            "2. Align nutrition with specific fitness goals\n"
-            "3. Improve macro and calorie intake consistency\n"
-            "4. Provide practical, implementable nutrition strategies\n\n"
-            
-            "Provide comprehensive nutrition adjustment recommendations "
-            "that are specific, actionable, and directly tied to the client's "
-            "performance and body composition goals."
+            "Key Considerations:\n"
+            "1. Analyze current training performance and progression\n"
+            "2. Align recommendations with specific fitness goals\n"
+            "3. Provide actionable exercise, volume, and intensity modifications\n"
+            "4. Consider individual strength, recovery, and technique metrics\n"
+            "5. Ensure recommendations promote continuous improvement and injury prevention"
         )
-        
-        return prompt
-    
-    def _log_nutrition_adjustments(self, adjustments: Dict[str, Any]):
+
+    def determine_training_changes(
+        self, 
+        training_analysis: Dict[str, Any], 
+        goal_alignment: Dict[str, Any],
+        current_workout_plan: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
-        Log nutrition adjustments for tracking and future reference.
+        Determine training changes based on comprehensive analysis.
         
         Args:
-            adjustments: Generated nutrition adjustment recommendations
+            training_analysis: Detailed training performance analysis
+            goal_alignment: Current goal progress and alignment status
+            current_workout_plan: Existing workout plan details
+            
+        Returns:
+            Training adjustment recommendations
         """
         try:
-            # Log key details about nutrition adjustments
-            self.logger.info(
-                "Nutrition Adjustments Generated: "
-                f"Recommended Changes: {adjustments.get('recommended_changes')}"
+            # Prepare comprehensive prompt for LLM analysis
+            prompt = (
+                "Perform a detailed training adjustment analysis based on the following data:\n\n"
+                f"TRAINING ANALYSIS:\n{self._format_dict(training_analysis)}\n\n"
+                f"GOAL ALIGNMENT:\n{self._format_dict(goal_alignment)}\n\n"
+                f"CURRENT WORKOUT PLAN:\n{self._format_dict(current_workout_plan)}\n\n"
+                
+                "Provide comprehensive training adjustment recommendations covering:\n"
+                "1. Exercise modifications and progressions\n"
+                "2. Volume and intensity adjustments\n"
+                "3. Recovery and technique improvement strategies\n"
+                "4. Rationale for proposed changes\n"
+                "5. Potential updates to the workout plan"
             )
+            
+            system_message = self.get_system_message()
+            result = self.llm_client.call_llm(
+                prompt, 
+                system_message, 
+                schema=TrainingAdjustmentRecommendation
+            )
+            
+            return result
+        
         except Exception as e:
-            self.logger.error(f"Logging error: {e}")
+            self.logger.error(f"Error determining training changes: {str(e)}")
+            raise e
+
+    def _format_dict(self, data: Dict[str, Any]) -> str:
+        """Format dictionary into readable string."""
+        if not data:
+            return "No data available"
+        
+        formatted = ""
+        for key, value in data.items():
+            formatted += f"  {key}: {value}\n"
+        return formatted
