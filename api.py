@@ -259,19 +259,8 @@ from check_time_plans.plans.meal_plan_generator import MealPlanGenerator
             training_analysis
         )
 
-                recovery_data =  RecoveryMarkersExtractor.extract_recovery_markers(
-            standardized_data.dailyReports,
-            standardized_data.weekReport
-        )  
-
 """
 
-
-
-
-
-
-   
 
 
 
@@ -292,25 +281,21 @@ async def process_check_in(data: Dict[str, Any]):
         # 1. Data Ingestion Phase
         ingestion_module = CheckInDataIngestionModule()
         standardized_data = ingestion_module.process_check_in_data(data)
-
         
 
-        # 2. Extract // in this extart part I need to get the data and make it ready 
+        # 2. Extract 
         meal_data = MealAdherenceExtractor().extract_meal_adherence(
-            standardized_data.mealPlan.dict()
+            standardized_data.mealPlan.dict(),  
+            [report.dict() for report in standardized_data.dailyReports]  
         )
         training_data = TrainingLogsExtractor().extract_training_logs(
-           standardized_data.exerciseLogs.dict(),
-           standardized_data.workoutPlan.dict(),
+            [log.dict() for log in standardized_data.exerciseLogs]  
         )
         body_data = BodyMetricsExtractor().extract_body_measurements(
-            standardized_data.bodyMeasurements.dict(),
+            standardized_data.bodyMeasurements.dict()  
         )
 
 
-
-
-  
 
         # 3. Analysis Phase 
         nutrition_analysis = NutritionAdherenceModule().analyze_meal_compliance(meal_data)
