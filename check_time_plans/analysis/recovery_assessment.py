@@ -1,3 +1,6 @@
+# temporay is stop both of the recoverly classes maybe in the futue I will be implenting them
+
+
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from first_time_plans.call_llm_class import BaseLLM
@@ -43,4 +46,3 @@ class RecoveryDeepAnalysis(BaseModel):
     recovery_consistency: str = Field(..., description="Assessment of day-to-day recovery consistency")
 
 
-   #  ... need to be finish 

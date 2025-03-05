@@ -224,6 +224,7 @@ from check_time_plans.data_ingestion.check_in_ingestion import CheckInDataIngest
 from check_time_plans.data_ingestion.meal_adherence import MealAdherenceExtractor
 from check_time_plans.data_ingestion.training_logs import TrainingLogsExtractor
 from check_time_plans.data_ingestion.body_metrics import BodyMetricsExtractor
+from check_time_plans.data_ingestion.recover_markers import RecoveryMarkersExtractor
 
 
 from check_time_plans.analysis.nutrition_adherence import NutritionAdherenceModule
@@ -258,8 +259,19 @@ from check_time_plans.plans.meal_plan_generator import MealPlanGenerator
             training_analysis
         )
 
+                recovery_data =  RecoveryMarkersExtractor.extract_recovery_markers(
+            standardized_data.dailyReports,
+            standardized_data.weekReport
+        )  
+
 """
 
+
+
+
+
+
+   
 
 
 
@@ -280,21 +292,25 @@ async def process_check_in(data: Dict[str, Any]):
         # 1. Data Ingestion Phase
         ingestion_module = CheckInDataIngestionModule()
         standardized_data = ingestion_module.process_check_in_data(data)
+
         
 
-        # 2. Extract 
+        # 2. Extract // in this extart part I need to get the data and make it ready 
         meal_data = MealAdherenceExtractor().extract_meal_adherence(
-            standardized_data.mealPlan.dict(),  
-            [report.dict() for report in standardized_data.dailyReports]  
+            standardized_data.mealPlan
         )
         training_data = TrainingLogsExtractor().extract_training_logs(
-            [log.dict() for log in standardized_data.exerciseLogs]  
+           standardized_data.exerciseLogs,
+           standardized_data.workoutPlan
         )
         body_data = BodyMetricsExtractor().extract_body_measurements(
-            standardized_data.bodyMeasurements.dict()  
+            standardized_data.bodyMeasurements
         )
 
 
+
+
+  
 
         # 3. Analysis Phase 
         nutrition_analysis = NutritionAdherenceModule().analyze_meal_compliance(meal_data)
@@ -340,8 +356,11 @@ async def process_check_in(data: Dict[str, Any]):
                 "training_analysis" : training_analysis, 
                 "metrics_analysis" : metrics_analysis,
             }, 
-
-            "training_adjustments":  training_adjustments
+            "decisionPhase": { 
+                "goal_alignment" : goal_alignment,
+                "nutrition_adjustments" :  nutrition_adjustments, 
+                "training_adjustments" : training_adjustments
+            }, 
 
         }
     except Exception as e:
@@ -360,7 +379,6 @@ async def process_check_in(data: Dict[str, Any]):
         integrated_plan = plan_integrator.integrate_adjustments(
             nutrition_adjustments,
             training_adjustments,
-            load_adjustments
         )
 
         # 5. Generate new plans or use existing ones
@@ -405,28 +423,6 @@ async def process_check_in(data: Dict[str, Any]):
         api_response = report_generator.format_api_response(final_report)
 
         """
-
-
-        # Always return both plans in the response
-        return {
-            "status": "success",
-            "rec" : check_in_data, 
-        }
-
-
-        """
-            "workout_plan": workout_plan,
-
-            "meal_plan": meal_plan,
-            "check_in_report": api_response,
-            "progress_evaluation": progress_assessment,
-            "modifications_made": {
-                "workout_modified": integrated_plan.requires_workout_changes,
-                "nutrition_modified": integrated_plan.requires_nutrition_changes
-            
-            }
-
-        """
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -443,6 +439,7 @@ async def process_check_in(data: Dict[str, Any]):
 
 # Import modules for data processing and analysis
 from first_time_plans.Module_A_B.dataIngestionModule import DataIngestionModule
+
 from first_time_plans.Module_A_B.goalClarificationModule import GoalClarificationModule
 from first_time_plans.Module_A_B.bodyCompositionModule import BodyCompositionModule
 from first_time_plans.Module_A_B.trainingHistory import TrainingHistoryModule
