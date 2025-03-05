@@ -318,28 +318,15 @@ async def process_check_in(data: Dict[str, Any]):
         training_analysis = TrainingPerformanceModule().analyze_workout_execution(training_data)
         metrics_analysis = BodyMetricsModule().analyze_body_changes(body_data)
 
-
-                
-       
         goal_alignment = GoalAlignmentNode().evaluate_goal_progress(
             metrics_analysis,
             training_analysis
         )
 
-         # 4. Decision Phase
-        # these is the last part where it based on all the previos information decide what change or do not change untit and leave dfor the next week based on all the the previos decision       
-        nutrition_adjustments = NutritionAdjustmentNode().determine_nutrition_changes(
-            nutrition_analysis,
-            goal_alignment
-        )
 
 
+      
 
-        # these part is regarding traing adjustment sama as meal need to be donem if there is any slight change then must do it if not then none.
-        training_adjustments = TrainingAdjustmentNode().determine_training_changes(
-            training_analysis,
-          #  recovery_analysis
-        )
 
 
         return {
@@ -363,10 +350,7 @@ async def process_check_in(data: Dict[str, Any]):
                 "report_daily_week" : report_daily_week, 
                 "goal_alignment" : goal_alignment,
             }, 
-            "decisionPhase": { 
-                "nutrition_adjustments" :  nutrition_adjustments, 
-                "training_adjustments" : training_adjustments
-            }, 
+
             "summary_report" :  {
                 "report" : "summary_report"
             }
