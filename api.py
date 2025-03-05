@@ -300,7 +300,7 @@ async def process_check_in(data: Dict[str, Any]):
             standardized_data.mealPlan.dict()
         )
         training_data = TrainingLogsExtractor().extract_training_logs(
-           standardized_data.exerciseLogs,
+           standardized_data.exerciseLogs.dict(),
            standardized_data.workoutPlan.dict(),
         )
         body_data = BodyMetricsExtractor().extract_body_measurements(
