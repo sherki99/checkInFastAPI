@@ -163,17 +163,11 @@ class NutritionAdjustmentNode:
         except Exception as e:
             self.logger.error(f"Logging error: {e}")
 
-# Example usage in the main processing pipeline
+
+
+"""# Example usage in the main processing pipeline
 def process_nutrition_adjustments(analysis_data: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Process nutrition adjustments within the broader data processing pipeline.
-    
-    Args:
-        analysis_data: Comprehensive analysis data from previous processing stages
-    
-    Returns:
-        Processed nutrition adjustment recommendations
-    """
+   
     nutrition_adjustment_node = NutritionAdjustmentNode()
     
     nutrition_adjustments = nutrition_adjustment_node.determine_nutrition_changes(
@@ -184,4 +178,4 @@ def process_nutrition_adjustments(analysis_data: Dict[str, Any]) -> Dict[str, An
     
     return {
         "nutrition_adjustments": nutrition_adjustments
-    }
+    }"""
