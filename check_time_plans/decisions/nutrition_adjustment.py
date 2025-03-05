@@ -3,10 +3,32 @@ from pydantic import BaseModel, Field
 from first_time_plans.call_llm_class import BaseLLM
 import logging
 
+from typing import List, Optional
+from pydantic import BaseModel, Field
+
+class MacroAdjustment(BaseModel):
+    """Represents an adjustment for a specific macronutrient."""
+    nutrient_type: str  # e.g., "protein", "carbs", "fat"
+    adjustment_value: float  # percentage or absolute change
+    adjustment_unit: str = "%"  # default to percentage, can be "%" or "g"
+
+class MealComponent(BaseModel):
+    """Represents a component of a meal."""
+    food_item: str
+    portion_size: Optional[float] = None
+    portion_unit: Optional[str] = None
+
+class MealPlanEntry(BaseModel):
+    """Represents a single meal in a meal plan."""
+    meal_name: str  # e.g., "Breakfast", "Lunch", "Dinner", "Snack"
+    components: List[MealComponent]
+    estimated_calories: Optional[float] = None
+    estimated_macros: Optional[List[MacroAdjustment]] = None
+
 class NutritionAdjustmentRecommendation(BaseModel):
     """Structured recommendation for nutrition adjustments."""
-    macro_adjustments: Dict[str, float] = Field(
-        default_factory=dict, 
+    macro_adjustments: List[MacroAdjustment] = Field(
+        default_factory=list, 
         description="Recommended changes to macronutrient intake"
     )
     calorie_adjustments: float = Field(
@@ -25,11 +47,13 @@ class NutritionAdjustmentRecommendation(BaseModel):
         ..., 
         description="Explanation for the recommended nutrition changes"
     )
-    new_meal_plan: Optional[List[str, Any]] = Field(
+    new_meal_plan: Optional[List[MealPlanEntry]] = Field(
         None, 
-        description="Updated meal plan if significant changes are needed, alyway return the entire meal plan even if not change needed"
+        description="Updated meal plan if significant changes are needed. Always return the entire meal plan even if no changes are needed."
     )
 
+
+    
 class NutritionAdjustmentNode:
     """
     Module for determining nutrition changes based on analysis and goal alignment.

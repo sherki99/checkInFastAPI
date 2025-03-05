@@ -4,41 +4,65 @@ from first_time_plans.call_llm_class import BaseLLM
 import logging
 
 
+
+class ExerciseModification(BaseModel):
+    """Represents a modification to a specific exercise."""
+    exercise_name: str
+    modification_type: str  # e.g., "form", "variation", "progression"
+    details: Optional[str] = None  # Specific details of the modification
+
+class VolumeAdjustment(BaseModel):
+    """Represents volume changes for a muscle group or exercise."""
+    target: str  # Muscle group or exercise name
+    volume_change: float  # Percentage or absolute change in volume
+    change_unit: str = "%"  # Default to percentage
+
+class WorkoutComponent(BaseModel):
+    """Represents a single component of a workout."""
+    exercise: str
+    sets: int
+    reps: int
+    intensity: Optional[str] = None  # e.g., "moderate", "high", "low"
+    additional_notes: Optional[str] = None
+
 class TrainingAdjustmentRecommendation(BaseModel):
     """Structured recommendation for training adjustments."""
-    exercise_modifications: List[str, List[str, Any]] = Field(
-        default_factory=dict, 
+    exercise_modifications: List[ExerciseModification] = Field(
+        default_factory=list, 
         description="Recommended changes to specific exercises"
     )
-    volume_adjustments: Optional[List[str, float]] = Field(
-        None, 
+    volume_adjustments: List[VolumeAdjustment] = Field(
+        default_factory=list, 
         description="Changes in training volume for different muscle groups"
     )
     intensity_changes: Optional[str] = Field(
         None, 
-        description="Recommended changes in training intensity"
+        description="Recommended changes in overall training intensity"
     )
     recovery_recommendations: Optional[List[str]] = Field(
         None, 
         description="Suggestions for improved recovery strategies"
     )
-    exercise_additions: Optional[List[str]] = Field(
-        None, 
+    exercise_additions: List[str] = Field(
+        default_factory=list, 
         description="New exercises to incorporate into the workout plan"
     )
-    exercise_deletions: Optional[List[str]] = Field(
-        None, 
+    exercise_deletions: List[str] = Field(
+        default_factory=list, 
         description="Exercises to remove from the current plan"
     )
     rationale: str = Field(
         ..., 
         description="Explanation for the recommended training changes"
     )
-    new_workout_plan: Optional[List[str, Any]] = Field(
+    new_workout_plan: Optional[List[WorkoutComponent]] = Field(
         None, 
         description="Updated workout plan if significant changes are needed"
     )
 
+
+
+    
 
 class TrainingAdjustmentNode:
     """
